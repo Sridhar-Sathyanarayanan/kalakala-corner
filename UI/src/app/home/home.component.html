@@ -1,0 +1,177 @@
+<div class="home-root mat-typography">
+  <!-- Welcome Section -->
+  <section class="welcome">
+    <div class="welcome-card">
+      <h2 class="typing-animation title">Welcome to Kalakala Corner</h2>
+      <h3 class="subtitle">
+        A place where creativity and tradition join hands.
+      </h3>
+    </div>
+  </section>
+  <!-- HERO (big colorful gradient + carousel) -->
+  <section class="hero">
+    <div class="hero-left">
+      <h1>Handmade with ❤️ — <span>Style, Story & Soul</span></h1>
+      <p class="subtitle">
+        Curated crafts, sustainable gifting and joyful designs for every modern
+        home.
+      </p>
+
+      <div class="hero-cta">
+        <button mat-raised-button color="accent" routerLink="/catalogue">
+          <mat-icon>shopping_bag</mat-icon>
+          Shop Collections
+        </button>
+      </div>
+
+      <div class="hero-tags">
+        <mat-chip-set>
+          <mat-chip selected>Eco-friendly</mat-chip>
+          <mat-chip selected>Made in India</mat-chip>
+          <mat-chip selected>Woman-led</mat-chip>
+        </mat-chip-set>
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="carousel">
+        <div class="viewport">
+          <div class="strip" [style.transform]="'translateX(-' + currentIndex() * 100 + '%)'">
+            @for (s of slides; track s; let i =$index) {
+            <figure class="slide" [class.active]="currentIndex() === i">
+              <img [src]="s.image" [alt]="s.title" />
+            </figure>
+            }
+          </div>
+        </div>
+
+        <!-- controls -->
+        <div class="controls">
+          <button mat-mini-fab (click)="prevSlide()" aria-label="previous">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <button mat-mini-fab (click)="nextSlide()" aria-label="next">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+
+        <!-- dots -->
+        <div class="dots">
+          <button mat-icon-button *ngFor="let s of slides; let i = index" (click)="goToSlide(i)">
+            <span class="dot" [class.active]="currentIndex() === i"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- ABOUT (image left / text right on desktop) -->
+  <section class="about">
+    <div class="about-image">
+      <img src="assets/images/doll.jpeg" alt="Celebrate Art & Culture" />
+      <div class="image-overlay">
+        <mat-icon>brush</mat-icon>
+      </div>
+    </div>
+
+    <div class="about-text">
+      <h2>
+        <span class="highlight">Celebrate</span> <br />
+        <span class="accent">Art, Culture</span> &
+        <span class="eco">Sustainability</span>
+      </h2>
+
+      <p class="subtitle">
+        Discover the joy of mindful creations — each piece tells a story of
+        tradition, love, and care for the planet.
+      </p>
+
+      <mat-list>
+        <mat-list-item>
+          <mat-icon color="accent">favorite</mat-icon>
+          <span>Empowering women artisans</span>
+        </mat-list-item>
+        <mat-list-item>
+          <mat-icon color="primary">eco</mat-icon>
+          <span>Eco-friendly & upcycled designs</span>
+        </mat-list-item>
+        <mat-list-item>
+          <mat-icon color="warn">palette</mat-icon>
+          <span>Modern aesthetics with heritage roots</span>
+        </mat-list-item>
+      </mat-list>
+    </div>
+  </section>
+
+  <!-- WHY IT MATTERS (cards with soft icons) -->
+  <section class="why-matter">
+    <h2>
+      <span class="highlight">Why</span>
+      <span class="accent">Arts & Crafts</span>
+      <span class="eco">Matter</span>
+    </h2>
+
+    <p class="intro">
+      More than just creativity — they connect us to culture, empower
+      communities, and make the world more sustainable.
+    </p>
+    <div class="reasons">
+      @for (item of reasons; track item) {
+      <mat-card class="reason-card">
+        <mat-icon class="reason-icon" [style.color]="item.color">{{
+          item.icon
+          }}</mat-icon>
+
+        <p>{{ item.desc }}</p>
+      </mat-card>
+      }
+    </div>
+  </section>
+
+  <!-- CATALOG: grid of cards (staggered) -->
+  <section class="collections">
+    <h2>
+      <span class="highlight">Did you </span>
+      <span class="accent">Know?</span>
+    </h2>
+
+    <div class="collection-grid">
+      <div class="list-column">
+        <ul>
+          @for (item of dyk; track item) {
+          <li>{{ item.desc }}</li>
+          }
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="contact">
+    <div class="contact-box">
+      <h2><mat-icon>mail_outline</mat-icon> Get in Touch</h2>
+      <p class="subtitle">
+        We’re happy to answer your queries or hear from you.
+      </p>
+
+      <div class="contact-info">
+        <div class="info-item">
+          <mat-icon>email</mat-icon>
+          <span>rsk.sudha@gmail.com</span>
+        </div>
+        <div class="info-item">
+          <mat-icon>call</mat-icon>
+          <span>+91 7669990988</span>
+        </div>
+        <div class="info-item">
+          <mat-icon>location_on</mat-icon>
+          <span>New Delhi, India</span>
+        </div>
+        <div class="info-item">
+          <mat-icon>location_on</mat-icon>
+          <a href="https://www.instagram.com/kalakalacorner" target="_blank">kalakalacorner</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

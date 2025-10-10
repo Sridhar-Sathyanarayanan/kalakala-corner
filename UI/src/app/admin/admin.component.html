@@ -1,0 +1,79 @@
+<div class="admin-container">
+
+  <!-- Add Product Form -->
+  <mat-card class="add-product-card mat-elevation-z8">
+    <h1>Add New Product</h1>
+    <form class="add-product-form" (ngSubmit)="addProduct()">
+
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Product Name</mat-label>
+        <input matInput placeholder="Enter product name" [(ngModel)]="newProduct.name" name="name" required />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Price</mat-label>
+        <input matInput type="number" placeholder="₹0.00" [(ngModel)]="newProduct.price" name="price" required />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Category</mat-label>
+        <input matInput placeholder="Enter category" [(ngModel)]="newProduct.category" name="category" required />
+      </mat-form-field>
+
+      <!-- Image Upload -->
+      <div class="image-upload" (click)="fileInput.click()">
+        <input #fileInput type="file" accept="image/*" (change)="onImageSelected($event)" />
+        <ng-container *ngIf="newProduct.image as img; else uploadText">
+          <div class="image-preview">
+            <img [src]="img" alt="Preview" />
+            <button mat-mini-fab color="warn" class="delete-btn" (click)="newProduct.image=''; $event.stopPropagation()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </ng-container>
+        <ng-template #uploadText>
+          <div class="upload-placeholder">
+            <mat-icon>cloud_upload</mat-icon>
+            <span>Tap or Click to Upload Image</span>
+          </div>
+        </ng-template>
+      </div>
+
+      <button mat-raised-button color="primary" type="submit" class="add-btn">
+        <mat-icon>add_circle</mat-icon> Add Product
+      </button>
+
+    </form>
+  </mat-card>
+
+  <!-- Products Grid -->
+  <div class="products-grid">
+    <mat-card class="product-card mat-elevation-z4" *ngFor="let product of products">
+      <div class="product-img-wrapper">
+        <ng-container *ngIf="product.image as img; else noImage">
+          <img [src]="img" alt="{{ product.name }}" />
+        </ng-container>
+        <ng-template #noImage>
+          <div class="no-image">
+            <mat-icon>image_not_supported</mat-icon>
+          </div>
+        </ng-template>
+      </div>
+
+      <mat-card-header>
+        <mat-card-title>{{ product.name }}</mat-card-title>
+        <mat-card-subtitle>₹ {{ product.price }}</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <p>Category: {{ product.category }}</p>
+      </mat-card-content>
+
+      <mat-card-actions align="end">
+        <button mat-icon-button color="warn" (click)="removeProduct(product.id)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+</div>

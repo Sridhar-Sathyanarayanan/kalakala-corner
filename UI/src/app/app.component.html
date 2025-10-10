@@ -1,0 +1,38 @@
+<header class="navbar">
+  <!-- Left: Logo / Brand -->
+  <div class="brand-container">
+    <a routerLink="/" class="brand">
+      <img src="assets/images/logo.png" alt="Kalakala Corner Logo" class="logo" />
+      <h3>Kalakala Corner</h3>
+    </a>
+  </div>
+
+  <!-- Hamburger for mobile -->
+  <button class="hamburger" (click)="toggleMobileMenu()" aria-label="Toggle menu">
+    <mat-icon class="menu">menu</mat-icon>
+  </button>
+
+  <!-- Desktop & Mobile Nav -->
+  <nav [class.open]="mobileMenuOpen">
+    <ul (click)="toggleMobileMenu()">
+      <li><a routerLink="/">Home</a></li>
+      <li><a routerLink="/catalogue">Catalogue</a></li>
+      <li><a routerLink="/about-us">About Us</a></li>
+      <li><a routerLink="/contact">Contact</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main class="main-content">
+  <router-outlet></router-outlet>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-main">
+    <div class="footer-left">
+      <h4>Kalakala Corner</h4>
+      <p>Creativity · Culture · Tradition</p>
+    </div>
+  </div>
+  <div class="footer-bottom">© 2025 Kalakala Corner · All Rights Reserved</div>
+</footer>

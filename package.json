@@ -1,0 +1,13 @@
+{
+  "name": "kalakala-corner",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "install:all": "npm i && npm --prefix ui i --legacy-peer-deps && npm --prefix mid-tier i --legacy-peer-deps",
+    "dev": "concurrently -n mid-tier,ui --kill-others \"npm --prefix mid-tier run start:dev\" \"npm --prefix ui run start\"",
+    "build": "npm --prefix ui run build && npm --prefix mid-tier run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

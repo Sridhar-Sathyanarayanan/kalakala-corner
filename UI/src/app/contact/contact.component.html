@@ -1,0 +1,64 @@
+<section class="contact-panel" aria-labelledby="contact-heading">
+  <div class="card glass">
+    <!-- Banner -->
+    <div class="card-media">
+      <img src="assets/images/contact.jpg" alt="Contact Us banner" />
+      <div class="card-badge">✨ Kalakala Corner</div>
+    </div>
+
+    <!-- Body -->
+    <div class="card-body">
+      <header class="card-header">
+        <h1 id="contact-heading">Contact Us <span class="emoji">💌</span></h1>
+        <p class="subtitle">We’d love to hear from you <span>🌿</span></p>
+      </header>
+
+      <ul class="contact-list" role="list">
+        <li class="contact-item">
+          <mat-icon>email</mat-icon>
+          <div class="info">
+            <div class="title"><a class="value" href="mailto:{{ email }}">Email</a></div>
+            <a class="value" href="mailto:{{ email }}">{{ email }}</a>
+          </div>
+          <button class="mini" (click)="copy(email, 'Email')">Copy</button>
+        </li>
+
+        <li class="contact-item">
+          <mat-icon>phone</mat-icon>
+          <div class="info">
+            <div class="title">Phone</div>
+            <a class="value" href="tel:{{ phone }}">{{ phone }}</a>
+          </div>
+          <button class="mini" (click)="copy(phone, 'Phone')">Copy</button>
+        </li>
+
+        <li class="contact-item">
+          <mat-icon>location_on</mat-icon>
+          <div class="info">
+            <div class="title">Location</div>
+            <div class="value">{{ location }}</div>
+          </div>
+        </li>
+
+        <li class="contact-item">
+          <i class="fab fa-instagram fa-lg"></i>
+          <div class="info">
+            <div class="title">
+              <a href="https://www.instagram.com/{{ instagram }}" target="_blank">Instagram</a>
+            </div>
+            <a class="value" href="https://www.instagram.com/{{ instagram }}" target="_blank" rel="noopener">{{
+              instagram }}</a>
+          </div>
+        </li>
+      </ul>
+
+      <div class="cta-row">
+        <div class="micro">DM on Instagram — we reply fast! ⚡</div>
+      </div>
+
+      <div class="copied-toast" *ngIf="copiedText">
+        {{ copiedText }} copied ✔
+      </div>
+    </div>
+  </div>
+</section>
