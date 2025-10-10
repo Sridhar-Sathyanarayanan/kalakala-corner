@@ -13,4 +13,10 @@ export class ProductService {
   getProducts(): Observable<any[]> {
     return this.http.get<any[]>(`${environment.apiURL}/products-list`);
   }
+
+  addProduct(product): Observable<any[]> {
+    return this.http.post<any[]>(`${environment.apiURL}/add-product`, {
+      withCredentials: true,
+    });
+  }
 }

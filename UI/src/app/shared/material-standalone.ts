@@ -14,6 +14,7 @@ import { MatSlideToggleModule } from "@angular/material/slide-toggle";
 import { MatExpansionModule } from "@angular/material/expansion";
 import { MatSidenavModule } from "@angular/material/sidenav";
 import { MatChipsModule } from "@angular/material/chips";
+import { MatSnackBarModule } from "@angular/material/snack-bar";
 
 export const MaterialStandaloneModules = [
   CommonModule,
@@ -33,4 +34,5 @@ export const MaterialStandaloneModules = [
   MatExpansionModule,
   MatSidenavModule,
   MatChipsModule,
+  MatSnackBarModule,
 ];

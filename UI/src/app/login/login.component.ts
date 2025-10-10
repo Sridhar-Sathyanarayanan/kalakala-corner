@@ -1,8 +1,10 @@
-import { Component } from "@angular/core";
+import { Component, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { MaterialStandaloneModules } from "../shared/material-standalone";
 import { AppService } from "../services/app.service";
+import { MatSnackBar } from "@angular/material/snack-bar";
+import { Router } from "@angular/router";
 
 @Component({
   selector: "app-login",
@@ -15,14 +17,30 @@ export class LoginComponent {
   username: string = "";
   password: string = "";
   hidePassword: boolean = true;
-  constructor(private appService: AppService) {}
+  error = false;
+  constructor(
+    private appService: AppService,
+    private snackBar: MatSnackBar,
+    private router: Router
+  ) {}
   login() {
     if (!this.username || !this.password) {
       alert("Please enter both username and password.");
       return;
     }
-    this.appService.login(this.username, this.password).subscribe((res) => {
-      sessionStorage.setItem("jwtToken", res.token);
+    this.appService.login(this.username, this.password).subscribe({
+      next: () => {
+        this.error = false;
+        {
+          this.snackBar.open("Logged in successfully", null, {
+            duration: 3000,
+          });
+          this.router.navigate(["/catalogue"]);
+        }
+      },
+      error: () => {
+        this.error = true;
+      },
     });
   }
 }

@@ -19,6 +19,9 @@
       <li><a routerLink="/catalogue">Catalogue</a></li>
       <li><a routerLink="/about-us">About Us</a></li>
       <li><a routerLink="/contact">Contact</a></li>
+      @if (admin) {
+      <li><a (click)="logout()">Logout</a></li>
+      }
     </ul>
   </nav>
 </header>

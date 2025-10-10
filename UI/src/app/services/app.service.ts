@@ -1,7 +1,7 @@
 // src/app/services/product.service.ts
 import { inject, Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
-import { Observable } from "rxjs";
+import { BehaviorSubject, Observable } from "rxjs";
 import { environment } from "../../environments/environment";
 interface JWT {
   message: string;
@@ -13,11 +13,30 @@ interface JWT {
 })
 export class AppService {
   private http = inject(HttpClient);
-
+  isLoggedIn$ = new BehaviorSubject<boolean>(false);
   login(username: string, password: string): Observable<JWT> {
-    return this.http.post<JWT>(`${environment.apiURL}/login`, {
-      username,
-      password,
-    });
+    return this.http.post<JWT>(
+      `${environment.apiURL}/api/login`,
+      {
+        username,
+        password,
+      },
+      { withCredentials: true }
+    );
+  }
+
+  logout() {
+    return this.http.post<JWT>(
+      `${environment.apiURL}/api/logout`,
+      {},
+      { withCredentials: true }
+    );
+  }
+
+  checkLoggedIn() {
+    return this.http.get<JWT>(
+      `${environment.apiURL}/api/auth/check`,
+      { withCredentials: true }
+    );
   }
 }

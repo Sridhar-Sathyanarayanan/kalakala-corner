@@ -1,6 +1,7 @@
 // server.ts
 import express, { Request, Response } from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 if (process.env.ENVIRONMENT !== "production") {
   require("dotenv").config();
 }
@@ -15,8 +16,7 @@ const corsOptions: cors.CorsOptions = {
 };
 
 app.use(cors(corsOptions));
-
-app.use(cors());
+app.use(cookieParser());
 app.use(express.json());
 
 app.get("/health", (req: Request, res: Response) => {

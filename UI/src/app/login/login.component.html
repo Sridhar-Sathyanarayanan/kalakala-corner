@@ -34,7 +34,9 @@
         type="button"
         (click)="hidePassword = !hidePassword"
       >
-        <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+        <mat-icon>{{
+          hidePassword ? "visibility_off" : "visibility"
+        }}</mat-icon>
       </button>
     </mat-form-field>
 
@@ -47,5 +49,8 @@
     >
       Login
     </button>
+    @if (error) {
+    <p>Invalid credentials</p>
+    }
   </mat-card>
 </div>

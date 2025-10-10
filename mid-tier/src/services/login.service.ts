@@ -21,10 +21,16 @@ export async function verifyPassword(username: string, password: string) {
       return { message: "Invalid password" };
     }
     // Generate JWT (expires in 30 minutes)
-    const token = jwt.sign({ username }, "ADMIN_TOKEN", { expiresIn: "30m" });
+    const token = jwt.sign({ username }, process.env.ADMIN_TOKEN as string, {
+      expiresIn: "30m",
+    });
     return { message: "Login successful", token };
   } catch (err) {
     console.error("Error verifying password:", err);
     return { message: "Internal server error" };
   }
+}
+
+export async function checkLoggedIn(token:string){
+  return jwt.verify(token, process.env.ADMIN_TOKEN as string);
 }
