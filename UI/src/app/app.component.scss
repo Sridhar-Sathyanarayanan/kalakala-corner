@@ -151,6 +151,11 @@
 /* Main content */
 .main-content {
   padding: 1rem;
+  .user {
+    display: grid;
+    grid-template-columns: 90% 10%;
+    color: red;
+  }
 }
 
 /* Footer */

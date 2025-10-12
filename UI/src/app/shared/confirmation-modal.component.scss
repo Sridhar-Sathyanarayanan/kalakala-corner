@@ -1,0 +1,18 @@
+.confirm-dialog {
+  min-width: 300px;
+
+  h2 {
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    font-size: 15px;
+    margin: 0.5rem 0 1rem;
+  }
+
+  mat-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+}

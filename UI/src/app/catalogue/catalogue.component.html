@@ -1,31 +1,40 @@
 <div class="catalogue">
-  <h1 class="catalogue-title">Product Catalogue</h1>
+  <div class="header">
+    <h1 class="catalogue-title">Product Catalogue</h1>
+    @if (appService.isLoggedIn$ | async) {<a routerLink="/add-product"><button matFab extended aria-label="Add product">
+        <mat-icon>note_add</mat-icon>
+        Add Product
+      </button></a>}
+  </div>
   <mat-divider></mat-divider>
-  <div class="products">
-    <div class="product-card" *ngFor="let product of products">
-      <div class="product-image" (click)="openModal(product.imageUrl)">
-        <img [src]="product.imageURL" [alt]="product.name" />
-        <div class="price-badge">${{ product.price }}</div>
-        <div class="fun-badge">New!</div>
-        <div class="rating-badge">
-          <i class="fa-solid fa-star" *ngFor="let star of getStars(product.rating)" [class.filled]="star === 1"></i>
-        </div>
-      </div>
 
-      <div class="product-info">
-        <h2>{{ product.name }}</h2>
-        <p>{{ product.desc }}</p>
-        <div class="details">
-          <span><i class="fa-solid fa-ruler-combined"></i> {{ product.size }}</span>
-          <span><i class="fa-solid fa-palette"></i> {{ product.color }}</span>
+  @if(products.length){ @for (product of products; track product) {
+  <div class="products">
+    <div class="product-card">
+      <div class="product-image" (click)="openProductModal(product)">
+        <img [src]="product.images[0]" [alt]="product.name" />
+        <div class="price-badge">
+          ₹{{ product.minPrice }} - {{ product.maxPrice }}
         </div>
       </div>
+      <div class="product-info">
+        <h3>{{ product.name }}</h3>
+        <p>{{ product.desc }}</p>
+      </div>
+      @if (appService.isLoggedIn$ | async) {
+      <div>
+        <button mat-flat-button color="primary" (click)="edit(product)">
+          Edit Details
+        </button>
+        <button mat-flat-button color="accent" (click)="delete(product)">
+          Delete Product
+        </button>
+      </div>
+      }
     </div>
   </div>
-
-  <!-- Modal -->
-  <div class="image-modal" *ngIf="modalImageUrl" (click)="closeModal()">
-    <span class="close-btn">&times;</span>
-    <img [src]="modalImageUrl" class="modal-content" />
-  </div>
+  } } @else{
+  <img src="assets/images/no_data_found.png" alt="No Data Found" class="logo" />
+  <h3>No products found. Please <a routerLink="/contact">contact</a></h3>
+  }
 </div>

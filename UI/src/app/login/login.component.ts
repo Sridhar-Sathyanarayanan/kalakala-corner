@@ -5,6 +5,7 @@ import { MaterialStandaloneModules } from "../shared/material-standalone";
 import { AppService } from "../services/app.service";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { Router } from "@angular/router";
+import { NgxSpinnerService } from "ngx-spinner";
 
 @Component({
   selector: "app-login",
@@ -21,24 +22,27 @@ export class LoginComponent {
   constructor(
     private appService: AppService,
     private snackBar: MatSnackBar,
-    private router: Router
+    private router: Router,
+    private spinner: NgxSpinnerService
   ) {}
   login() {
     if (!this.username || !this.password) {
       alert("Please enter both username and password.");
       return;
     }
+    this.spinner.show();
     this.appService.login(this.username, this.password).subscribe({
       next: () => {
+        this.spinner.hide();
         this.error = false;
-        {
-          this.snackBar.open("Logged in successfully", null, {
-            duration: 3000,
-          });
-          this.router.navigate(["/catalogue"]);
-        }
+        this.appService.isLoggedIn$.next(true);
+        this.snackBar.open("Logged in successfully", null, {
+          duration: 3000,
+        });
+        this.router.navigate(["/catalogue"]);
       },
       error: () => {
+        this.spinner.hide();
         this.error = true;
       },
     });

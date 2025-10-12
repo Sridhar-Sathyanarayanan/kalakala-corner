@@ -1,0 +1,125 @@
+/* add-product.component.scss */
+.add-product-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+
+  h1 {
+    color: #ff4081;
+    font-weight: bold;
+  }
+
+  mat-divider {
+    width: 100%;
+    max-width: 920px;
+    margin: 0.25rem 0 1rem;
+  }
+
+  .content {
+    width: 100%;
+    background: white;
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+  }
+
+  .full {
+    width: 100%;
+    display: block;
+  }
+
+  h3 {
+    margin: 1rem 0 0.5rem;
+    font-weight: 600;
+  }
+
+  .variants {
+    .variant-row {
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+      margin-bottom: 0.6rem;
+
+      mat-form-field {
+        flex: 1;
+      }
+
+      button {
+        margin-top: 6px;
+      }
+    }
+
+    .variant-actions {
+      margin-top: 0.6rem;
+    }
+  }
+
+  .image-upload {
+    margin-top: 1rem;
+
+    .upload-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .hint {
+      color: rgba(0, 0, 0, 0.6);
+      font-size: 0.85rem;
+    }
+
+    .previews {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+
+      .preview {
+        position: relative;
+        width: 110px;
+        height: 110px;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .remove {
+          position: absolute;
+          top: 4px;
+          right: 4px;
+          background: rgba(255, 255, 255, 0.9);
+        }
+      }
+    }
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-top: 1rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .add-product-container .content {
+    padding: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .add-product-container .variants .variant-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .add-product-container .preview {
+    width: 80px;
+    height: 80px;
+  }
+}

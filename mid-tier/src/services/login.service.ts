@@ -26,11 +26,10 @@ export async function verifyPassword(username: string, password: string) {
     });
     return { message: "Login successful", token };
   } catch (err) {
-    console.error("Error verifying password:", err);
     return { message: "Internal server error" };
   }
 }
 
-export async function checkLoggedIn(token:string){
+export async function checkLoggedIn(token: string) {
   return jwt.verify(token, process.env.ADMIN_TOKEN as string);
 }

@@ -2,6 +2,8 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import morgan from "morgan";
+import logger from "./services/logger";
 if (process.env.ENVIRONMENT !== "production") {
   require("dotenv").config();
 }
@@ -18,7 +20,14 @@ const corsOptions: cors.CorsOptions = {
 app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
-
+// Request logger (morgan → winston)
+app.use(
+  morgan("tiny", {
+    stream: {
+      write: (message) => logger.info(message.trim()),
+    },
+  })
+);
 app.get("/health", (req: Request, res: Response) => {
   res.status(200).send("OK");
 });

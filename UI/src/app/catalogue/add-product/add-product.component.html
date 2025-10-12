@@ -1,0 +1,112 @@
+<!-- add-product.component.html -->
+<div class="add-product-container">
+  <div class="content">
+    <h1>Add New Product</h1>
+    <mat-divider></mat-divider>
+
+    <form [formGroup]="productForm" (ngSubmit)="submit()">
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Product Name</mat-label>
+        <input matInput formControlName="name" placeholder="e.g., Classic T-shirt" />
+        @if (productForm.get('name')?.hasError('required')) {
+        <mat-error>Name is required</mat-error>
+        } @if (productForm.get('name')?.hasError('maxlength')) {
+        <mat-error>Max 120 chars</mat-error>
+        }
+        <mat-hint align="end">{{ productForm.get("name")?.value?.length || 0 }}/120</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Product Description</mat-label>
+        <textarea matInput rows="4" formControlName="desc" placeholder="Short description"></textarea>
+        @if (productForm.get('desc')?.hasError('required')) {
+        <mat-error>Description is required</mat-error>
+        } @if (productForm.get('desc')?.hasError('maxlength')) {
+        <mat-error>Max 500 chars</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="variants">
+        <h3>Sizes & Rates</h3>
+        <div formArrayName="variants">
+          @for (v of variants.controls; track v) {
+          <div class="variant-row" [formGroupName]="$index">
+            <mat-form-field appearance="outline">
+              <mat-label>Size</mat-label>
+              <input matInput formControlName="size" type="number" />
+              @if (v.get('size')?.invalid && v.get('size')?.touched) {
+              <mat-error>Required</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Measurement</mat-label>
+              <mat-select formControlName="measurement">
+                <mat-option value="cm">cm</mat-option>
+                <mat-option value="inches">inches</mat-option>
+                <mat-option value="m">m</mat-option>
+              </mat-select>
+              @if (v.get('measurement')?.invalid &&
+              v.get('measurement')?.touched) {
+              <mat-error>Required</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Rate</mat-label>
+              <input matInput formControlName="price" placeholder="1000" type="number" />
+              @if (v.get('price')?.invalid && v.get('price')?.touched) {
+              <mat-error>Required & must be ≥ 0</mat-error>
+
+              }
+            </mat-form-field>
+
+            <button mat-icon-button color="warn" aria-label="remove variant" (click)="removeVariant($index)">
+              <mat-icon>remove_circle</mat-icon>
+            </button>
+          </div>
+          }
+        </div>
+
+        <div class="variant-actions">
+          <button mat-stroked-button type="button" (click)="addVariant()">
+            <mat-icon>add</mat-icon>
+            Add size/rate
+          </button>
+        </div>
+      </div>
+
+      <div class="image-upload">
+        <h3>Images</h3>
+        <input id="imageInput" type="file" multiple accept="image/*" hidden (change)="onFilesSelected($event)" />
+        <div class="upload-actions">
+          <button mat-flat-button color="primary" type="button" (click)="uploadImages()">
+            <mat-icon>upload</mat-icon> Upload images
+          </button>
+          <span class="hint">Max size per image: 5MB</span>
+        </div>
+        @if (imagePreviews.length) {
+        <div class="previews">
+          @for (p of imagePreviews; track p) {
+          <div class="preview">
+            <img [src]="p" alt="preview" />
+            <button mat-mini-button color="warn" class="remove" (click)="removeImage($index)">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+          }
+        </div>
+        }
+      </div>
+
+      <div class="actions">
+        <button [disabled]="
+            productForm.invalid ||
+            !(imageFiles.length || existingImageUrls.length)
+          " mat-flat-button color="primary" type="submit">
+          <mat-icon>save</mat-icon> Save
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

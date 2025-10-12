@@ -1,0 +1,121 @@
+.product-details-container {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 1.5rem;
+  max-width: 900px;
+  width: 100%;
+  padding: 1rem;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    padding: 0.5rem;
+  }
+}
+
+/* LEFT SIDE - Image Carousel */
+.carousel-container {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .image-wrapper {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #f5f5f5;
+
+    .carousel-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 12px;
+      transition: transform 0.3s ease;
+    }
+
+    .nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(0, 0, 0, 0.3);
+      color: white;
+
+      &.prev {
+        left: 10px;
+      }
+
+      &.next {
+        right: 10px;
+      }
+    }
+  }
+
+  .dots {
+    display: flex;
+    justify-content: center;
+    margin-top: 8px;
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      margin: 0 4px;
+      border-radius: 50%;
+      background-color: #ccc;
+      cursor: pointer;
+      transition: background 0.3s;
+
+      &.active {
+        background-color: #3f51b5;
+      }
+    }
+  }
+}
+
+/* RIGHT SIDE - Product Info */
+.details-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+
+  h2 {
+    margin-bottom: 0.5rem;
+  }
+
+  .price {
+    font-weight: bold;
+    color: #4caf50;
+    margin-bottom: 1rem;
+  }
+
+  .variants {
+    margin: 1rem 0;
+  }
+
+  .actions {
+    margin-top: auto;
+    text-align: right;
+
+    @media (max-width: 768px) {
+      text-align: center;
+    }
+  }
+}
+th.mat-column-size,
+th.mat-column-measurement,
+th.mat-column-price {
+  font-weight: bold;
+  background-color: #ff4081;
+}
+.mat-column-size {
+  width: 15%;
+}
+
+.mat-column-measurement {
+  width: 15%;
+}
+.mat-column-price {
+  width: 25%;
+}

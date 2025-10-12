@@ -3,6 +3,7 @@ import { inject, Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { BehaviorSubject, Observable } from "rxjs";
 import { environment } from "../../environments/environment";
+import { LoggedIn } from "../models/app.model";
 interface JWT {
   message: string;
   token: string;
@@ -34,9 +35,8 @@ export class AppService {
   }
 
   checkLoggedIn() {
-    return this.http.get<JWT>(
-      `${environment.apiURL}/api/auth/check`,
-      { withCredentials: true }
-    );
+    return this.http.get<LoggedIn>(`${environment.apiURL}/api/auth/check`, {
+      withCredentials: true,
+    });
   }
 }

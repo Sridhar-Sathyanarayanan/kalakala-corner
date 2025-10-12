@@ -15,6 +15,10 @@ import { MatExpansionModule } from "@angular/material/expansion";
 import { MatSidenavModule } from "@angular/material/sidenav";
 import { MatChipsModule } from "@angular/material/chips";
 import { MatSnackBarModule } from "@angular/material/snack-bar";
+import { NgxSpinnerModule } from "ngx-spinner";
+import { ReactiveFormsModule } from "@angular/forms";
+import { MatSelectModule } from "@angular/material/select";
+import { MatDialogModule } from "@angular/material/dialog";
 
 export const MaterialStandaloneModules = [
   CommonModule,
@@ -35,4 +39,8 @@ export const MaterialStandaloneModules = [
   MatSidenavModule,
   MatChipsModule,
   MatSnackBarModule,
+  NgxSpinnerModule,
+  ReactiveFormsModule,
+  MatSelectModule,
+  MatDialogModule,
 ];

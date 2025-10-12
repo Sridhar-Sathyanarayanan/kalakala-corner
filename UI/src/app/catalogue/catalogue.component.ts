@@ -2,6 +2,12 @@ import { Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { ProductService } from "../services/product.service";
 import { MaterialStandaloneModules } from "../shared/material-standalone";
+import { AppService } from "../services/app.service";
+import { Product, ProductPayload } from "../models/app.model";
+import { MatDialog } from "@angular/material/dialog";
+import { ProductDetailsComponent } from "./product-details/product-details.component";
+import { ConfirmationModalComponent } from "../shared/confirmation-modal.component";
+import { Router } from "@angular/router";
 
 @Component({
   selector: "app-catalogue",
@@ -13,28 +19,44 @@ import { MaterialStandaloneModules } from "../shared/material-standalone";
 export class CatalogueComponent implements OnInit {
   products = [];
 
-  modalImageUrl: string | null = null;
-
-  constructor(private productService: ProductService) {}
+  constructor(
+    private productService: ProductService,
+    public appService: AppService,
+    private dialog: MatDialog,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
-    this.productService.getProducts().subscribe((data) => {
-      this.products = data["items"];
+    this.productService.getProducts().subscribe((data: Product) => {
+      this.products = data.items;
+      this.products.forEach((p) => {
+        p.minPrice = Math.min(...p.variants.map((i) => i.price));
+        p.maxPrice = Math.max(...p.variants.map((i) => i.price));
+      });
     });
   }
-
-  openModal(imageUrl: string) {
-    this.modalImageUrl = imageUrl;
+  openProductModal(product: ProductPayload) {
+    this.dialog.open(ProductDetailsComponent, {
+      data: product,
+      width: "95%",
+      maxWidth: "900px",
+    });
   }
-
-  closeModal() {
-    this.modalImageUrl = null;
+  edit(product: ProductPayload) {
+    this.router.navigate(["/edit-product", product.id]);
   }
-
-  /** Helper: return array of 1/0 for filled/unfilled stars */
-  getStars(rating: number): number[] {
-    return Array(5)
-      .fill(0)
-      .map((_, i) => (i < Math.round(rating) ? 1 : 0));
+  delete(product: ProductPayload) {
+    const dialogRef = this.dialog.open(ConfirmationModalComponent, {
+      data: {
+        message:
+          "Are you sure you want to delete the product? (Note: This will permanently delete the product from databae)",
+      },
+      width: "85%",
+    });
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        this.productService.deleteProduct(product.id).subscribe((res) => {});
+      }
+    });
   }
 }

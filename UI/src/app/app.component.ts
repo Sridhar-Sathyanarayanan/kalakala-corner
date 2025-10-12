@@ -2,6 +2,8 @@ import { Component, OnInit } from "@angular/core";
 import { RouterModule } from "@angular/router";
 import { MaterialStandaloneModules } from "./shared/material-standalone";
 import { AppService } from "./services/app.service";
+import { LoggedIn } from "./models/app.model";
+import { MatSnackBar } from "@angular/material/snack-bar";
 
 @Component({
   selector: "app-root",
@@ -13,11 +15,11 @@ import { AppService } from "./services/app.service";
 export class AppComponent implements OnInit {
   mobileMenuOpen = false;
   admin = false;
-  constructor(private appService: AppService) {}
+  constructor(public appService: AppService, private snackBar: MatSnackBar) {}
 
   ngOnInit(): void {
-    this.appService.checkLoggedIn().subscribe(() => {
-      this.appService.isLoggedIn$.next(true);
+    this.appService.checkLoggedIn().subscribe((res: LoggedIn) => {
+      this.appService.isLoggedIn$.next(res.loggedIn);
     });
     this.appService.isLoggedIn$.subscribe((status) => {
       this.admin = status;
@@ -29,7 +31,10 @@ export class AppComponent implements OnInit {
   }
 
   logout() {
-    this.appService.logout().subscribe((res) => {
+    this.appService.logout().subscribe(() => {
+      this.snackBar.open("Logged out successfully", null, {
+        duration: 3000,
+      });
       this.appService.isLoggedIn$.next(false);
     });
   }

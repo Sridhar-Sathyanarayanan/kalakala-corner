@@ -24,6 +24,7 @@
     "@ngfly/carousel": "^0.0.8",
     "bootstrap": "^5.3.8",
     "kalakala-corner": "file:..",
+    "ngx-spinner": "^19.0.0",
     "zone.js": "^0.15.1"
   },
   "devDependencies": {

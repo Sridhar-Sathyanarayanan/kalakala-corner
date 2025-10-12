@@ -1,13 +1,12 @@
 .catalogue {
   padding: 2rem;
-
-  background: #fff0f5; // soft pastel pink
-
+  background: #fff0f5;
+  .header {
+    display: grid;
+    grid-template-columns: 85% 15%;
+  }
   .catalogue-title {
-    
-    
     font-weight: 700;
-    
     color: #ff4081;
   }
 
@@ -53,7 +52,7 @@
         position: absolute;
         top: 10px;
         right: 10px;
-        background: #ffb6c1; // pastel pink
+        background: #4f0a15; // pastel pink
         color: #fff;
         padding: 0.4rem 0.8rem;
         border-radius: 12px;
@@ -61,46 +60,10 @@
         font-size: 0.9rem;
         box-shadow: 0 3px 6px rgba(255, 105, 180, 0.4);
       }
-
-      .rating-badge {
-        position: absolute;
-        bottom: 10px;
-        left: 10px;
-        display: flex;
-        gap: 2px;
-        i {
-          color: #ffd700;
-          font-size: 1.1rem;
-        }
-      }
     }
 
     .product-info {
       padding: 1rem;
-
-      h2 {
-        font-size: 1.2rem;
-        margin-bottom: 0.4rem;
-      }
-
-      p {
-        font-size: 0.9rem;
-        margin-bottom: 0.6rem;
-      }
-
-      .details {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.8rem;
-
-        margin-bottom: 0.8rem;
-
-        span {
-          display: flex;
-          align-items: center;
-          gap: 0.3rem;
-        }
-      }
 
       .buy-btn {
         background: #ff69b4;
@@ -123,53 +86,6 @@
         }
       }
     }
-  }
-
-  .image-modal {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(255, 182, 193, 0.95); // soft pink overlay
-    z-index: 1000;
-    animation: fadeIn 0.3s ease-out;
-
-    .modal-content {
-      max-width: 90%;
-      max-height: 80%;
-      border-radius: 20px;
-      box-shadow: 0 8px 20px rgba(255, 105, 180, 0.6);
-      animation: scaleIn 0.3s ease-out;
-    }
-
-    .close-btn {
-      position: absolute;
-      top: 20px;
-      right: 35px;
-      color: #fff;
-      font-size: 2rem;
-      cursor: pointer;
-      transition: color 0.2s;
-      &:hover {
-        color: #ff69b4;
-      }
-    }
-  }
-  .fun-badge {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-
-    color: white;
-    padding: 0.3rem 0.6rem;
-    font-size: 0.75rem;
-    border-radius: 10px;
-    font-weight: bold;
-    box-shadow: 0 3px 6px rgba(255, 105, 180, 0.4);
   }
 
   @keyframes fadeIn {
