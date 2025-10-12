@@ -19,7 +19,6 @@ export const getAProduct = async (req: Request, res: Response) => {
 
 export const addAProduct = async (req: Request, res: Response) => {
   try {
-    console.log(1111111111111, req.body)
     const result = await addProduct(req.body, req.files);
     res.status(200).send({ items: result });
   } catch {
