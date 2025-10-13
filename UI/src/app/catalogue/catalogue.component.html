@@ -8,8 +8,9 @@
   </div>
   <mat-divider></mat-divider>
 
-  @if(products.length){ @for (product of products; track product) {
+  @if(products.length){
   <div class="products">
+    @for (product of products; track product) {
     <div class="product-card">
       <div class="product-image" (click)="openProductModal(product)">
         <img [src]="product.images[0]" [alt]="product.name" />
@@ -32,8 +33,9 @@
       </div>
       }
     </div>
+    }
   </div>
-  } } @else{
+  } @else{
   <img src="assets/images/no_data_found.png" alt="No Data Found" class="logo" />
   <h3>No products found. Please <a routerLink="/contact">contact</a></h3>
   }

@@ -54,7 +54,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     { image: "assets/images/slide8.jpeg", title: "Origami & More" },
     { image: "assets/images/slide9.jpeg", title: "Origami & More" },
     { image: "assets/images/slide10.jpeg", title: "Origami & More" },
-    { image: "assets/images/slide11.jpeg", title: "Origami & More" },
   ];
   reasons = [
     {
