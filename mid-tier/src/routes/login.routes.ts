@@ -12,7 +12,7 @@ router.post("/api/login", async (req: Request, res: Response) => {
       res.cookie("auth_token", data.token as string, {
         httpOnly: true,
         secure: true,
-        sameSite: "strict",
+        sameSite: "none",
         maxAge: 30 * 60 * 1000, // 30 minutes
       });
       res.status(200).send({ success: true });
