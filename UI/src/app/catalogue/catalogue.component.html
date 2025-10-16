@@ -1,10 +1,15 @@
-<div class="catalogue">
-  <div class="header">
+<div class="catalogue" id="catalogue-content">
+  <div>
+    <span class="header">
     <h1 class="catalogue-title">Product Catalogue</h1>
     @if (appService.isLoggedIn$ | async) {<a routerLink="/add-product"><button matFab extended aria-label="Add product">
         <mat-icon>note_add</mat-icon>
         Add Product
+      </button></a><a><button matFab extended aria-label="Download PDF" (click)="downloadPDF()">
+        <mat-icon>file_download</mat-icon>
       </button></a>}
+      </span>
+      <h4 class="catalogue-subtitle">{{categoryTitle}}</h4>
   </div>
   <mat-divider></mat-divider>
 
@@ -14,16 +19,24 @@
     <div class="product-card">
       <div class="product-image" (click)="openProductModal(product)">
         <img [src]="product.images[0]" [alt]="product.name" />
+        @if(product.minPrice !=product.maxPrice){
         <div class="price-badge">
           ₹{{ product.minPrice }} - {{ product.maxPrice }}
         </div>
+        } @else {
+        <div class="price-badge">₹{{ product.minPrice }}</div>
+        }
       </div>
       <div class="product-info">
-        <h3>{{ product.name }}</h3>
-        <p>{{ product.desc }}</p>
+        <h3 class="product-info__content product-info__content--name" [matTooltip]="product.name">
+          {{ product.name }}
+        </h3>
+        <p class="product-info__content product-info__content--desc" [matTooltip]="product.desc">
+          {{ product.desc }}
+        </p>
       </div>
       @if (appService.isLoggedIn$ | async) {
-      <div>
+      <div class="product-info__admin">
         <button mat-flat-button color="primary" (click)="edit(product)">
           Edit Details
         </button>
@@ -36,7 +49,8 @@
     }
   </div>
   } @else{
+  <h3>No products found. <br />Please <a routerLink="/contact">contact</a></h3>
   <img src="assets/images/no_data_found.png" alt="No Data Found" class="logo" />
-  <h3>No products found. Please <a routerLink="/contact">contact</a></h3>
+
   }
 </div>

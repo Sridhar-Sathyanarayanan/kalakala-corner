@@ -19,6 +19,8 @@ import { NgxSpinnerModule } from "ngx-spinner";
 import { ReactiveFormsModule } from "@angular/forms";
 import { MatSelectModule } from "@angular/material/select";
 import { MatDialogModule } from "@angular/material/dialog";
+import { MatTooltipModule } from "@angular/material/tooltip";
+import { MatDividerModule } from "@angular/material/divider";
 
 export const MaterialStandaloneModules = [
   CommonModule,
@@ -43,4 +45,6 @@ export const MaterialStandaloneModules = [
   ReactiveFormsModule,
   MatSelectModule,
   MatDialogModule,
+  MatTooltipModule,
+  MatDividerModule,
 ];

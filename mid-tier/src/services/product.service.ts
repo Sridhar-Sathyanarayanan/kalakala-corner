@@ -4,6 +4,7 @@ import {
   PutCommand,
   ScanCommand,
   UpdateCommand,
+  DeleteCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 import logger from "./logger";
@@ -13,6 +14,10 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { createS3Client } from "../clients/s3Client";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
+
+import PDFDocument from "pdfkit";
+import { Response } from "express";
 
 export async function getProducts() {
   try {
@@ -27,13 +32,35 @@ export async function getProducts() {
   }
 }
 
+export async function allProductsWithCategory(category: string) {
+  try {
+    const ddbDocClient = createDDBDocClient();
+    const params = {
+      TableName: "product-catalogue",
+      FilterExpression: "#cat = :categoryValue",
+      ExpressionAttributeNames: {
+        "#cat": "category",
+      },
+      ExpressionAttributeValues: {
+        ":categoryValue": category,
+      },
+    };
+    const command = new ScanCommand(params);
+    const data = await ddbDocClient.send(command);
+    return data.Items;
+  } catch (error) {
+    logger.error("Unable to fetch data for category:", category);
+    throw error;
+  }
+}
+
 export async function getProduct(id: string) {
   try {
     const ddbDocClient = createDDBDocClient();
     const params = {
       TableName: "product-catalogue",
       Key: {
-        id: id,
+        id,
       },
     };
     const result = await ddbDocClient.send(new GetCommand(params));
@@ -126,13 +153,14 @@ async function deleteS3File(s3: S3Client, url: string) {
   }
 }
 
+
 /** Express handler for updating a product */
 export async function updateProduct(
   id: string,
   data: any,
   files?: Express.Multer.File[]
 ) {
-  const { name, desc, variants, existingImages } = data;
+  const { name, desc, variants, existingImages,category, notes } = data;
 
   const s3 = createS3Client();
   const ddb = createDDBDocClient();
@@ -175,6 +203,8 @@ export async function updateProduct(
               #desc = :desc,
               #variants = :variants,
               #images = :images,
+              #notes = :notes,
+              #category = :category,
               #updatedAt = :updatedAt
         `,
         ExpressionAttributeNames: {
@@ -182,6 +212,8 @@ export async function updateProduct(
           "#desc": "desc",
           "#variants": "variants",
           "#images": "images",
+          "#category": "category",
+          "#notes": "notes",
           "#updatedAt": "updatedAt",
         },
         ExpressionAttributeValues: {
@@ -189,6 +221,8 @@ export async function updateProduct(
           ":desc": desc,
           ":variants": variants,
           ":images": finalImages,
+          ":category": category,
+          ":notes": notes,
           ":updatedAt": new Date().toISOString(),
         },
         ReturnValues: "ALL_NEW",
@@ -201,4 +235,78 @@ export async function updateProduct(
     throw err;
   }
 }
-export async function deleteProduct(id: string) {}
+export async function deleteProduct(id: string) {
+  const item = await getProduct(id);
+  const s3 = createS3Client();
+  await Promise.all(item?.images.map((url: string) => deleteS3File(s3, url)));
+  const ddb = createDDBDocClient();
+  const params = {
+    TableName: "product-catalogue",
+    Key: {
+      id,
+    },
+  };
+  try {
+    await ddb.send(new DeleteCommand(params));
+    return { message: "Product deleted successfully" };
+  } catch (err) {
+    logger.error("Failed to delete item:", err);
+    throw err;
+  }
+}
+
+export async function downloadCatalogue(
+  res: Response<any, Record<string, any>>
+) {
+  try {
+    const ddbDocClient = createDDBDocClient();
+    const params = { TableName: "product-catalogue" };
+    const command = new ScanCommand(params);
+    const data = await ddbDocClient.send(command);
+    return data.Items;
+  } catch (error) {
+    logger.error("Unable to fetch catalogue data", error);
+
+    // If headers not already sent by pipe
+    if (!res.headersSent) {
+      res.status(500).send("Failed to generate PDF");
+    }
+  }
+}
+
+/** Stream an object from S3 to the express response given a full S3 URL */
+export async function fetchImageFromS3(url: string, res: Response) {
+  try {
+    const bucketUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
+    if (!url.startsWith(bucketUrl)) {
+      // For security, only allow serving from configured bucket
+      res.status(400).send({ message: "Invalid S3 URL" });
+      return;
+    }
+
+    const key = url.replace(bucketUrl, "");
+    const s3 = createS3Client();
+    const command = new GetObjectCommand({ Bucket: process.env.S3_BUCKET_NAME, Key: key });
+    const result = await s3.send(command);
+
+    // Set headers
+    const contentType = (result.ContentType as string) || "application/octet-stream";
+    if (result.ContentLength) res.setHeader("Content-Length", String(result.ContentLength));
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Cache-Control", "public, max-age=31536000");
+
+    // Stream body
+    const body = result.Body as any;
+    if (body && typeof body.pipe === "function") {
+      body.pipe(res);
+    } else if (body && body instanceof Uint8Array) {
+      res.send(Buffer.from(body));
+    } else {
+      // Fallback: return 404
+      res.status(404).send({ message: "No image body" });
+    }
+  } catch (err) {
+    logger.error("Failed to fetch image from S3", err);
+    res.status(500).send({ message: "Failed to fetch image" });
+  }
+}

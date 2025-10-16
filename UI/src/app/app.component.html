@@ -14,22 +14,67 @@
 
   <!-- Desktop & Mobile Nav -->
   <nav [class.open]="mobileMenuOpen">
-    <ul (click)="toggleMobileMenu()">
-      <li><a routerLink="/">Home</a></li>
-      <li><a routerLink="/catalogue">Catalogue</a></li>
-      <li><a routerLink="/about-us">About Us</a></li>
-      <li><a routerLink="/contact">Contact</a></li>
+    <ul>
+      <li (click)="navigateTo('/')">Home</li>
+
+      <li>
+        <!-- Keep dropdown trigger on <a> -->
+        <a [matMenuTriggerFor]="categoryMenu" class="menu-trigger">
+          Catalogue <mat-icon>arrow_drop_down</mat-icon>
+        </a>
+        <mat-menu #categoryMenu="matMenu">
+          <button mat-menu-item (click)="navigateTo('/catalogue/all')">
+            All items
+          </button>
+          <button mat-menu-item (click)="navigateTo('/catalogue/handicrafts')">
+            Handicrafts items
+          </button>
+          <button mat-menu-item (click)="navigateTo('/catalogue/eco-wooden')">
+            Eco-friendly wooden gift items
+          </button>
+          <button mat-menu-item (click)="navigateTo('/catalogue/wooden')">
+            Wooden Themes gifts
+          </button>
+          <button mat-menu-item (click)="navigateTo('/catalogue/wooden-utility')">
+            Wooden utility articles
+          </button>
+          <button mat-menu-item (click)="navigateTo('/catalogue/wooden-pooja')">
+            Wooden pooja items
+          </button>
+          <button mat-menu-item (click)="navigateTo('/catalogue/kids-eco-wooden')">
+            Kids centre - eco friendly wooden toys
+          </button>
+          <button mat-menu-item (click)="navigateTo('/catalogue/thanjavur-paintings')">
+            Traditional Thanjavur Paintings
+          </button>
+          <button mat-menu-item (click)="navigateTo('/catalogue/thanjavur-art-plates')">
+            Traditional Thanjavur Art Plates
+          </button>
+        </mat-menu>
+      </li>
+
+      <li (click)="navigateTo('/about-us')">About Us</li>
+      <li (click)="navigateTo('/contact')">Contact</li>
+
       @if (admin) {
-      <li><a (click)="logout()">Logout</a></li>
+      <li (click)="logout($event)">Logout</li>
       }
     </ul>
   </nav>
 </header>
 
 <main class="main-content">
-  @if (appService.isLoggedIn$ | async) {<span class="user"><span></span>
-    <h5>Hi Admin</h5>
-  </span>}
+  @if (appService.isLoggedIn$ | async) {
+  <div class="greeting">
+    <span></span>
+    <div class="admin-greeting mat-elevation-z2">
+      <mat-icon class="admin-avatar">account_circle</mat-icon>
+      <div>
+        <span>Hi, Admin</span>
+      </div>
+    </div>
+  </div>
+  }
   <router-outlet></router-outlet>
 </main>
 

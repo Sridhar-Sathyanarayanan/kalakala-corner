@@ -11,8 +11,12 @@ import { Product, ProductPayload } from "../models/app.model";
 export class ProductService {
   private http = inject(HttpClient);
 
-  getProducts(): Observable<Product> {
-    return this.http.get<Product>(`${environment.apiURL}/products-list`);
+  getProducts(category: string): Observable<Product> {
+    return this.http.get<Product>(
+      `${environment.apiURL}/products-list${
+        category === "all" ? "" : "/" + category
+      }`
+    );
   }
 
   getAProduct(id): Observable<{ items: ProductPayload }> {
@@ -27,10 +31,14 @@ export class ProductService {
     });
   }
 
-  updateProduct(data: FormData ,id:string): Observable<any[]> {
-    return this.http.post<any[]>(`${environment.apiURL}/update-product/${id}`, data, {
-      withCredentials: true,
-    });
+  updateProduct(data: FormData, id: string): Observable<any[]> {
+    return this.http.post<any[]>(
+      `${environment.apiURL}/update-product/${id}`,
+      data,
+      {
+        withCredentials: true,
+      }
+    );
   }
 
   deleteProduct(id: string): Observable<any[]> {
@@ -40,5 +48,23 @@ export class ProductService {
         withCredentials: true,
       }
     );
+  }
+
+  downloadPDF(): Observable<Product> {
+    return this.http.get<Product>(`${environment.apiURL}/downloadPDF`, {
+      withCredentials: true,
+    });
+  }
+
+  /**
+   * Fetch an image proxied by the server from S3. Server expects { url }
+   * Returns a Blob which can be used to createObjectURL or download.
+   */
+  fetchS3Image(url: string) {
+    return this.http.post(
+      `${environment.apiURL}/fetch-s3-image`,
+      { url },
+      { responseType: "blob", withCredentials: true }
+    ) as Observable<Blob>;
   }
 }

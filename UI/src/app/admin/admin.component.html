@@ -23,20 +23,19 @@
       <!-- Image Upload -->
       <div class="image-upload" (click)="fileInput.click()">
         <input #fileInput type="file" accept="image/*" (change)="onImageSelected($event)" />
-        <ng-container *ngIf="newProduct.image as img; else uploadText">
+        @if (newProduct.image) {
           <div class="image-preview">
-            <img [src]="img" alt="Preview" />
+            <img [src]="newProduct.image" alt="Preview" />
             <button mat-mini-fab color="warn" class="delete-btn" (click)="newProduct.image=''; $event.stopPropagation()">
               <mat-icon>close</mat-icon>
             </button>
           </div>
-        </ng-container>
-        <ng-template #uploadText>
+        } @else {
           <div class="upload-placeholder">
             <mat-icon>cloud_upload</mat-icon>
             <span>Tap or Click to Upload Image</span>
           </div>
-        </ng-template>
+        }
       </div>
 
       <button mat-raised-button color="primary" type="submit" class="add-btn">
@@ -50,14 +49,13 @@
   <div class="products-grid">
     <mat-card class="product-card mat-elevation-z4" *ngFor="let product of products">
       <div class="product-img-wrapper">
-        <ng-container *ngIf="product.image as img; else noImage">
-          <img [src]="img" alt="{{ product.name }}" />
-        </ng-container>
-        <ng-template #noImage>
+        @if (product.image) {
+          <img [src]="product.image" alt="{{ product.name }}" />
+        } @else {
           <div class="no-image">
             <mat-icon>image_not_supported</mat-icon>
           </div>
-        </ng-template>
+        }
       </div>
 
       <mat-card-header>

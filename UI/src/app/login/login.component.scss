@@ -5,7 +5,6 @@
   justify-content: center;
   align-items: center;
   padding: 1rem;
-  font-family: 'Roboto', sans-serif;
 }
 
 /* Card */
@@ -83,6 +82,12 @@
         text-decoration: underline;
       }
     }
+  }
+  .error{
+    color: red;
+    background-color: wheat;
+    padding: 2%;
+    border-radius: 5px;
   }
 }
 

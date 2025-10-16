@@ -1,3 +1,5 @@
+@use "../../styles/styles.scss" as styles;
+
 $accent: #e91e63;
 $muted: #6b6b6b;
 $glass: linear-gradient(
@@ -16,7 +18,7 @@ $glass: linear-gradient(
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
 
   .title {
-    color: #ff4081;
+    color: styles.$theme3;
     font-weight: bold;
   }
 

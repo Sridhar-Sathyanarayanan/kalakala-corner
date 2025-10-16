@@ -7,7 +7,7 @@ import { MatSnackBar } from "@angular/material/snack-bar";
 import { Router, ActivatedRoute } from "@angular/router";
 import { AppService } from "../../services/app.service";
 import { NgxSpinnerService } from "ngx-spinner";
-import { ProductPayload } from "../../models/app.model";
+import { categories, ProductPayload } from "../../models/app.model";
 
 @Component({
   selector: "app-add-product",
@@ -23,7 +23,7 @@ export class AddProductComponent implements OnInit {
   imagePreviews: SafeUrl[] = []; // For UI preview
   existingImageUrls: string[] = []; // Already in S3
   imageFiles: File[] = []; // Newly uploaded files
-
+  categories = JSON.parse(JSON.stringify(categories));
   id = "";
 
   constructor(
@@ -76,6 +76,11 @@ export class AddProductComponent implements OnInit {
       ? data.variants.map((v: any) => this.createVariantGroup(v))
       : [this.createVariantGroup()];
 
+    const notesArray =
+      data?.notes && data.notes.length
+        ? data.notes.map((n: string) => this.fb.control(n, Validators.required))
+        : [this.fb.control("", Validators.required)];
+
     this.productForm = this.fb.group({
       name: [
         data?.name || "",
@@ -85,8 +90,26 @@ export class AddProductComponent implements OnInit {
         data?.desc || "",
         [Validators.required, Validators.maxLength(500)],
       ],
+      category: [data?.category || "", Validators.required],
       variants: this.fb.array(variantsArray),
+      notes: this.fb.array(notesArray),
     });
+  }
+
+  get notes(): FormArray {
+    return this.productForm.get("notes") as FormArray;
+  }
+
+  addNote() {
+    this.notes.push(this.fb.control("", Validators.maxLength(250)));
+  }
+
+  removeNote(index: number) {
+    if (this.notes.length > 1) {
+      this.notes.removeAt(index);
+    } else {
+      this.notes.at(0).reset();
+    }
   }
 
   private createVariantGroup(variant?: any): FormGroup {
@@ -111,6 +134,10 @@ export class AddProductComponent implements OnInit {
     } else {
       this.variants.at(0).reset({ measurement: "cm" });
     }
+  }
+
+  trackByIndex(index: number): number {
+    return index;
   }
 
   /** Handle new file selection */
@@ -183,7 +210,11 @@ export class AddProductComponent implements OnInit {
       formData.append(`variants[${i}][measurement]`, v.measurement);
       formData.append(`variants[${i}][price]`, v.price);
     });
-
+    formData.append("category", this.productForm.value.category);
+    // Append notes as array of strings
+    this.productForm.value.notes.forEach((v, i) => {
+      formData.append(`notes[${i}]`, v);
+    });
     // Append new images
     this.imageFiles.forEach((file) => formData.append("images", file));
 
@@ -203,7 +234,7 @@ export class AddProductComponent implements OnInit {
             duration: 3000,
           }
         );
-        this.router.navigate(["/catalogue"]);
+        this.router.navigate(["/catalogue/all"]);
       },
       error: (err) => {
         this.spinner.hide();

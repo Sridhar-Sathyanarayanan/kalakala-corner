@@ -8,6 +8,11 @@ export const routes: Routes = [
   },
   {
     path: "catalogue",
+    redirectTo: "catalogue/all",
+    pathMatch: "full",
+  },
+  {
+    path: "catalogue/:category",
     loadComponent: () =>
       import("./catalogue/catalogue.component").then(
         (m) => m.CatalogueComponent

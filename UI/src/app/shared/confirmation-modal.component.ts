@@ -13,7 +13,7 @@ import { MaterialStandaloneModules } from "../shared/material-standalone";
 export class ConfirmationModalComponent {
   constructor(
     public dialogRef: MatDialogRef<ConfirmationModalComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { message: string }
+    @Inject(MAT_DIALOG_DATA) public data: { message: string, button:string }
   ) {}
 
   onConfirm(): void {

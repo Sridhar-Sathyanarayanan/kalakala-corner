@@ -1,3 +1,4 @@
+@use "../../styles/styles.scss" as styles;
 .admin-container {
   padding: 1.5rem;
   max-width: 1200px;
@@ -11,7 +12,7 @@
     border-radius: 16px;
 
     h1 {
-      color: #ff4081;
+      color: styles.$theme3;
       font-weight: bold;
     }
 

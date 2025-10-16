@@ -1,3 +1,4 @@
+@use "../../../styles/styles.scss" as styles;
 /* add-product.component.scss */
 .add-product-container {
   display: flex;
@@ -6,7 +7,7 @@
   padding: 1rem;
 
   h1 {
-    color: #ff4081;
+    color: styles.$theme3;
     font-weight: bold;
   }
 
@@ -106,7 +107,78 @@
     margin-top: 1rem;
   }
 }
+// Notes section styles
+.notes-section {
+  margin-top: 1.5rem;
+  padding-bottom: 0.5rem;
 
+  h3 {
+    margin: 1rem 0 0.5rem;
+    font-weight: 600;
+  }
+
+  .note-row {
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .note-field {
+    width: 100%;
+    min-width: 0;
+  }
+
+  button[mat-icon-button] {
+    margin-left: 0.2rem;
+    margin-top: 0.1rem;
+    flex-shrink: 0;
+  }
+
+  .note-actions {
+    margin-top: 0.5rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .notes-section {
+    h3 {
+      font-size: 1rem;
+    }
+    .note-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.3rem;
+    }
+    button[mat-icon-button] {
+      margin-left: 0;
+      margin-top: 0.2rem;
+      align-self: flex-end;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .notes-section {
+    h3 {
+      font-size: 0.98rem;
+    }
+    .note-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.2rem;
+    }
+    .note-field {
+      font-size: 0.98rem;
+    }
+    button[mat-icon-button] {
+      margin-left: 0;
+      margin-top: 0.15rem;
+      align-self: flex-end;
+    }
+  }
+}
 @media (max-width: 720px) {
   .add-product-container .content {
     padding: 0.8rem;
@@ -114,6 +186,10 @@
 }
 
 @media (max-width: 480px) {
+  .add-product-container mat-form-field.full {
+    margin-bottom: 0.6rem;
+  }
+
   .add-product-container .variants .variant-row {
     flex-direction: column;
     align-items: stretch;

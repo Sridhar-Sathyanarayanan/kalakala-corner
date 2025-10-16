@@ -1,3 +1,4 @@
+@use "../../styles/styles.scss" as styles;
 :host {
   display: block;
 }
@@ -41,7 +42,7 @@
     position: absolute;
     left: 1rem;
     bottom: 1rem;
-    background: #ff4081;
+    background: styles.$theme3;
     color: white;
     padding: 0.35rem 0.7rem;
     border-radius: 999px;
@@ -58,8 +59,7 @@
 /* Header */
 .card-header h1 {
   margin: 0;
-
-  color: #ff4081;
+  color: styles.$theme3;
   font-weight: bold;
   display: flex;
   align-items: center;

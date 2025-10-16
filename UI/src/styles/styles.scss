@@ -2,14 +2,11 @@
 
 @font-face {
   font-family: ThemeFont-Regular;
-  src: url(/assets/fonts/Lato-Regular.woff2);
-}
-@font-face {
-  font-family: ThemeFont-Semibold;
-  src: url(/assets/fonts/Lato-Semibold.woff2);
+  src: url(/assets/fonts/Metropolis-Regular.otf);
 }
 $theme1: #e0c3a6;
 $theme2: #3e0d31;
+$theme3: #ff4081;
 html,
 body {
   font-family: "ThemeFont-Regular", "Trebuchet MS", "Helvetica Neue", sans-serif;
