@@ -6,6 +6,38 @@
   --text-on-primary: #fff;
   --radius: 14px;
 }
+ .logo-center {
+    flex: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .logo-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      
+      padding: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transition: transform 0.3s ease;
+ background: linear-gradient(135deg, #ff5c8a, #ffb347);
+  padding: 3px;
+  border-radius: 50%;
+      &:hover {
+        transform: scale(1.05);
+      }
+
+      .center-logo {
+        width: 64px;
+        height: 64px;
+        object-fit: cover;
+        border-radius: 50%;
+            background: #fff;
+    border-radius: 50%;    padding: 6px;
+      }
+    }
+  }
 .menu-trigger {
   display: inline-flex;
   align-items: center;
@@ -60,12 +92,48 @@
     color: wheat;
     font-weight: 800;
     text-decoration: none;
+    h3 {
+      font-size: clamp(1.3rem, 2vw, 1.7rem);
+      font-weight: 900;
+      margin: 0;
+      background: linear-gradient(90deg, #f9d423, #ff4e50); // try others!
 
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-fill-color: transparent;
+      letter-spacing: 0.05em;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+      white-space: nowrap;
+      background-size: 200% auto;
+      transition: background-position 0.4s ease;
+      &:hover {
+        text-shadow: 0 0 8px rgba(255, 200, 150, 0.4);
+        transform: scale(1.02);
+        background-position: right center;
+      }
+    }
     .logo {
-      width: 42px;
-      height: 42px;
+      width: 48px;
+      height: 48px;
       border-radius: 50%;
       object-fit: cover;
+      transition: transform 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+      &:hover {
+        transform: scale(1.05);
+      }
+    }
+  }
+  @media (max-width: 600px) {
+    .brand h3 {
+      font-size: 1.2rem;
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
     }
   }
 
@@ -213,6 +281,14 @@
       }
     }
   }
+      .logo-center {
+      margin: 10px 0;
+
+      .center-logo {
+        width: 56px;
+        height: 56px;
+      }
+    }
 }
 
 /* Main content */
@@ -242,8 +318,13 @@
       margin: 0;
       font-weight: 800;
       background: var(--accent-gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      /* Disable lint for vendor prefixed property */
+      -webkit-background-clip: text; /* stylelint-disable-line property-no-unknown */
+      background-clip: text; /* standard property */
+      /* Removed -webkit-text-fill-color as it's not a standard property */
+
+
+      /* Optionally, for similar effect in supporting browsers, you can use background-clip along with color adjustments if needed */
     }
   }
 
