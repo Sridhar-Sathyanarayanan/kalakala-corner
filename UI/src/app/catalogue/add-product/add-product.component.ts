@@ -114,9 +114,8 @@ export class AddProductComponent implements OnInit {
 
   private createVariantGroup(variant?: any): FormGroup {
     return this.fb.group({
-      size: [variant?.size || null, [Validators.required, Validators.min(0)]],
-      measurement: [variant?.measurement || "cm", [Validators.required]],
-      price: [variant?.price || null, [Validators.required, Validators.min(0)]],
+      size: [variant?.size || null, [Validators.required]],
+      price: [variant?.price || null, [Validators.min(0)]],
     });
   }
 
@@ -132,7 +131,7 @@ export class AddProductComponent implements OnInit {
     if (this.variants.length > 1) {
       this.variants.removeAt(index);
     } else {
-      this.variants.at(0).reset({ measurement: "cm" });
+      this.variants.at(0).reset();
     }
   }
 
@@ -207,7 +206,6 @@ export class AddProductComponent implements OnInit {
     formData.append("desc", this.productForm.value.desc);
     this.productForm.value.variants.forEach((v, i) => {
       formData.append(`variants[${i}][size]`, v.size);
-      formData.append(`variants[${i}][measurement]`, v.measurement);
       formData.append(`variants[${i}][price]`, v.price);
     });
     formData.append("category", this.productForm.value.category);

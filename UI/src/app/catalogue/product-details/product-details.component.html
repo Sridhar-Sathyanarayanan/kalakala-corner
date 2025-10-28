@@ -22,23 +22,26 @@
 
   <!-- Right: Product Info -->
   <div class="details-container">
-      <button mat-icon-button class="close-btn" color="primary" (click)="close()" aria-label="Close">
-    <mat-icon>close</mat-icon>
-  </button>
+    <button mat-icon-button class="close-btn" color="primary" (click)="close()" aria-label="Close">
+      <mat-icon>close</mat-icon>
+    </button>
     <h2>{{ data.name }}</h2>
-    <p class="price">
-      @if(data.minPrice != data.maxPrice){<span class="price__value">₹{{ data.minPrice }} - {{ data.maxPrice }}</span>}
-      @else {
-      <span class="price__value">₹{{ data.minPrice }}</span>
-      }
-    </p>
+    <div class="price-section">
+      <p class="price">
+        @if(data.minPrice && data.maxPrice){ @if(data.minPrice !=
+        data.maxPrice){<span class="price__value">₹{{ data.minPrice }} - {{ data.maxPrice }}</span>} @else {
+        <span class="price__value">₹{{ data.minPrice }}</span>
+        } }
+      </p>
+      <a routerLink="./contact" target="_blank"><button mat-raised-button color="primary">Get Quote</button></a>
+    </div>
     <p>{{ data.desc }}</p>
 
     @if (data.variants?.length) {
     <div class="variants">
       <h4>Variants</h4>
       <mat-divider></mat-divider>
-      <br>
+      <br />
       <table mat-table [dataSource]="data.variants" class="variants-table mat-elevation-z2">
         <!-- Size Column -->
         <ng-container matColumnDef="size">
@@ -46,42 +49,35 @@
           <td mat-cell *matCellDef="let v">{{ v.size }}</td>
         </ng-container>
 
-        <!-- Measurement Column -->
-        <ng-container matColumnDef="measurement">
-          <th mat-header-cell *matHeaderCellDef>Measurement</th>
-          <td mat-cell *matCellDef="let v">{{ v.measurement }}</td>
-        </ng-container>
-
         <!-- Price Column -->
         <ng-container matColumnDef="price">
           <th mat-header-cell *matHeaderCellDef>Price</th>
-          <td mat-cell *matCellDef="let v">₹{{ v.price }}</td>
+          <td mat-cell *matCellDef="let v">
+            {{ v.price === "null" ? "--" : "₹" + v.price }}
+          </td>
         </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef='["size", "measurement", "price"]'></tr>
-        <tr mat-row *matRowDef="let row; columns: ['size', 'measurement', 'price']"></tr>
+        <tr mat-header-row *matHeaderRowDef="['size', 'price']"></tr>
+        <tr mat-row *matRowDef="let row; columns: ['size', 'price']"></tr>
       </table>
     </div>
-    }
-
-    @if (data.notes?.length) {
+    } @if (data.notes?.length) {
     <div class="notes-section">
       <h4>Notes</h4>
       <mat-divider></mat-divider>
       <table class="notes-table">
         <tbody>
           @for (note of data.notes; track note) {
-            <tr class="note-row">
-              <td class="note-bullet">
-                <span class="custom-bullet">&#9679;</span>
-              </td>
-              <td class="note-content">{{ note }}</td>
-            </tr>
+          <tr class="note-row">
+            <td class="note-bullet">
+              <span class="custom-bullet">&#9679;</span>
+            </td>
+            <td class="note-content">{{ note }}</td>
+          </tr>
           }
         </tbody>
       </table>
     </div>
     }
-
   </div>
 </div>

@@ -5,7 +5,7 @@ import { AppService } from "./services/app.service";
 import { LoggedIn } from "./models/app.model";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { MatDialog } from "@angular/material/dialog";
-import { ConfirmationModalComponent } from "./shared/confirmation-modal.component";
+import { ConfirmationModalComponent } from "./shared/confirmation/confirmation-modal.component";
 import { BreakpointObserver, Breakpoints } from "@angular/cdk/layout";
 
 @Component({

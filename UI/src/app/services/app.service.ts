@@ -39,4 +39,8 @@ export class AppService {
       withCredentials: true,
     });
   }
+
+  sendMail(params) {
+    return this.http.post(`${environment.apiURL}/sendMail`, params);
+  }
 }

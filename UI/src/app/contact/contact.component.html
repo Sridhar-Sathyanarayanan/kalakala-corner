@@ -1,65 +1,134 @@
-<section class="contact-panel" aria-labelledby="contact-heading">
-  <div class="card glass">
-    <!-- Banner -->
+<section class="contact-panel">
+  <div class="contact-info">
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title-group>
+          <mat-card-title>Email </mat-card-title>
+          <mat-card-subtitle><a class="value"
+              href="mailto:rsk.sudha@gmail.com">rsk.sudha@gmail.com</a></mat-card-subtitle>
+          <img mat-card-sm-image src="assets/images/mail.svg" />
+        </mat-card-title-group>
+      </mat-card-header>
+    </mat-card>
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title-group>
+          <mat-card-title>Phone</mat-card-title>
+          <mat-card-subtitle><a class="value" href="tel:+917669990988">+91 7669990988</a></mat-card-subtitle>
+          <img mat-card-sm-image src="assets/images/phone.svg" />
+        </mat-card-title-group>
+      </mat-card-header> </mat-card><mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title-group>
+          <mat-card-title>Location</mat-card-title>
+          <mat-card-subtitle class="value">New Delhi, India</mat-card-subtitle>
+          <img mat-card-sm-image src="assets/images/location.svg" />
+        </mat-card-title-group>
+      </mat-card-header> </mat-card><mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title-group>
+          <mat-card-title>Instagram</mat-card-title>
+          <mat-card-subtitle><a class="value" href="https://www.instagram.com/kalakalacorner"
+              target="_blank">kalakalacorner</a></mat-card-subtitle>
+          <img mat-card-sm-image src="assets/images/instagram.svg" />
+        </mat-card-title-group>
+      </mat-card-header>
+    </mat-card>
+  </div>
+  <div class="card">
+    <!-- Left Panel: Info -->
     <div class="card-media">
-      <img src="assets/images/contact.jpg" alt="Contact Us banner" />
-      <div class="card-badge">✨ Kalakala Corner</div>
+      <img src="assets/images/contact.jpg" alt="Contact Us" loading="lazy" />
+      <div class="card-badge">Get in Touch</div>
     </div>
 
-    <!-- Body -->
+    <!-- Right Panel: Form -->
     <div class="card-body">
-      <header class="card-header">
-        <h1 id="contact-heading">Contact Us <span class="emoji">💌</span></h1>
-        <p class="subtitle">We’d love to hear from you <span>🌿</span></p>
-      </header>
-
-      <ul class="contact-list" role="list">
-        <li class="contact-item">
-          <mat-icon>email</mat-icon>
-          <div class="info">
-            <div class="title">
-              <a class="value" href="mailto:{{ email }}">Email</a>
-            </div>
-            <a class="value" href="mailto:{{ email }}">{{ email }}</a>
-          </div>
-          <button class="mini" (click)="copy(email, 'Email')">Copy</button>
-        </li>
-
-        <li class="contact-item">
-          <mat-icon>phone</mat-icon>
-          <div class="info">
-            <div class="title">Phone</div>
-            <a class="value" href="tel:{{ phone }}">{{ phone }}</a>
-          </div>
-          <button class="mini" (click)="copy(phone, 'Phone')">Copy</button>
-        </li>
-
-        <li class="contact-item">
-          <mat-icon>location_on</mat-icon>
-          <div class="info">
-            <div class="title">Location</div>
-            <div class="value">{{ location }}</div>
-          </div>
-        </li>
-
-        <li class="contact-item">
-          <i class="fab fa-instagram fa-lg"></i>
-          <div class="info">
-            <div class="title">
-              <a href="https://www.instagram.com/{{ instagram }}" target="_blank">Instagram</a>
-            </div>
-            <a class="value" href="https://www.instagram.com/{{ instagram }}" target="_blank" rel="noopener">{{
-              instagram }}</a>
-          </div>
-        </li>
-      </ul>
-
-      <div class="cta-row">
-        <div class="micro">DM on Instagram — we reply fast! ⚡</div>
+      <div class="card-header">
+        <h1><mat-icon>support_agent</mat-icon> Contact Us</h1>
       </div>
-      @if(copiedText){
-      <div class="copied-toast">{{ copiedText }} copied ✔</div>
-      }
+      <p class="subtitle">
+        We’d love to hear from you. Fill out the form and our team will reach
+        out within 24 hours.
+      </p>
+
+      <!-- Contact Form -->
+      <form [formGroup]="contactForm" (ngSubmit)="onSubmit()" class="contact-form">
+        <!-- Name -->
+        <mat-form-field appearance="outline">
+          <mat-label>Name</mat-label>
+          <input matInput formControlName="name" placeholder="Your name" />
+          <mat-error *ngIf="contactForm.get('name')?.hasError('required')">
+            Name is required
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Country + Phone -->
+        <div class="phone-group">
+          <mat-form-field appearance="outline" class="phone-field">
+            <mat-label>Phone</mat-label>
+            <input matInput formControlName="phone" placeholder="10-digit phone number" maxlength="10" />
+            <mat-error *ngIf="contactForm.get('phone')?.hasError('required')">
+              Phone is required
+            </mat-error>
+            <mat-error *ngIf="contactForm.get('phone')?.hasError('pattern')">
+              Enter valid 10-digit number
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Email -->
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email" placeholder="your@email.com" />
+          <mat-error *ngIf="contactForm.get('email')?.hasError('required')">
+            Email is required
+          </mat-error>
+          <mat-error *ngIf="contactForm.get('email')?.hasError('email')">
+            Enter valid email address
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Query Type -->
+        <label class="radio-label">Query Type</label>
+        <mat-radio-group formControlName="queryType" class="radio-group">
+          <mat-radio-button value="general">General Query</mat-radio-button>
+          <mat-radio-button value="product">Product Specific Query</mat-radio-button>
+        </mat-radio-group>
+
+        <!-- Product Dropdown (Visible only if 'product' is selected) -->
+        <mat-form-field appearance="outline" *ngIf="contactForm.get('queryType')?.value === 'product'">
+          <mat-label>Product</mat-label>
+          <mat-select formControlName="product">
+            @for (p of productsList; track p) {
+            <mat-option [value]="p">{{ p }}</mat-option>
+            }
+          </mat-select>
+          <mat-error *ngIf="contactForm.get('product')?.hasError('required')">
+            Product selection is required
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Message -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Message</mat-label>
+          <textarea matInput rows="4" formControlName="query" placeholder="Your message... (Minimum 10 characters)"></textarea>
+          <mat-error *ngIf="contactForm.get('query')?.hasError('required')">
+            Message is required (Minimum 10 characters)
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Submit -->
+        <div class="cta-row">
+          <button mat-raised-button color="primary" [disabled]="contactForm.invalid">
+            <mat-icon>send</mat-icon>
+            <span>Send Message</span>
+          </button>
+          <span class="micro">We usually respond within 24 hours</span>
+        </div>
+      </form>
     </div>
   </div>
+
+  <div *ngIf="copied" class="copied-toast">✔ Email copied!</div>
 </section>

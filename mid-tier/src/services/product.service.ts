@@ -15,8 +15,6 @@ import {
 } from "@aws-sdk/client-s3";
 import { createS3Client } from "../clients/s3Client";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
-
-import PDFDocument from "pdfkit";
 import { Response } from "express";
 
 export async function getProducts() {

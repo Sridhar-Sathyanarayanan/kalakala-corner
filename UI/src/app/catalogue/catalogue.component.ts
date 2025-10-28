@@ -11,7 +11,7 @@ import {
 } from "../models/app.model";
 import { MatDialog } from "@angular/material/dialog";
 import { ProductDetailsComponent } from "./product-details/product-details.component";
-import { ConfirmationModalComponent } from "../shared/confirmation-modal.component";
+import { ConfirmationModalComponent } from "../shared/confirmation/confirmation-modal.component";
 import { ActivatedRoute, Router } from "@angular/router";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -33,7 +33,7 @@ export class CatalogueComponent implements OnInit {
     public appService: AppService,
     private dialog: MatDialog,
     private router: Router,
-    private route: ActivatedRoute // Inject ActivatedRo
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
@@ -54,8 +54,13 @@ export class CatalogueComponent implements OnInit {
     this.productService.getProducts(category).subscribe((data: Product) => {
       this.products = data.items;
       this.products.forEach((p) => {
-        p.minPrice = Math.min(...p.variants.map((i) => i.price));
-        p.maxPrice = Math.max(...p.variants.map((i) => i.price));
+        const priceList = Array.isArray(p.variants)
+          ? p.variants.map((i) => Number(i.price)).filter((f) => !isNaN(f))
+          : [];
+        if (priceList.length) {
+          p.minPrice = Math.min(...priceList);
+          p.maxPrice = Math.max(...priceList);
+        }
       });
     });
   }
@@ -128,12 +133,8 @@ export class CatalogueComponent implements OnInit {
         autoTable(doc, {
           startY: y + imageHeight - 2,
           margin: { left: margin + imageWidth + 10 },
-          head: [["Size", "Measurement", "Price"]],
-          body: item.variants.map((v: any) => [
-            v.size,
-            v.measurement,
-            `₹${v.price}`,
-          ]),
+          head: [["Size", "Price"]],
+          body: item.variants.map((v: any) => [v.size, `₹${v.price}`]),
           styles: { fontSize: 9, cellPadding: 2 },
           headStyles: {
             fillColor: [66, 139, 202],

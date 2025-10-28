@@ -48,21 +48,8 @@
           <div class="variant-row" [formGroupName]="$index">
             <mat-form-field appearance="outline">
               <mat-label>Size</mat-label>
-              <input matInput formControlName="size" type="number" />
+              <input matInput formControlName="size" />
               @if (v.get('size')?.invalid && v.get('size')?.touched) {
-              <mat-error>Required</mat-error>
-              }
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Measurement</mat-label>
-              <mat-select formControlName="measurement">
-                <mat-option value="cm">cm</mat-option>
-                <mat-option value="inches">inches</mat-option>
-                <mat-option value="m">m</mat-option>
-              </mat-select>
-              @if (v.get('measurement')?.invalid &&
-              v.get('measurement')?.touched) {
               <mat-error>Required</mat-error>
               }
             </mat-form-field>
@@ -71,8 +58,7 @@
               <mat-label>Rate</mat-label>
               <input matInput formControlName="price" placeholder="1000" type="number" />
               @if (v.get('price')?.invalid && v.get('price')?.touched) {
-              <mat-error>Required & must be ≥ 0</mat-error>
-
+              <mat-error>Must be ≥ 0</mat-error>
               }
             </mat-form-field>
 
@@ -117,7 +103,7 @@
       </div>
 
       <div class="image-upload">
-        <h3>Images</h3>
+        <h3>Images *</h3>
         <input id="imageInput" type="file" multiple accept="image/*" hidden (change)="onFilesSelected($event)" />
         <div class="upload-actions">
           <button mat-flat-button color="primary" type="button" (click)="uploadImages()">

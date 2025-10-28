@@ -6,7 +6,7 @@ export interface ProductPayload {
   id: string;
   name: string;
   desc: string;
-  variants: { measurement: string; price: number; size: number }[];
+  variants: { price: number; size: number }[];
   notes: string[];
   category: string;
   images: string[];

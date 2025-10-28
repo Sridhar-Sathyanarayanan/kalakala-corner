@@ -1,15 +1,16 @@
 <div class="catalogue" id="catalogue-content">
   <div>
     <span class="header">
-    <h1 class="catalogue-title">Product Catalogue</h1>
-    @if (appService.isLoggedIn$ | async) {<a routerLink="/add-product"><button matFab extended aria-label="Add product">
-        <mat-icon>note_add</mat-icon>
-        Add Product
-      </button></a><a><button matFab extended aria-label="Download PDF" (click)="downloadPDF()">
-        <mat-icon>file_download</mat-icon>
-      </button></a>}
-      </span>
-      <h4 class="catalogue-subtitle">{{categoryTitle}}</h4>
+      <h1 class="catalogue-title">Product Catalogue</h1>
+      @if (appService.isLoggedIn$ | async) {<a routerLink="/add-product"><button matFab extended
+          aria-label="Add product">
+          <mat-icon>note_add</mat-icon>
+          Add Product
+        </button></a><a><button matFab extended aria-label="Download PDF" (click)="downloadPDF()">
+          <mat-icon>file_download</mat-icon>
+        </button></a>}
+    </span>
+    <h4 class="catalogue-subtitle">{{ categoryTitle }}</h4>
   </div>
   <mat-divider></mat-divider>
 
@@ -19,13 +20,14 @@
     <div class="product-card">
       <div class="product-image" (click)="openProductModal(product)">
         <img [src]="product.images[0]" [alt]="product.name" />
-        @if(product.minPrice !=product.maxPrice){
+        @if(product.minPrice && product.maxPrice){ @if(product.minPrice
+        !=product.maxPrice){
         <div class="price-badge">
           ₹{{ product.minPrice }} - {{ product.maxPrice }}
         </div>
         } @else {
         <div class="price-badge">₹{{ product.minPrice }}</div>
-        }
+        } }
       </div>
       <div class="product-info">
         <h3 class="product-info__content product-info__content--name" [matTooltip]="product.name">

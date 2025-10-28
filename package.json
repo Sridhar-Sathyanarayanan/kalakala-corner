@@ -5,7 +5,8 @@
   "scripts": {
     "install:all": "npm i && npm --prefix ui i --legacy-peer-deps && npm --prefix mid-tier i --legacy-peer-deps",
     "dev": "concurrently -n mid-tier,ui --kill-others \"npm --prefix mid-tier run start:dev\" \"npm --prefix ui run start\"",
-    "build": "npm --prefix ui run build && npm --prefix mid-tier run build"
+    "build": "npm --prefix ui run build && npm --prefix mid-tier run build",
+    "check-for-updates:all": "ncu -u && ncu --prefix ui -u && ncu --prefix mid-tier -u"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

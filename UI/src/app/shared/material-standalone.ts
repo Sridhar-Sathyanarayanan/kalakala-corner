@@ -16,11 +16,13 @@ import { MatSidenavModule } from "@angular/material/sidenav";
 import { MatChipsModule } from "@angular/material/chips";
 import { MatSnackBarModule } from "@angular/material/snack-bar";
 import { NgxSpinnerModule } from "ngx-spinner";
-import { ReactiveFormsModule } from "@angular/forms";
+import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { MatSelectModule } from "@angular/material/select";
 import { MatDialogModule } from "@angular/material/dialog";
 import { MatTooltipModule } from "@angular/material/tooltip";
 import { MatDividerModule } from "@angular/material/divider";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
+import { MatRadioModule } from "@angular/material/radio";
 
 export const MaterialStandaloneModules = [
   CommonModule,
@@ -47,4 +49,7 @@ export const MaterialStandaloneModules = [
   MatDialogModule,
   MatTooltipModule,
   MatDividerModule,
+  FormsModule,
+  MatProgressSpinnerModule,
+  MatRadioModule,
 ];

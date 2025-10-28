@@ -38,8 +38,10 @@ app.get("/", (req, res) => {
 
 import productRoutes from "./routes/products.routes";
 import loginRoutes from "./routes/login.routes";
+import mailRoutes from "./routes/mail.routes";
 app.use(productRoutes);
 app.use(loginRoutes);
+app.use(mailRoutes);
 
 // Start server
 app.listen(port, () => {
