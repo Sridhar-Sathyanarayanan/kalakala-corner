@@ -7,7 +7,7 @@ import { MatSnackBar } from "@angular/material/snack-bar";
 import { Router, ActivatedRoute } from "@angular/router";
 import { AppService } from "../../services/app.service";
 import { NgxSpinnerService } from "ngx-spinner";
-import { categories, ProductPayload } from "../../models/app.model";
+import { ProductPayload } from "../../models/app.model";
 
 @Component({
   selector: "app-add-product",
@@ -23,7 +23,7 @@ export class AddProductComponent implements OnInit {
   imagePreviews: SafeUrl[] = []; // For UI preview
   existingImageUrls: string[] = []; // Already in S3
   imageFiles: File[] = []; // Newly uploaded files
-  categories = JSON.parse(JSON.stringify(categories));
+  categories = [];
   id = "";
 
   constructor(
@@ -42,14 +42,15 @@ export class AddProductComponent implements OnInit {
     this.appService.isLoggedIn$.subscribe((status) => {
       if (!status) this.router.navigate(["/login"]);
     });
-
-    // Check for edit mode
     this.id = this.activatedRoute.snapshot.paramMap.get("id") || "";
     if (this.id) {
       this.loadProduct(this.id);
     } else {
       this.createForm(); // Add mode
     }
+    this.productService.getCategories().subscribe((data) => {
+      this.categories = data.items;
+    });
   }
 
   /** Load product in edit mode */
@@ -116,6 +117,7 @@ export class AddProductComponent implements OnInit {
     return this.fb.group({
       size: [variant?.size || null, [Validators.required]],
       price: [variant?.price || null, [Validators.min(0)]],
+      discountedPrice: [variant?.discountedPrice || null, [Validators.min(0)]],
     });
   }
 
@@ -207,6 +209,7 @@ export class AddProductComponent implements OnInit {
     this.productForm.value.variants.forEach((v, i) => {
       formData.append(`variants[${i}][size]`, v.size);
       formData.append(`variants[${i}][price]`, v.price);
+      formData.append(`variants[${i}][discountedPrice]`, v.discountedPrice);
     });
     formData.append("category", this.productForm.value.category);
     // Append notes as array of strings

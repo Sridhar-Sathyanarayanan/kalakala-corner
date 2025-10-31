@@ -1,0 +1,183 @@
+<div class="add-category-container">
+  <div class="content">
+    <h1>Manage Categories</h1>
+    <mat-divider></mat-divider>
+
+    <!-- Existing Categories -->
+    <section class="existing-categories">
+      <h5>Existing Categories</h5>
+      <div class="categories-list-wrapper">
+        <mat-list *ngIf="categoriesArray.controls.length > 0; else noCategories">
+          <mat-list-item *ngFor="let cat of categoriesArray.controls; let i = index"
+            [class.deleted]="cat.get('isDeleted')?.value" [class.editing]="cat.get('isEditing')?.value">
+            <div class="category-item-content">
+              <!-- Icon -->
+              <mat-icon matListItemIcon class="category-icon"
+                [color]="cat.get('isDeleted')?.value ? 'warn' : 'primary'">
+                {{ cat.get("isDeleted")?.value ? "label_off" : "label" }}
+              </mat-icon>
+
+              <!-- Category Name / Input -->
+              <div class="category-name-wrapper">
+                <ng-container *ngIf="cat.get('isEditing')?.value; else readOnlyLabel">
+                  <mat-form-field appearance="outline" class="category-input">
+                    <input matInput [formControl]="getControl(cat, 'name')" placeholder="Category Name"
+                      [readonly]="cat.get('isDeleted')?.value" />
+                    <mat-error *ngIf="getControl(cat, 'name').hasError('required')">
+                      Name is required
+                    </mat-error>
+                    <mat-error *ngIf="getControl(cat, 'name').hasError('maxlength')">
+                      Max 100 characters
+                    </mat-error>
+                  </mat-form-field>
+                </ng-container>
+                <ng-template #readOnlyLabel>
+                  <span class="category-text">{{
+                    cat.get("name")?.value
+                    }}</span>
+                </ng-template>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="action-buttons">
+                <!-- Edit Mode Actions -->
+                <ng-container *ngIf="cat.get('isEditing')?.value">
+                  <button mat-icon-button color="primary" (click)="saveEdit(i)" matTooltip="Save"
+                    [disabled]="getControl(cat, 'name').invalid">
+                    <mat-icon>check</mat-icon>
+                  </button>
+                  <button mat-icon-button color="warn" (click)="cancelEdit(i)" matTooltip="Cancel">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </ng-container>
+
+                <!-- View Mode Actions -->
+                <ng-container *ngIf="
+                    !cat.get('isEditing')?.value && !cat.get('isDeleted')?.value
+                  ">
+                  <button mat-icon-button color="accent" (click)="editCategory(i)" matTooltip="Edit">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button color="warn" (click)="deleteCategory(i)" matTooltip="Delete">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </ng-container>
+
+                <!-- Deleted State Actions -->
+                <ng-container *ngIf="cat.get('isDeleted')?.value">
+                  <button mat-icon-button color="primary" (click)="undoDelete(i)" matTooltip="Undo Delete">
+                    <mat-icon>undo</mat-icon>
+                  </button>
+                </ng-container>
+              </div>
+            </div>
+          </mat-list-item>
+        </mat-list>
+      </div>
+
+      <ng-template #noCategories>
+        <div class="no-categories">
+          <mat-icon>inbox</mat-icon>
+          <p>No categories available. Add your first category!</p>
+        </div>
+      </ng-template>
+    </section>
+    <!-- Add Button -->
+    <div class="actions-footer">
+      <button mat-raised-button color="primary" (click)="addCategory()">
+        <mat-icon>add_circle</mat-icon>
+        <span>Add Category</span>
+      </button>
+    </div>
+    <mat-divider></mat-divider>
+
+    <!-- Summary Cards -->
+    <div class="summary-container" *ngIf="
+        deletedCategories.length > 0 ||
+        modifiedCategories.length > 0 ||
+        addedCategories.length > 0
+      ">
+      <h5 class="summary-title">
+        <mat-icon>summarize</mat-icon>
+        Pending Changes Summary
+      </h5>
+
+      <div class="summary-grid">
+        <!-- Added Categories Card -->
+        <mat-card class="summary-card added-card" *ngIf="addedCategories.length > 0">
+          <mat-card-header>
+            <mat-icon mat-card-avatar class="card-icon">add_circle</mat-icon>
+            <mat-card-title>Added</mat-card-title>
+            <mat-card-subtitle>{{ addedCategories.length }}
+              {{
+              addedCategories.length === 1 ? "category" : "categories"
+              }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="summary-list">
+              <div class="summary-item" *ngFor="let cat of addedCategories">
+                <mat-icon class="item-icon">label</mat-icon>
+                <span class="item-text">{{ cat.name }}</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Modified Categories Card -->
+        <mat-card class="summary-card modified-card" *ngIf="modifiedCategories.length > 0">
+          <mat-card-header>
+            <mat-icon mat-card-avatar class="card-icon">edit</mat-icon>
+            <mat-card-title>Modified</mat-card-title>
+            <mat-card-subtitle>{{ modifiedCategories.length }}
+              {{
+              modifiedCategories.length === 1 ? "category" : "categories"
+              }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="summary-list">
+              <div class="summary-item modified-item" *ngFor="let cat of modifiedCategories">
+                <div class="modified-flow">
+                  <span class="old-name">{{ cat.oldName }}</span>
+                  <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+                  <span class="new-name">{{ cat.newName }}</span>
+                </div>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Deleted Categories Card -->
+        <mat-card class="summary-card deleted-card" *ngIf="deletedCategories.length > 0">
+          <mat-card-header>
+            <mat-icon mat-card-avatar class="card-icon">delete</mat-icon>
+            <mat-card-title>Deleted</mat-card-title>
+            <mat-card-subtitle>{{ deletedCategories.length }}
+              {{
+              deletedCategories.length === 1 ? "category" : "categories"
+              }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="summary-list">
+              <div class="summary-item" *ngFor="let cat of deletedCategories">
+                <mat-icon class="item-icon">label_off</mat-icon>
+                <span class="item-text deleted-text">{{ cat.name }}</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Save Button -->
+    <div class="actions-footer">
+      <button mat-raised-button color="accent" (click)="saveCategories()" [disabled]="
+          deletedCategories.length === 0 &&
+          modifiedCategories.length === 0 &&
+          addedCategories.length === 0
+        ">
+        <mat-icon>save</mat-icon>
+        <span>Save All Changes</span>
+      </button>
+    </div>
+  </div>
+</div>

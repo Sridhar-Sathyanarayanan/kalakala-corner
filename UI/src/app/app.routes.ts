@@ -8,7 +8,7 @@ export const routes: Routes = [
   },
   {
     path: "catalogue",
-    redirectTo: "catalogue/all",
+    redirectTo: "/catalogue/all",
     pathMatch: "full",
   },
   {
@@ -31,16 +31,18 @@ export const routes: Routes = [
       ),
   },
   {
+    path: "modify-category",
+    loadComponent: () =>
+      import("./catalogue/modify-category/modify-category.component").then(
+        (m) => m.ModifyCategoryComponent
+      ),
+  },
+  {
     path: "edit-product/:id",
     loadComponent: () =>
       import("./catalogue/add-product/add-product.component").then(
         (m) => m.AddProductComponent
       ),
-  },
-  {
-    path: "admin",
-    loadComponent: () =>
-      import("./admin/admin.component").then((m) => m.AdminComponent),
   },
   {
     path: "about-us",

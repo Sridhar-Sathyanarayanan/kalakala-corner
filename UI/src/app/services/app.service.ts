@@ -40,7 +40,7 @@ export class AppService {
     });
   }
 
-  sendMail(params) {
-    return this.http.post(`${environment.apiURL}/sendMail`, params);
+  sendSMS(params) {
+    return this.http.post(`${environment.apiURL}/sendSMS`, params);
   }
 }

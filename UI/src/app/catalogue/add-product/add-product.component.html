@@ -1,8 +1,7 @@
 <!-- add-product.component.html -->
 <div class="add-product-container">
   <div class="content">
-    
-    <h1>{{id ? 'Edit' : 'Add New'}} Product</h1>
+    <h1>{{ id ? "Edit" : "Add New" }} Product</h1>
     <mat-divider></mat-divider>
 
     <form [formGroup]="productForm" (ngSubmit)="submit()">
@@ -20,7 +19,7 @@
         <mat-label>Category</mat-label>
         <mat-select formControlName="category">
           <mat-option value="" disabled>Select a category</mat-option>
-          <mat-option *ngFor="let cat of categories" [value]="cat.slug">
+          <mat-option *ngFor="let cat of categories" [value]="cat.path">
             {{ cat.name }}
           </mat-option>
         </mat-select>
@@ -61,7 +60,14 @@
               <mat-error>Must be ≥ 0</mat-error>
               }
             </mat-form-field>
-
+            <mat-form-field appearance="outline">
+              <mat-label>Discounted Rate</mat-label>
+              <input matInput formControlName="discountedPrice" type="number" />
+              @if (v.get('discountedPrice')?.invalid &&
+              v.get('discountedPrice')?.touched) {
+              <mat-error>Must be ≥ 0</mat-error>
+              }
+            </mat-form-field>
             <button mat-icon-button color="warn" aria-label="remove variant" (click)="removeVariant($index)">
               <mat-icon>remove_circle</mat-icon>
             </button>

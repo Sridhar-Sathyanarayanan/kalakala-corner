@@ -1,16 +1,18 @@
 import { Router } from "express";
+import multer from "multer";
 import {
   addAProduct,
-  getAllProducts,
-  getAllProductsWithCategory,
   deleteAProduct,
-  getAProduct,
-  updateAProduct,
   download,
   fetchS3Image,
+  getAllCategories,
+  getAllProducts,
+  getAllProductsWithCategory,
+  getAProduct,
+  updateAProduct,
+  saveAllCategories
 } from "../controller/products.controller";
 import { verifyAdmin } from "../services/authMiddleware";
-import multer from "multer";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -29,5 +31,8 @@ router.post(
 router.delete("/delete-product/:id", verifyAdmin, deleteAProduct);
 router.get("/downloadPDF", verifyAdmin, download);
 router.post("/fetch-s3-image", fetchS3Image);
+
+router.get("/categories-list", getAllCategories);
+router.post("/save-categories", saveAllCategories);
 
 export default router;

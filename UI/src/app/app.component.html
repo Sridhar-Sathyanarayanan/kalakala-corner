@@ -22,34 +22,13 @@
         <a [matMenuTriggerFor]="categoryMenu" class="menu-trigger">
           Catalogue <mat-icon>arrow_drop_down</mat-icon>
         </a>
-        <mat-menu #categoryMenu="matMenu">
-          <button mat-menu-item (click)="navigateTo('/catalogue/all')">
-            All items
+        <mat-menu #categoryMenu="matMenu" class="category-menu">
+          @for (item of menuItems; track item.path) {
+          <button mat-menu-item (click)="navigateTo('/catalogue/' + item.path)">
+            {{item.icon}} {{ item.name }}
           </button>
-          <button mat-menu-item (click)="navigateTo('/catalogue/handicrafts')">
-            Handicrafts items
-          </button>
-          <button mat-menu-item (click)="navigateTo('/catalogue/eco-wooden')">
-            Eco-friendly wooden gift items
-          </button>
-          <button mat-menu-item (click)="navigateTo('/catalogue/wooden')">
-            Wooden Themes gifts
-          </button>
-          <button mat-menu-item (click)="navigateTo('/catalogue/wooden-utility')">
-            Wooden utility articles
-          </button>
-          <button mat-menu-item (click)="navigateTo('/catalogue/wooden-pooja')">
-            Wooden pooja items
-          </button>
-          <button mat-menu-item (click)="navigateTo('/catalogue/kids-eco-wooden')">
-            Kids centre - eco friendly wooden toys
-          </button>
-          <button mat-menu-item (click)="navigateTo('/catalogue/thanjavur-paintings')">
-            Traditional Thanjavur Paintings
-          </button>
-          <button mat-menu-item (click)="navigateTo('/catalogue/thanjavur-art-plates')">
-            Traditional Thanjavur Art Plates
-          </button>
+          <mat-divider></mat-divider>
+          }
         </mat-menu>
       </li>
 
@@ -65,16 +44,34 @@
 
 <main class="main-content">
   @if (appService.isLoggedIn$ | async) {
-  <div class="greeting">
-    <span></span>
-    <div class="admin-greeting mat-elevation-z2">
-      <mat-icon class="admin-avatar">account_circle</mat-icon>
-      <div>
-        <span>Hi, Admin</span>
+  <div class="greeting-container mat-elevation-z2">
+    <div class="admin-info">
+      <mat-icon color="primary">account_circle</mat-icon>
+      <div class="admin-text">
+        <span class="greeting-text">Hi, Admin</span>
+        <small class="role-text">Welcome back!</small>
       </div>
+    </div>
+
+    <!-- Actions dropdown -->
+    <div class="add-dropdown">
+      <button mat-raised-button color="accent" [matMenuTriggerFor]="addMenu">
+        Actions <mat-icon>arrow_drop_down</mat-icon>
+      </button>
+      <mat-menu #addMenu="matMenu">
+        <button mat-menu-item (click)="navigateTo('/add-product')">
+          <mat-icon>note_add</mat-icon>
+          Add Product
+        </button>
+        <button mat-menu-item (click)="navigateTo('/modify-category')">
+          <mat-icon>category</mat-icon>
+          Add/Edit Category
+        </button>
+      </mat-menu>
     </div>
   </div>
   }
+
   <router-outlet></router-outlet>
 </main>
 

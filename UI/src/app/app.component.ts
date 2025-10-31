@@ -2,11 +2,12 @@ import { Component, OnInit } from "@angular/core";
 import { Router, RouterModule } from "@angular/router";
 import { MaterialStandaloneModules } from "./shared/material-standalone";
 import { AppService } from "./services/app.service";
-import { LoggedIn } from "./models/app.model";
+import { emojis, LoggedIn } from "./models/app.model";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { MatDialog } from "@angular/material/dialog";
 import { ConfirmationModalComponent } from "./shared/confirmation/confirmation-modal.component";
 import { BreakpointObserver, Breakpoints } from "@angular/cdk/layout";
+import { ProductService } from "./services/product.service";
 
 @Component({
   selector: "app-root",
@@ -18,12 +19,15 @@ import { BreakpointObserver, Breakpoints } from "@angular/cdk/layout";
 export class AppComponent implements OnInit {
   mobileMenuOpen = false;
   admin = false;
+  menuItems = [];
+
   constructor(
     public appService: AppService,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
     private router: Router,
-    private breakpointObserver: BreakpointObserver
+    private breakpointObserver: BreakpointObserver,
+    private productService: ProductService
   ) {}
 
   ngOnInit(): void {
@@ -32,6 +36,13 @@ export class AppComponent implements OnInit {
     });
     this.appService.isLoggedIn$.subscribe((status) => {
       this.admin = status;
+    });
+    this.productService.getCategories().subscribe((data) => {
+      this.menuItems = data.items.map((item, index) => ({
+        ...item,
+        icon: emojis[index % emojis.length],
+      }));
+      this.menuItems.unshift({ name: "All Products", path: "all", icon: "🔥" });
     });
   }
 
@@ -62,7 +73,7 @@ export class AppComponent implements OnInit {
     });
   }
   navigateTo(route: string) {
-    this.router.navigate([route]);
+    this.router.navigateByUrl(route);
     this.mobileMenuOpen = false; // optional: close mobile menu after navigation
   }
 }

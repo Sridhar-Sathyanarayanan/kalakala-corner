@@ -1,21 +1,29 @@
-import { createDDBDocClient } from "../clients/dynamoClient";
 import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
+import {
+  BatchWriteCommand,
+  DeleteCommand,
+  DynamoDBDocumentClient,
   GetCommand,
   PutCommand,
   ScanCommand,
   UpdateCommand,
-  DeleteCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { v4 as uuidv4 } from "uuid";
-import logger from "./logger";
-import {
-  DeleteObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from "@aws-sdk/client-s3";
-import { createS3Client } from "../clients/s3Client";
-import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { Response } from "express";
+import { v4 as uuidv4 } from "uuid";
+import { createDDBDocClient } from "../clients/dynamoClient";
+import { createS3Client } from "../clients/s3Client";
+import logger from "./logger";
+
+interface CategoryPayload {
+  deletedCategories: { path: string }[];
+  modifiedCategories: { path: string; newName: string }[];
+  addedCategories: { name: string }[];
+}
 
 export async function getProducts() {
   try {
@@ -151,14 +159,13 @@ async function deleteS3File(s3: S3Client, url: string) {
   }
 }
 
-
 /** Express handler for updating a product */
 export async function updateProduct(
   id: string,
   data: any,
   files?: Express.Multer.File[]
 ) {
-  const { name, desc, variants, existingImages,category, notes } = data;
+  const { name, desc, variants, existingImages, category, notes } = data;
 
   const s3 = createS3Client();
   const ddb = createDDBDocClient();
@@ -284,12 +291,17 @@ export async function fetchImageFromS3(url: string, res: Response) {
 
     const key = url.replace(bucketUrl, "");
     const s3 = createS3Client();
-    const command = new GetObjectCommand({ Bucket: process.env.S3_BUCKET_NAME, Key: key });
+    const command = new GetObjectCommand({
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: key,
+    });
     const result = await s3.send(command);
 
     // Set headers
-    const contentType = (result.ContentType as string) || "application/octet-stream";
-    if (result.ContentLength) res.setHeader("Content-Length", String(result.ContentLength));
+    const contentType =
+      (result.ContentType as string) || "application/octet-stream";
+    if (result.ContentLength)
+      res.setHeader("Content-Length", String(result.ContentLength));
     res.setHeader("Content-Type", contentType);
     res.setHeader("Cache-Control", "public, max-age=31536000");
 
@@ -307,4 +319,184 @@ export async function fetchImageFromS3(url: string, res: Response) {
     logger.error("Failed to fetch image from S3", err);
     res.status(500).send({ message: "Failed to fetch image" });
   }
+}
+
+export async function getCategories() {
+  try {
+    const ddbDocClient = createDDBDocClient();
+    const params = { TableName: "product-categories" };
+    const command = new ScanCommand(params);
+    const data = await ddbDocClient.send(command);
+    return data.Items;
+  } catch (error) {
+    logger.error("Unable to fetch all data");
+    throw error;
+  }
+}
+
+export async function saveCategories(payload: CategoryPayload) {
+  try {
+    const ddbDocClient = createDDBDocClient();
+
+    // 1. DELETE categories and associated products
+    for (const cat of payload.deletedCategories) {
+      // Find all products with this category name
+      const items = await allProductsWithCategory(cat.path);
+      // Batch delete all associated products
+      if (items?.length) {
+        await batchDeleteProducts(ddbDocClient, items);
+        logger.info(
+          `Deleted ${items.length} products for category: ${cat.path}`
+        );
+      }
+
+      // Delete the category (using path as primary key)
+      await ddbDocClient.send(
+        new DeleteCommand({
+          TableName: "product-categories",
+          Key: { path: cat.path },
+        })
+      );
+      logger.info(`Deleted category with path: ${cat.path}`);
+    }
+
+    // 2. UPDATE categories and associated products
+    for (const cat of payload.modifiedCategories) {
+      const path = createSlug(cat.newName);
+      // Find all products with the old category name
+      const items = await allProductsWithCategory(cat.path);
+      // Batch update category name in all associated products
+      if (items?.length) {
+        await batchUpdateProducts(ddbDocClient, items, path);
+        logger.info(
+          `Updated ${items.length} products with new category name: ${cat.newName}`
+        );
+      }
+      // Delete old category entry
+      await ddbDocClient.send(
+        new DeleteCommand({
+          TableName: "product-categories",
+          Key: { path: cat.path },
+        })
+      );
+      // Add new category entry with updated name and path
+      await ddbDocClient.send(
+        new PutCommand({
+          TableName: "product-categories",
+          Item: {
+            path: createSlug(cat.newName),
+            name: cat.newName,
+          },
+        })
+      );
+      logger.info(`Updated category path ${cat.path}`);
+    }
+
+    // 3. ADD new categories
+
+    for (const cat of payload.addedCategories) {
+      await ddbDocClient.send(
+        new PutCommand({
+          TableName: "product-categories",
+          Item: {
+            path: createSlug(cat.name),
+            name: cat.name,
+          },
+        })
+      );
+      logger.info(`Added new category: ${cat.name} `);
+    }
+
+    logger.info("All categories processed successfully!");
+    return await getCategories();
+  } catch (error) {
+    logger.error("Error updating categories:", error);
+    throw error;
+  }
+}
+
+/**
+ * Batch delete products in chunks of 25 (DynamoDB limit)
+ * Assumes products have a single primary key or composite key
+ */
+async function batchDeleteProducts(
+  ddbDocClient: any,
+  products: any[]
+): Promise<void> {
+  const BATCH_SIZE = 25;
+
+  for (let i = 0; i < products.length; i += BATCH_SIZE) {
+    const batch = products.slice(i, i + BATCH_SIZE);
+    const deleteRequests = batch.map((product) => {
+      // Determine the key structure based on your product table schema
+      const key: any = { path: product.path };
+
+      return {
+        DeleteRequest: { Key: { id: product.id } },
+      };
+    });
+
+    await ddbDocClient.send(
+      new BatchWriteCommand({
+        RequestItems: {
+          "product-catalogue": deleteRequests,
+        },
+      })
+    );
+
+    logger.info(`Batch deleted ${batch.length} products`);
+  }
+}
+
+/**
+ * Batch update products with new category name
+ * Updates are done in parallel batches for better performance
+ */
+async function batchUpdateProducts(
+  ddbDocClient: any,
+  products: any[],
+  newCategoryName: string
+): Promise<void> {
+  const BATCH_SIZE = 10; // Parallel update batch size
+
+  for (let i = 0; i < products.length; i += BATCH_SIZE) {
+    const batch = products.slice(i, i + BATCH_SIZE);
+
+    // Execute updates in parallel for this batch
+    await Promise.all(
+      batch.map((product) => {
+        // Determine the key structure based on your product table schema
+        // Option 1: Single partition key
+
+        return ddbDocClient.send(
+          new UpdateCommand({
+            TableName: "product-catalogue",
+            Key: { id: product.id },
+            UpdateExpression:
+              "SET #categoryName = :newName, #updatedAt = :updatedAt",
+            ExpressionAttributeNames: {
+              "#categoryName": "category",
+              "#updatedAt": "updatedAt",
+            },
+            ExpressionAttributeValues: {
+              ":newName": newCategoryName,
+              ":updatedAt": new Date().toISOString(),
+            },
+          })
+        );
+      })
+    );
+
+    logger.info(
+      `Batch updated ${batch.length} products with category name: ${newCategoryName}`
+    );
+  }
+}
+function createSlug(category: string) {
+  //Creating route slug for category
+  return category
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }

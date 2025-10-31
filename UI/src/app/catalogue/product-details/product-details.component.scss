@@ -1,63 +1,205 @@
 @use "../../../styles/styles.scss" as styles;
 
-.product-details-container {
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  gap: 1.5rem;
-  max-width: 900px;
-  width: 100%;
-  padding: 1rem;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    padding: 0.5rem;
+// CSS Animations
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
-/* LEFT SIDE - Image Carousel */
-.carousel-container {
-  flex: 1;
+@keyframes scaleIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes imageTransition {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+// Animation Classes
+.animate-fade-in {
+  animation: fadeIn 400ms ease-in forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 300ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-slide-left {
+  animation: slideInLeft 400ms ease-out forwards;
+}
+
+.animate-slide-right {
+  animation: slideInRight 400ms ease-out forwards;
+}
+
+.product-details-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  max-width: 1200px;
+  width: 100%;
+  padding: 1.5rem;
   position: relative;
+  background: #fff;
+  border-radius: 16px;
+  max-height: 85vh;
+  overflow: hidden;
+
+  @media (max-width: 960px) {
+    grid-template-columns: 1fr;
+    max-height: 90vh;
+    padding: 1rem;
+  }
+}
+
+// Close Button
+.close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: rotate(90deg) scale(1.1);
+    background: #fff;
+  }
+
+  mat-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+    color: #333;
+  }
+}
+
+// Left Section - Carousel
+.carousel-section {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  height: 100%;
+  max-height: 70vh;
+  overflow: hidden;
+}
+
+.carousel-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100%;
+  overflow: hidden;
 
   .image-wrapper {
     position: relative;
-    width: 100%;
-    height: 90vh;
+    flex: 1;
     display: flex;
-    align-items: center; // ⬅️ vertically centers image
-    justify-content: center; // ⬅️ horizontally centers image (optional)
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+    border-radius: 16px;
     overflow: hidden;
-    border-radius: 12px;
-    background: #f5f5f5;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    min-height: 300px;
+    max-height: calc(70vh - 60px);
 
     .carousel-image {
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
-      border-radius: 12px;
       transition: transform 0.3s ease;
+      animation: imageTransition 300ms ease-out;
+
+      &:hover {
+        transform: scale(1.02);
+      }
     }
 
     .nav-btn {
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 0, 0, 0.6);
       color: white;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+      &:hover {
+        background: styles.$theme3;
+        transform: translateY(-50%) scale(1.1);
+      }
 
       &.prev {
-        left: 10px;
+        left: 1rem;
       }
 
       &.next {
-        right: 10px;
+        right: 1rem;
       }
-      &.icon {
-        background: styles.$theme3;
+
+      mat-icon {
+        font-size: 28px;
+        width: 28px;
+        height: 28px;
       }
     }
   }
@@ -65,138 +207,605 @@
   .dots {
     display: flex;
     justify-content: center;
-    margin-top: 8px;
+    gap: 0.5rem;
+    padding: 0.5rem;
 
     .dot {
-      width: 10px;
-      height: 10px;
-      margin: 0 4px;
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
-      background-color: #ccc;
+      border: 2px solid #ccc;
+      background: transparent;
       cursor: pointer;
-      transition: background 0.3s;
+      transition: all 0.3s ease;
+      padding: 0;
+
+      &:hover {
+        transform: scale(1.2);
+        border-color: styles.$theme3;
+      }
 
       &.active {
-        background-color: #3f51b5;
+        background: styles.$theme3;
+        border-color: styles.$theme3;
+        width: 32px;
+        border-radius: 6px;
       }
     }
   }
+
+  .image-counter {
+    text-align: center;
+    font-size: 0.875rem;
+    color: #666;
+    font-weight: 500;
+  }
 }
 
-/* RIGHT SIDE - Product Info */
-.details-container {
-  flex: 1;
+// Right Section - Details
+.details-section {
   display: flex;
   flex-direction: column;
-  .close-btn {
+  height: 100%;
+  max-height: 70vh;
+  overflow: hidden;
+}
+
+.details-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.5rem;
+  height: 100%;
+  flex: 1;
+
+  // Custom Scrollbar
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, styles.$theme3 0%, #7d1a2d 100%);
+    border-radius: 4px;
+    transition: background 0.3s ease;
+
+    &:hover {
+      background: styles.$theme3;
+    }
+  }
+
+  // Firefox scrollbar
+  scrollbar-width: thin;
+  scrollbar-color: styles.$theme3 #f1f1f1;
+}
+
+.product-name {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 2%;
+  line-height: 1.3;
+  position: relative;
+  padding-bottom: 2%;
+
+  &::after {
+    content: "";
     position: absolute;
-    top: 0;
-    right: 0;
-    margin: 0.5rem;
-    background: wheat;
-    color: #333;
+    left: 0;
+    bottom: 0;
+    width: 50%;
+    height: 4px;
+    background: linear-gradient(90deg, styles.$theme3 0%, transparent 100%);
+    border-radius: 2px;
+  }
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2%;
+  flex-wrap: wrap;
+}
+
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.quote-link {
+  text-decoration: none;
+}
+
+.quote-btn-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  height: 36px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 18px;
+  border: 2px solid;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+// Price Card - Enhanced with discount styling
+.price-card {
+  margin-bottom: 2%;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 2px solid #f0f0f0;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  position: relative;
+
+  // Special styling for products with discounts
+  &.has-discount {
+    background: linear-gradient(135deg, #fff5f9 0%, #ffe9f2 100%);
+    border-color: #ffb6d9;
+    box-shadow: 0 6px 24px rgba(255, 20, 147, 0.15);
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #ff1493, #ff69b4, #ff1493);
+      background-size: 200% 100%;
+      animation: shimmer 3s linear infinite;
+    }
+  }
+
+  .price-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .discount-badge-top {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #54a734 0%, #f41e3f 100%);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(255, 20, 147, 0.3);
+    align-self: flex-start;
+    animation: pulse 2s ease-in-out infinite;
+    letter-spacing: 0.5px;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .current-price {
+    .price-label {
+      font-size: 0.875rem;
+      color: #666;
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+
+    .price-value {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #ff1493;
+      display: block;
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+    }
+  }
+
+  .original-price {
+    .price-value-original {
+      font-size: 1.1rem;
+      color: #999;
+      text-decoration: line-through;
+      font-weight: 500;
+      display: block;
+    }
+  }
+
+  // Old discount badge (kept for backwards compatibility)
+  .discount-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.375rem 0.75rem;
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+    border-radius: 16px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(17, 153, 142, 0.3);
+    animation: pulse 2s infinite;
+    align-self: flex-start;
+
+    mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+    }
+  }
+}
+
+// Section Headers
+h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: styles.$theme3;
+  margin: 3% 0;
+
+  mat-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
+}
+
+// Description
+.description-section {
+  margin-bottom: 1.5rem;
+
+  .description-text {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #444;
+    margin: 0;
+  }
+}
+
+// Variants Section
+.variants-section {
+  margin-bottom: 1.5rem;
+
+  .table-container {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e0e0e0;
+  }
+
+  .variants-table {
+    width: 100%;
+    background: white;
+
+    th {
+      background: linear-gradient(135deg, styles.$theme3 0%, #7d1a2d 100%);
+      color: white;
+      font-weight: 600;
+      font-size: 0.875rem;
+      padding: 1rem;
+      text-align: left;
+    }
+
+    td {
+      padding: 1rem;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    tr {
+      &:last-child td {
+        border-bottom: none;
+      }
+
+      &:hover {
+        background: #f8f9fa;
+      }
+    }
+
+    // Add stagger animation to rows
+    mat-row {
+      animation: fadeIn 400ms ease-in forwards;
+
+      @for $i from 1 through 20 {
+        &:nth-child(#{$i}) {
+          animation-delay: #{$i * 50}ms;
+        }
+      }
+    }
+
+    .size-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 500;
+
+      .size-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        color: #666;
+      }
+    }
+
+    .price-cell {
+      font-weight: 500;
+      color: #333;
+
+      &.crossed {
+        text-decoration: line-through;
+        color: #999;
+        font-size: 0.875rem;
+      }
+    }
+
+    .offer-price-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+
+      .discounted-value {
+        font-weight: 700;
+        color: #ff1493;
+        font-size: 1.1rem;
+      }
+
+      .discount-percent {
+        font-size: 0.75rem;
+        color: #11998e;
+        font-weight: 600;
+        padding: 0.15rem 0.5rem;
+        background: #e8f8f5;
+        border-radius: 10px;
+        display: inline-block;
+        align-self: flex-start;
+      }
+    }
+
+    .no-offer {
+      color: #999;
+    }
+  }
+}
+
+// Notes Section
+.notes-section {
+  margin-bottom: 1.5rem;
+
+  .notes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .note-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 3px solid styles.$theme3;
+    transition: all 0.3s ease;
+    animation: fadeIn 400ms ease-in forwards;
+
+    &:hover {
+      background: #e8ecf1;
+      transform: translateX(4px);
+    }
+
+    .note-icon {
+      font-size: 12px;
+      width: 12px;
+      height: 12px;
+      color: styles.$theme3;
+      margin-top: 4px;
+    }
+
+    .note-text {
+      flex: 1;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: #333;
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 960px) {
+  .product-details-container {
+    gap: 1.5rem;
+    max-height: 85vh;
+  }
+
+  .carousel-section,
+  .details-section {
+    max-height: none;
+  }
+
+  .carousel-container .image-wrapper {
+    min-height: 300px;
+    max-height: 50vh;
+  }
+
+  .details-scroll {
+    max-height: 40vh;
+  }
+
+  .product-name {
+    font-size: 1.5rem;
+  }
+
+  .price-card {
+    .current-price .price-value {
+      font-size: 1.75rem;
+    }
+  }
+
+  .header-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+
+    .quote-btn-compact {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .product-details-container {
+    padding: 0.75rem;
+    border-radius: 0;
+    max-height: 100vh;
+    height: 100vh;
+    gap: 1rem;
+    background: white;
+  }
+
+  .close-btn {
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 40px;
+    height: 40px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 20;
 
     mat-icon {
       font-size: 24px;
-    }
-  }
-  h2 {
-    margin-bottom: 5%;
-    font-weight: 700;
-    position: relative;
-    display: inline-block; // shrink to text width
-    padding-bottom: 0.25rem;
-    max-width: 90%;
-    &::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      bottom: 0;
-      width: 50%;
-      height: 2px;
-      background-color: styles.$theme3;
-    }
-  }
-  .price-section {
-    display: grid;
-    grid-template-columns: 70% 30%;
-  }
-
-  .price {
-    font-weight: bold;
-    margin-bottom: 1rem;
-    &__value {
-      background-color: #4f0a15;
-      border-radius: 5px;
-      color: white;
-      padding: 2%;
+      width: 24px;
+      height: 24px;
     }
   }
 
-  .variants {
-    margin: 1rem 0;
-    h4 {
-      margin-bottom: 0.5rem;
-      font-weight: 600;
-      color: styles.$theme3;
+  .carousel-section {
+    max-height: 40vh;
+  }
+
+  .carousel-container {
+    .image-wrapper {
+      min-height: 200px;
+      max-height: 35vh;
+      border-radius: 8px;
+
+      .nav-btn {
+        width: 32px;
+        height: 32px;
+
+        &.prev {
+          left: 0.5rem;
+        }
+
+        &.next {
+          right: 0.5rem;
+        }
+
+        mat-icon {
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+      }
     }
   }
 
-  .actions {
-    margin-top: auto;
-    text-align: right;
+  .details-section {
+    max-height: 55vh;
+    background: white;
+  }
 
-    @media (max-width: 768px) {
-      text-align: center;
+  .details-scroll {
+    max-height: 55vh;
+    padding-right: 0.25rem;
+    background: white;
+  }
+
+  .product-name {
+    font-size: 1.25rem;
+  }
+
+  .price-card {
+    .current-price .price-value {
+      font-size: 1.5rem;
+    }
+
+    .discount-badge-top {
+      font-size: 0.75rem;
+      padding: 0.4rem 0.8rem;
+
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+      }
     }
   }
-}
-.notes-section {
-  margin: 1.5rem 0 0.5rem 0;
-  h4 {
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: styles.$theme3;
-  }
-  .notes-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0 4px;
-    background: transparent;
-  }
-  .note-row {
-    transition: background 0.2s;
-    &:hover {
-      background: #f3f6fa;
-    }
-  }
-  .note-bullet {
-    width: 32px;
-    text-align: center;
-    vertical-align: top;
-    padding-top: 2px;
-  }
-  .custom-bullet {
-    color: #4f0a15;
+
+  h3 {
     font-size: 1.1rem;
-    display: inline-block;
-    vertical-align: middle;
   }
-  .note-content {
-    padding: 0.5rem 0.5rem 0.5rem 0.2rem;
-    font-size: 1rem;
-    color: #222;
-    border-radius: 4px;
+
+  .header-actions {
+    .quote-btn-compact {
+      width: 100%;
+      height: 40px;
+    }
   }
-}
-th.mat-column-size,
-th.mat-column-price {
-  font-weight: bold;
-  background-color: styles.$theme3;
-}
-.mat-column-size {
-  width: 35%;
-}
-.mat-column-price {
-  width: 25%;
+
+  .variants-section {
+    .variants-table {
+      font-size: 0.875rem;
+
+      th,
+      td {
+        padding: 0.75rem 0.5rem;
+      }
+
+      .offer-price-cell {
+        .discounted-value {
+          font-size: 1rem;
+        }
+
+        .discount-percent {
+          font-size: 0.7rem;
+        }
+      }
+    }
+  }
 }

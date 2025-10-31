@@ -3,7 +3,7 @@ import { inject, Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { Observable } from "rxjs";
 import { environment } from "../../environments/environment";
-import { Product, ProductPayload } from "../models/app.model";
+import { Category, Product, ProductPayload } from "../models/app.model";
 
 @Injectable({
   providedIn: "root",
@@ -66,5 +66,18 @@ export class ProductService {
       { url },
       { responseType: "blob", withCredentials: true }
     ) as Observable<Blob>;
+  }
+
+  getCategories(): Observable<Category> {
+    return this.http.get<Category>(`${environment.apiURL}/categories-list`);
+  }
+  saveCategories(data): Observable<Category> {
+    return this.http.post<Category>(
+      `${environment.apiURL}/save-categories`,
+      data,
+      {
+        withCredentials: true,
+      }
+    );
   }
 }

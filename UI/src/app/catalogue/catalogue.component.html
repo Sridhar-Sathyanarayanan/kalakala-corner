@@ -1,58 +1,112 @@
 <div class="catalogue" id="catalogue-content">
-  <div>
-    <span class="header">
-      <h1 class="catalogue-title">Product Catalogue</h1>
-      @if (appService.isLoggedIn$ | async) {<a routerLink="/add-product"><button matFab extended
-          aria-label="Add product">
-          <mat-icon>note_add</mat-icon>
-          Add Product
-        </button></a><a><button matFab extended aria-label="Download PDF" (click)="downloadPDF()">
-          <mat-icon>file_download</mat-icon>
-        </button></a>}
-    </span>
-    <h4 class="catalogue-subtitle">{{ categoryTitle }}</h4>
-  </div>
-  <mat-divider></mat-divider>
-
-  @if(products.length){
-  <div class="products">
-    @for (product of products; track product) {
-    <div class="product-card">
-      <div class="product-image" (click)="openProductModal(product)">
-        <img [src]="product.images[0]" [alt]="product.name" />
-        @if(product.minPrice && product.maxPrice){ @if(product.minPrice
-        !=product.maxPrice){
-        <div class="price-badge">
-          ₹{{ product.minPrice }} - {{ product.maxPrice }}
-        </div>
-        } @else {
-        <div class="price-badge">₹{{ product.minPrice }}</div>
-        } }
-      </div>
-      <div class="product-info">
-        <h3 class="product-info__content product-info__content--name" [matTooltip]="product.name">
-          {{ product.name }}
-        </h3>
-        <p class="product-info__content product-info__content--desc" [matTooltip]="product.desc">
-          {{ product.desc }}
-        </p>
+  <div class="catalogue-header">
+    <div class="header-content">
+      <div class="title-section">
+        <h1 class="catalogue-title">
+          <span class="title-icon">✨</span>
+          Product Catalogue
+          <span class="title-icon">✨</span>
+        </h1>
+        <h4 class="catalogue-subtitle">{{ categoryTitle }}</h4>
       </div>
       @if (appService.isLoggedIn$ | async) {
-      <div class="product-info__admin">
-        <button mat-flat-button color="primary" (click)="edit(product)">
-          Edit Details
-        </button>
-        <button mat-flat-button color="accent" (click)="delete(product)">
-          Delete Product
+      <div class="header-actions">
+        <button mat-fab extended aria-label="Download PDF" (click)="downloadPDF()" class="download-btn">
+          <mat-icon>file_download</mat-icon>
+          Download PDF
         </button>
       </div>
       }
     </div>
+  </div>
+
+  @if(products.length){
+  <div class="products-grid">
+    @for (product of products; track product) {
+    <div class="product-card" [class.has-discount]="product.hasDiscount" (click)="openProductModal(product)">
+      @if(product.hasDiscount) {
+      <div class="discount-ribbon">
+        <span>OFFER</span>
+      </div>
+      }
+
+      <div class="card-image-wrapper">
+        <img [src]="product.images[0]" [alt]="product.name" class="product-image" loading="lazy" />
+
+        @if(product.displayMinPrice !== undefined && product.displayMaxPrice !==
+        undefined) {
+        <div class="price-badge-container">
+          @if(product.maxDiscountPercent && product.maxDiscountPercent > 0) {
+          <div class="discount-badge">
+            UP TO {{ product.maxDiscountPercent }}% OFF
+          </div>
+          }
+
+          <div class="price-badge">
+            @if(product.displayMinPrice === product.displayMaxPrice) {
+            <span class="price-single">₹{{ product.displayMinPrice }}</span>
+            } @else {
+            <span class="price-range">₹{{ product.displayMinPrice }} - ₹{{
+              product.displayMaxPrice
+              }}</span>
+            }
+          </div>
+          @if(product.hasDiscount && (product.originalMinPrice !==
+          product.displayMinPrice || product.originalMaxPrice !==
+          product.displayMaxPrice)) {
+          <div class="price-badge original-price">
+            <span class="original-price-range">
+              @if(product.originalMinPrice === product.originalMaxPrice) { ₹{{
+              product.originalMinPrice
+              }}
+              } @else { ₹{{ product.originalMinPrice }} - ₹{{
+              product.originalMaxPrice
+              }}
+              }
+            </span>
+          </div>
+          }
+        </div>
+        }
+      </div>
+
+      <div class="card-content">
+        <h3 class="product-name" [matTooltip]="product.name">
+          {{ product.name }}
+        </h3>
+        <p class="product-desc" [matTooltip]="product.desc">
+          {{ product.desc }}
+        </p>
+
+        @if (appService.isLoggedIn$ | async) {
+        <div class="admin-actions" (click)="$event.stopPropagation()">
+          <button mat-stroked-button class="edit-btn" (click)="edit(product)">
+            <mat-icon>edit</mat-icon>
+            Edit
+          </button>
+          <button mat-stroked-button class="delete-btn" (click)="delete(product)">
+            <mat-icon>delete</mat-icon>
+            Delete
+          </button>
+        </div>
+        } @else {
+        <div class="view-details-btn">
+          <span>View Details</span>
+          <mat-icon>arrow_forward</mat-icon>
+        </div>
+        }
+      </div>
+    </div>
     }
   </div>
-  } @else{
-  <h3>No products found. <br />Please <a routerLink="/contact">contact</a></h3>
-  <img src="assets/images/no_data_found.png" alt="No Data Found" class="logo" />
-
+  } @else {
+  <div class="empty-state">
+    <img src="assets/images/no_data_found.png" alt="No Data Found" class="empty-image" />
+    <h3 class="empty-title">No products found</h3>
+    <p class="empty-subtitle">
+      Please <a routerLink="/contact" class="contact-link">contact us</a> for
+      more information
+    </p>
+  </div>
   }
 </div>

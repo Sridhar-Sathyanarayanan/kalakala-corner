@@ -1,13 +1,15 @@
 import { Request, Response } from "express";
 import {
-  getProducts,
-  allProductsWithCategory,
   addProduct,
+  allProductsWithCategory,
   deleteProduct,
-  getProduct,
-  updateProduct,
   downloadCatalogue,
   fetchImageFromS3,
+  getCategories,
+  getProduct,
+  getProducts,
+  saveCategories,
+  updateProduct
 } from "../services/product.service";
 
 export const getAllProducts = async (req: Request, res: Response) => {
@@ -80,5 +82,19 @@ export const fetchS3Image = async (req: Request, res: Response) => {
     await fetchImageFromS3(url, res);
   } catch (err) {
     res.status(500).send({ message: "Failed to fetch image" });
+  }
+};
+
+export const getAllCategories = async (req: Request, res: Response) => {
+  const result = await getCategories();
+  res.status(200).send({ items: result });
+};
+
+export const saveAllCategories = async (req: Request, res: Response) => {
+  try {
+    const result = await saveCategories(req.body);
+    res.status(200).send({ items: result });
+  } catch {
+    res.status(500).send({ message: "Internal Server Error" });
   }
 };

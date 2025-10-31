@@ -135,16 +135,6 @@
   font-size: 0.9rem;
 }
 
-.copied-toast {
-  margin-top: 1rem;
-  background: rgba(16, 185, 129, 0.15);
-  color: #047857;
-  padding: 0.4rem 0.8rem;
-  border-radius: 999px;
-  display: inline-block;
-  font-weight: 600;
-}
-
 @media (min-width: 860px) {
   .card {
     grid-template-columns: 45% 55%;
