@@ -34,6 +34,7 @@
       <!-- Image Counter -->
       @if(data.images.length > 1) {
       <div class="image-counter">
+        <mat-icon>photo_library</mat-icon>
         {{ currentIndex + 1 }} / {{ data.images.length }}
       </div>
       }
@@ -77,21 +78,29 @@
 
             <!-- Current/Display Price -->
             <div class="current-price">
-              <div class="price-label">Price</div>
+              <div class="price-label">
+                <mat-icon>payments</mat-icon>
+                Price
+              </div>
               @if(priceRange.displayMinPrice === priceRange.displayMaxPrice) {
-              <span class="price-value">₹{{ priceRange.displayMinPrice }}</span>
-              } @else {
-              <span class="price-value">₹{{ priceRange.displayMinPrice }} - ₹{{ priceRange.displayMaxPrice }}</span>
+              @if(priceRange.displayMinPrice){<span class="price-value">₹{{ priceRange.displayMinPrice }}</span>
+              }@else {<span>Click 'Get Quote' to contact Admin to know the price</span>}} @else {
+              <span class="price-value">₹{{ priceRange.displayMinPrice }} - ₹{{
+                priceRange.displayMaxPrice
+                }}</span>
               }
             </div>
 
             <!-- Original Price (strikethrough) - Show only if different -->
             @if(shouldShowOriginalPrice()) {
             <div class="original-price">
+              <div class="price-label-small">Was:</div>
               @if(priceRange.originalMinPrice === priceRange.originalMaxPrice) {
               <span class="price-value-original">₹{{ priceRange.originalMinPrice }}</span>
               } @else {
-              <span class="price-value-original">₹{{ priceRange.originalMinPrice }} - ₹{{ priceRange.originalMaxPrice }}</span>
+              <span class="price-value-original">₹{{ priceRange.originalMinPrice }} - ₹{{
+                priceRange.originalMaxPrice
+                }}</span>
               }
             </div>
             }
@@ -124,7 +133,12 @@
           <table mat-table [dataSource]="data.variants" class="variants-table">
             <!-- Size Column -->
             <ng-container matColumnDef="size">
-              <th mat-header-cell *matHeaderCellDef>Size</th>
+              <th mat-header-cell *matHeaderCellDef>
+                <div class="header-with-icon">
+                  <mat-icon>straighten</mat-icon>
+                  <span>Size</span>
+                </div>
+              </th>
               <td mat-cell *matCellDef="let v">
                 <div class="size-cell">
                   <mat-icon class="size-icon">straighten</mat-icon>
@@ -135,7 +149,16 @@
 
             <!-- Original Price Column -->
             <ng-container matColumnDef="price">
-              <th mat-header-cell *matHeaderCellDef>Price</th>
+              <th mat-header-cell *matHeaderCellDef>
+                <div class="header-with-icon">
+                  <mat-icon>{{
+                    hasAnyOfferPrice ? "money_off" : "payments"
+                    }}</mat-icon>
+                  <span>{{
+                    hasAnyOfferPrice ? "Regular Price" : "Price"
+                    }}</span>
+                </div>
+              </th>
               <td mat-cell *matCellDef="let v">
                 <span class="price-cell" [class.crossed]="
                     v.discountedPrice && v.discountedPrice !== 'null'
@@ -147,13 +170,19 @@
 
             <!-- Discounted Price Column -->
             <ng-container matColumnDef="discountedPrice">
-              <th mat-header-cell *matHeaderCellDef>Offer Price</th>
+              <th mat-header-cell *matHeaderCellDef>
+                <div class="header-with-icon">
+                  <mat-icon>local_offer</mat-icon>
+                  <span>Offer Price</span>
+                </div>
+              </th>
               <td mat-cell *matCellDef="let v">
                 @if(v.discountedPrice && v.discountedPrice !== "null") {
                 <div class="offer-price-cell">
                   <span class="discounted-value">₹{{ v.discountedPrice }}</span>
                   @if(v.price && v.price !== "null") {
                   <span class="discount-percent">
+                    <mat-icon>arrow_downward</mat-icon>
                     {{ calculateDiscount(v.price, v.discountedPrice) }}% OFF
                   </span>
                   }
@@ -164,11 +193,8 @@
               </td>
             </ng-container>
 
-            <tr mat-header-row *matHeaderRowDef="['size', 'price', 'discountedPrice']"></tr>
-            <tr mat-row *matRowDef="
-                let row;
-                columns: ['size', 'price', 'discountedPrice']
-              " class="animate-fade-in"></tr>
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns" class="animate-fade-in"></tr>
           </table>
         </div>
       </div>

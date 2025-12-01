@@ -330,14 +330,12 @@
 .greeting-container {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   background: #fff;
   padding: 1rem 1.5rem;
   border-radius: 8px;
   margin: 1rem auto;
-  max-width: 90%;
-  flex-wrap: wrap;
-  gap: 1rem;
+  max-width: 15%;
 }
 
 .admin-info {
@@ -362,27 +360,13 @@
   color: #666;
 }
 
-.add-dropdown button[mat-raised-button] {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .greeting-container {
     flex-direction: column;
     align-items: flex-start;
     text-align: left;
-  }
-
-  .add-dropdown {
-    width: 100%;
-  }
-
-  .add-dropdown button {
-    width: 100%;
-    justify-content: center;
+    max-width: 50%;
   }
 }
 

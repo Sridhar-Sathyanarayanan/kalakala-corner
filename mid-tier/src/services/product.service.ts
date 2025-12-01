@@ -7,7 +7,6 @@ import {
 import {
   BatchWriteCommand,
   DeleteCommand,
-  DynamoDBDocumentClient,
   GetCommand,
   PutCommand,
   ScanCommand,
@@ -24,10 +23,9 @@ interface CategoryPayload {
   modifiedCategories: { path: string; newName: string }[];
   addedCategories: { name: string }[];
 }
-
+const ddbDocClient = createDDBDocClient();
 export async function getProducts() {
   try {
-    const ddbDocClient = createDDBDocClient();
     const params = { TableName: "product-catalogue" };
     const command = new ScanCommand(params);
     const data = await ddbDocClient.send(command);
@@ -40,10 +38,9 @@ export async function getProducts() {
 
 export async function allProductsWithCategory(category: string) {
   try {
-    const ddbDocClient = createDDBDocClient();
     const params = {
       TableName: "product-catalogue",
-      FilterExpression: "#cat = :categoryValue",
+      FilterExpression: "contains(#cat, :categoryValue)",
       ExpressionAttributeNames: {
         "#cat": "category",
       },
@@ -53,6 +50,7 @@ export async function allProductsWithCategory(category: string) {
     };
     const command = new ScanCommand(params);
     const data = await ddbDocClient.send(command);
+    console.log(11111111111111, data.Items)
     return data.Items;
   } catch (error) {
     logger.error("Unable to fetch data for category:", category);
@@ -62,7 +60,6 @@ export async function allProductsWithCategory(category: string) {
 
 export async function getProduct(id: string) {
   try {
-    const ddbDocClient = createDDBDocClient();
     const params = {
       TableName: "product-catalogue",
       Key: {
@@ -109,7 +106,7 @@ export async function addProduct(
       logger.error(`Unable to post to s3 bucket`, err);
     }
   }
-  const ddbDocClient = createDDBDocClient();
+
   const params = {
     TableName: "product-catalogue",
     Item: {
@@ -264,7 +261,6 @@ export async function downloadCatalogue(
   res: Response<any, Record<string, any>>
 ) {
   try {
-    const ddbDocClient = createDDBDocClient();
     const params = { TableName: "product-catalogue" };
     const command = new ScanCommand(params);
     const data = await ddbDocClient.send(command);
@@ -323,7 +319,6 @@ export async function fetchImageFromS3(url: string, res: Response) {
 
 export async function getCategories() {
   try {
-    const ddbDocClient = createDDBDocClient();
     const params = { TableName: "product-categories" };
     const command = new ScanCommand(params);
     const data = await ddbDocClient.send(command);
@@ -336,8 +331,6 @@ export async function getCategories() {
 
 export async function saveCategories(payload: CategoryPayload) {
   try {
-    const ddbDocClient = createDDBDocClient();
-
     // 1. DELETE categories and associated products
     for (const cat of payload.deletedCategories) {
       // Find all products with this category name
@@ -466,7 +459,6 @@ async function batchUpdateProducts(
     await Promise.all(
       batch.map((product) => {
         // Determine the key structure based on your product table schema
-        // Option 1: Single partition key
 
         return ddbDocClient.send(
           new UpdateCommand({

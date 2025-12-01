@@ -8,7 +8,6 @@ import { NgxSpinnerService } from "ngx-spinner";
 import { personalDetails, Product } from "../models/app.model";
 import { AppService } from "../services/app.service";
 import { ProductService } from "../services/product.service";
-import { phoneOrEmailValidator } from "../shared/custom-validator";
 import { MaterialStandaloneModules } from "../shared/material-standalone";
 import { MessageModalComponent } from "../shared/message/message-modal.component";
 
@@ -32,26 +31,24 @@ export class ContactComponent implements OnInit {
     private router: Router,
     private breakpointObserver: BreakpointObserver
   ) {
-    this.contactForm = this.fb.group(
-      {
-        name: [
-          "",
-          [
-            Validators.required,
-            Validators.minLength(2),
-            Validators.maxLength(30),
-          ],
+    this.contactForm = this.fb.group({
+      name: [
+        "",
+        [
+          Validators.required,
+          Validators.minLength(2),
+          Validators.maxLength(30),
         ],
-        phone: ["", [Validators.pattern(/^[0-9]{10}$/)]],
-        email: ["", [Validators.email]],
-        queryType: ["general", Validators.required],
-        product: [""],
-        query: ["", [Validators.required, Validators.minLength(10)]],
-      },
-      {
-        validators: [phoneOrEmailValidator],
-      }
-    );
+      ],
+      phone: [
+        "",
+        [Validators.required, Validators.pattern(/^\+?[0-9\s\-().]{7,20}$/)],
+      ],
+      email: ["", [Validators.email]],
+      queryType: ["general", Validators.required],
+      product: [""],
+      query: ["", [Validators.required, Validators.minLength(10)]],
+    });
   }
 
   ngOnInit(): void {
@@ -78,7 +75,7 @@ export class ContactComponent implements OnInit {
       return;
     }
     this.spinner.show();
-    this.appService.sendSMS(this.contactForm.value).subscribe({
+    this.appService.sendEmail(this.contactForm.value).subscribe({
       next: () => {
         this.spinner.hide();
         const isMobile = this.breakpointObserver.isMatched(Breakpoints.Handset);

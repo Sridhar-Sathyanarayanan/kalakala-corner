@@ -235,10 +235,19 @@
   }
 
   .image-counter {
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
     font-size: 0.875rem;
     color: #666;
     font-weight: 500;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
   }
 }
 
@@ -420,10 +429,19 @@
 
   .current-price {
     .price-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
       font-size: 0.875rem;
       color: #666;
       font-weight: 500;
       margin-bottom: 0.25rem;
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
     }
 
     .price-value {
@@ -437,6 +455,22 @@
   }
 
   .original-price {
+    .price-label-small {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.75rem;
+      color: #999;
+      font-weight: 500;
+      margin-bottom: 0.15rem;
+
+      mat-icon {
+        font-size: 14px;
+        width: 14px;
+        height: 14px;
+      }
+    }
+
     .price-value-original {
       font-size: 1.1rem;
       color: #999;
@@ -520,6 +554,18 @@ h3 {
       font-size: 0.875rem;
       padding: 1rem;
       text-align: left;
+
+      .header-with-icon {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+        }
+      }
     }
 
     td {
@@ -591,8 +637,16 @@ h3 {
         padding: 0.15rem 0.5rem;
         background: #e8f8f5;
         border-radius: 10px;
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
         align-self: flex-start;
+
+        mat-icon {
+          font-size: 14px;
+          width: 14px;
+          height: 14px;
+        }
       }
     }
 
@@ -743,6 +797,16 @@ h3 {
         }
       }
     }
+
+    .image-counter {
+      font-size: 0.8rem;
+
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+      }
+    }
   }
 
   .details-section {
@@ -761,8 +825,20 @@ h3 {
   }
 
   .price-card {
-    .current-price .price-value {
-      font-size: 1.5rem;
+    .current-price {
+      .price-label {
+        font-size: 0.8rem;
+
+        mat-icon {
+          font-size: 16px;
+          width: 16px;
+          height: 16px;
+        }
+      }
+
+      .price-value {
+        font-size: 1.5rem;
+      }
     }
 
     .discount-badge-top {
@@ -773,6 +849,22 @@ h3 {
         font-size: 16px;
         width: 16px;
         height: 16px;
+      }
+    }
+
+    .original-price {
+      .price-label-small {
+        font-size: 0.7rem;
+
+        mat-icon {
+          font-size: 12px;
+          width: 12px;
+          height: 12px;
+        }
+      }
+
+      .price-value-original {
+        font-size: 1rem;
       }
     }
   }
@@ -797,6 +889,20 @@ h3 {
         padding: 0.75rem 0.5rem;
       }
 
+      th .header-with-icon {
+        mat-icon {
+          font-size: 16px;
+          width: 16px;
+          height: 16px;
+        }
+      }
+
+      .size-cell .size-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+      }
+
       .offer-price-cell {
         .discounted-value {
           font-size: 1rem;
@@ -804,8 +910,40 @@ h3 {
 
         .discount-percent {
           font-size: 0.7rem;
+
+          mat-icon {
+            font-size: 12px;
+            width: 12px;
+            height: 12px;
+          }
         }
       }
     }
+  }
+}
+
+// iOS/Mac specific optimizations
+@supports (-webkit-touch-callout: none) {
+  .product-details-container {
+    // iOS Safari specific fixes
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .details-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+// Android specific optimizations
+@media screen and (max-width: 600px) {
+  .carousel-container .image-wrapper {
+    // Better touch targets for Android
+    touch-action: pan-y pinch-zoom;
+  }
+
+  .nav-btn {
+    // Larger touch targets
+    min-width: 44px;
+    min-height: 44px;
   }
 }

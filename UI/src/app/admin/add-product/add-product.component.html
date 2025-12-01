@@ -3,7 +3,7 @@
   <div class="content">
     <h1>{{ id ? "Edit" : "Add New" }} Product</h1>
     <mat-divider></mat-divider>
-
+    @if(productForm){
     <form [formGroup]="productForm" (ngSubmit)="submit()">
       <mat-form-field appearance="outline" class="full">
         <mat-label>Product Name</mat-label>
@@ -16,9 +16,8 @@
         <mat-hint align="end">{{ productForm.get("name")?.value?.length || 0 }}/120</mat-hint>
       </mat-form-field>
       <mat-form-field appearance="outline" class="full">
-        <mat-label>Category</mat-label>
-        <mat-select formControlName="category">
-          <mat-option value="" disabled>Select a category</mat-option>
+        <mat-label>Categories</mat-label>
+        <mat-select formControlName="category" multiple>
           <mat-option *ngFor="let cat of categories" [value]="cat.path">
             {{ cat.name }}
           </mat-option>
@@ -26,7 +25,7 @@
 
         @if (productForm.get('category')?.hasError('required') &&
         productForm.get('category')?.touched) {
-        <mat-error>Category is required</mat-error>
+        <mat-error>At least one category is required</mat-error>
         }
       </mat-form-field>
 
@@ -140,5 +139,6 @@
         </button>
       </div>
     </form>
+  }
   </div>
 </div>

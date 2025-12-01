@@ -65,6 +65,51 @@
     </div>
   </section>
   
+  <!-- FEATURED PRODUCT -->
+  @if (featuredProduct && featuredProductImageUrl) {
+  <section class="featured-product">
+    <h2>
+      <span class="highlight">Featured </span>
+      <span class="accent">Product</span>
+    </h2>
+
+    <div class="featured-content">
+      <div class="featured-image">
+        <img [src]="featuredProductImageUrl" [alt]="featuredProduct.name" />
+        <div class="image-badge">
+          <mat-icon>star</mat-icon>
+          <span>Featured</span>
+        </div>
+      </div>
+
+      <div class="featured-details">
+        <h3>{{ featuredProduct.name }}</h3>
+        <p class="description">{{ featuredProduct.desc }}</p>
+        
+        @if (featuredProduct.variants && featuredProduct.variants.length > 0) {
+        <div class="price-info">
+          <span class="price">₹{{ featuredProduct.variants[0].price }}</span>
+          @if (featuredProduct.variants[0].discountedPrice && featuredProduct.variants[0].discountedPrice < featuredProduct.variants[0].price) {
+            <span class="discounted-price">₹{{ featuredProduct.variants[0].discountedPrice }}</span>
+          }
+        </div>
+        }
+
+        <div class="featured-actions">
+          <button mat-raised-button color="primary" [routerLink]="['/catalogue', featuredProduct.category || 'all']">
+            <mat-icon>shopping_cart</mat-icon>
+            View in Catalogue
+          </button>
+          <button mat-raised-button routerLink="/contact">
+            <mat-icon>contact_support</mat-icon>
+            Enquire Now
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+  }
+
   <!-- ABOUT (image left / text right on desktop) -->
   <section class="about">
     <div class="about-image">
@@ -127,6 +172,83 @@
       }
     </div>
   </section>
+
+  <!-- TESTIMONIALS CAROUSEL -->
+  @if (testimonials.length > 0) {
+  <section class="testimonials">
+    <h2>
+      <span class="highlight">What Our </span>
+      <span class="accent">Customers </span>
+      <span class="eco">Say</span>
+    </h2>
+
+    <p class="intro">
+      Hear from our happy customers about their experience with our handcrafted products.
+    </p>
+
+    <div class="testimonials-carousel">
+      <div class="carousel-viewport">
+        <div class="testimonial-strip" 
+             [style.transform]="'translateX(-' + currentTestimonialIndex() * 100 + '%)'">
+          @for (testimonial of testimonials; track testimonial.id; let i = $index) {
+          <div class="testimonial-card" [class.active]="currentTestimonialIndex() === i">
+            @if (testimonialProductImages.get(testimonial.id)) {
+            <div class="testimonial-image">
+              <img [src]="testimonialProductImages.get(testimonial.id)" 
+                   [alt]="testimonial.product" />
+            </div>
+            }
+            
+            <div class="testimonial-text-area">
+              <div class="quote-icon">
+                <mat-icon>format_quote</mat-icon>
+              </div>
+              
+              <div class="testimonial-content">
+                @if (testimonial.rating > 0) {
+                <div class="stars">
+                  @for (filled of getStarArray(testimonial.rating); track $index) {
+                    <mat-icon [class.filled]="filled">
+                      {{ filled ? 'star' : 'star_border' }}
+                    </mat-icon>
+                  }
+                </div>
+                }
+                
+                <p class="comment">{{ testimonial.comments }}</p>
+                
+                <div class="product-info">
+                  <mat-icon>shopping_bag</mat-icon>
+                  <span>{{ testimonial.product }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+
+      <!-- Carousel Controls -->
+      <div class="testimonial-controls">
+        <button mat-mini-fab (click)="prevTestimonial()" aria-label="previous testimonial">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <button mat-mini-fab (click)="nextTestimonial()" aria-label="next testimonial">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+
+      <!-- Dots Indicator -->
+      <div class="testimonial-dots">
+        @for (testimonial of testimonials; track testimonial.id; let i = $index) {
+          <button mat-icon-button (click)="currentTestimonialIndex.set(i)">
+            <span class="dot" [class.active]="currentTestimonialIndex() === i"></span>
+          </button>
+        }
+      </div>
+    </div>
+  </section>
+  }
 
   <!-- CATALOG: grid of cards (staggered) -->
   <section class="collections">

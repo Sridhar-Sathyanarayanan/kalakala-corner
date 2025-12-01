@@ -1,10 +1,10 @@
 import { Request, Response, Router } from "express";
-import { sendSMS } from "../services/sms.service";
+import { sendEmail } from "../services/mail.service";
 import logger from "../services/logger";
 
 const router = Router();
 
-router.post("/sendSMS", async (req: Request, res: Response) => {
+router.post("/sendEmail", async (req: Request, res: Response) => {
   try {
     const { name, email, phone, query } = req.body;
 
@@ -12,7 +12,7 @@ router.post("/sendSMS", async (req: Request, res: Response) => {
     if (!name || !(email || phone) || !query) {
       return res.status(400).json({ message: "All fields are required." });
     }
-    await sendSMS(req.body);
+    await sendEmail(req.body);
     res.status(200).send({ message: "SMS sent successfully." });
   } catch (error) {
     logger.error("Unable to fetch all data");

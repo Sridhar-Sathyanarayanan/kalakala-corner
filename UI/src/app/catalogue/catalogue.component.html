@@ -21,8 +21,16 @@
   </div>
 
   @if(products.length){
+  <!-- Top Paginator -->
+  <div class="paginator-wrapper top-paginator">
+    <mat-paginator [length]="products.length" [pageSize]="pageSize" [pageIndex]="currentPage"
+      [pageSizeOptions]="[3, 6, 9, 12, 15]" [showFirstLastButtons]="true" (page)="onPageChange($event)"
+      class="catalogue-paginator">
+    </mat-paginator>
+  </div>
+
   <div class="products-grid">
-    @for (product of products; track product) {
+    @for (product of paginatedProducts; track product.id) {
     <div class="product-card" [class.has-discount]="product.hasDiscount" (click)="openProductModal(product)">
       @if(product.hasDiscount) {
       <div class="discount-ribbon">
@@ -31,7 +39,8 @@
       }
 
       <div class="card-image-wrapper">
-        <img [src]="product.images[0]" [alt]="product.name" class="product-image" loading="lazy" />
+        <img [src]="product.images[0]" [alt]="product.name" class="product-image" loading="lazy"
+          (error)="$event.target.src = 'assets/images/placeholder.png'" />
 
         @if(product.displayMinPrice !== undefined && product.displayMaxPrice !==
         undefined) {
@@ -51,6 +60,7 @@
               }}</span>
             }
           </div>
+
           @if(product.hasDiscount && (product.originalMinPrice !==
           product.displayMinPrice || product.originalMaxPrice !==
           product.displayMaxPrice)) {
@@ -80,11 +90,11 @@
 
         @if (appService.isLoggedIn$ | async) {
         <div class="admin-actions" (click)="$event.stopPropagation()">
-          <button mat-stroked-button class="edit-btn" (click)="edit(product)">
+          <button mat-stroked-button class="edit-btn" (click)="edit(product)" aria-label="Edit product">
             <mat-icon>edit</mat-icon>
             Edit
           </button>
-          <button mat-stroked-button class="delete-btn" (click)="delete(product)">
+          <button mat-stroked-button class="delete-btn" (click)="delete(product)" aria-label="Delete product">
             <mat-icon>delete</mat-icon>
             Delete
           </button>
@@ -99,7 +109,15 @@
     </div>
     }
   </div>
-  } @else {
+
+  <!-- Bottom Paginator -->
+  <div class="paginator-wrapper bottom-paginator">
+    <mat-paginator [length]="products.length" [pageSize]="pageSize" [pageIndex]="currentPage"
+      [pageSizeOptions]="[3, 6, 9, 12, 15]" [showFirstLastButtons]="true" (page)="onPageChange($event)"
+      class="catalogue-paginator">
+    </mat-paginator>
+  </div>
+  } @else if(!(products.length || loading)) {
   <div class="empty-state">
     <img src="assets/images/no_data_found.png" alt="No Data Found" class="empty-image" />
     <h3 class="empty-title">No products found</h3>

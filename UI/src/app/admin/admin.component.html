@@ -1,0 +1,377 @@
+<div class="admin-dashboard-container">
+  <div class="content">
+    <!-- Page Header Section -->
+    <div class="page-header">
+      <h1>Admin Dashboard</h1>
+      <p class="subtitle">
+        Manage products, categories, and customer enquiries
+      </p>
+
+      <mat-divider></mat-divider>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons-section">
+        <button mat-raised-button class="action-button add-product-btn" routerLink="/add-product">
+          <div class="button-icon">
+            <mat-icon>add_shopping_cart</mat-icon>
+          </div>
+          <div class="button-content">
+            <div class="button-title">Add Product</div>
+            <div class="button-description">Create new product listings</div>
+          </div>
+        </button>
+
+        <button mat-raised-button class="action-button manage-category-btn" routerLink="/modify-category">
+          <div class="button-icon">
+            <mat-icon>category</mat-icon>
+          </div>
+          <div class="button-content">
+            <div class="button-title">Manage Categories</div>
+            <div class="button-description">Add or edit product categories</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Customer enquiries Section -->
+    <div class="enquiries-section">
+      <div class="section-header">
+        <div class="section-title">
+          <mat-icon>contact_support</mat-icon>
+          <h2>Customer Enquiries</h2>
+        </div>
+        @if (enquiries.length > 0) {
+        <div class="enquiry-count">{{ enquiries.length }} Total Enquiries</div>
+        }
+      </div>
+
+      <!-- Table Content -->
+      <div class="table-wrapper">
+        <!-- Desktop Table View -->
+        @if (enquiries.length > 0) {
+        <table mat-table [dataSource]="enquiries">
+          <!-- Enquiry Date Column -->
+          <ng-container matColumnDef="date">
+            <th mat-header-cell *matHeaderCellDef>Date</th>
+            <td mat-cell *matCellDef="let enquiry" class="enquiry-date">
+              {{ enquiry.date | date : "MMM dd, yyyy" }}<br />
+              <span style="font-size: 0.85rem; color: #9e9e9e">
+                {{ enquiry.date | date : "hh:mm a" }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Customer Name Column -->
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Customer Name</th>
+            <td mat-cell *matCellDef="let enquiry" class="customer-name">
+              {{ enquiry.name }}
+            </td>
+          </ng-container>
+
+          <!-- Phone Column -->
+          <ng-container matColumnDef="phone">
+            <th mat-header-cell *matHeaderCellDef>Phone</th>
+            <td mat-cell *matCellDef="let enquiry" class="contact-info">
+              <div class="phone">
+                <span>{{ enquiry.phone }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Email Column -->
+          <ng-container matColumnDef="email">
+            <th mat-header-cell *matHeaderCellDef>Email</th>
+            <td mat-cell *matCellDef="let enquiry" class="contact-info">
+              @if (enquiry.email) {
+              <div class="email">
+                <span>{{ enquiry.email }}</span>
+              </div>
+              } @else {
+              <div>--</div>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Product Column -->
+          <ng-container matColumnDef="product">
+            <th mat-header-cell *matHeaderCellDef>Product</th>
+            <td mat-cell *matCellDef="let enquiry" class="product-name">
+              <span class="product-badge">{{ enquiry.product }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Query Column -->
+          <ng-container matColumnDef="query">
+            <th mat-header-cell *matHeaderCellDef>Query</th>
+            <td mat-cell *matCellDef="let enquiry" class="query-text">
+              <div class="query-content" [class.expanded]="enquiry.expanded">
+                {{ enquiry.query }}
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+        }
+
+        <!-- Mobile Card View -->
+        @if (enquiries.length > 0) {
+        <div class="mobile-enquiries-list">
+          @for (enquiry of enquiries; track enquiry) {
+          <div class="enquiry-card">
+            <div class="card-header">
+              <div class="customer-info">
+                <div class="customer-name">{{ enquiry.name }}</div>
+                <div class="enquiry-date">
+                  {{ enquiry.date | date : "MMM dd, yyyy - hh:mm a" }}
+                </div>
+              </div>
+            </div>
+
+            <div class="card-content">
+              <!-- Phone -->
+              <div class="info-row">
+                <mat-icon>phone</mat-icon>
+                <div class="info-content">
+                  <div class="label">Phone</div>
+                  <div class="value">{{ enquiry.phone }}</div>
+                </div>
+              </div>
+
+              <!-- Email -->
+              <div class="info-row">
+                <mat-icon>email</mat-icon>
+                <div class="info-content">
+                  <div class="label">Email</div>
+                  @if (enquiry.email) {
+                  <div class="value">{{ enquiry.email }}</div>
+                  } @else {
+                  <div class="value">--</div>
+                  }
+                </div>
+              </div>
+
+              <!-- Product -->
+              <div class="info-row">
+                <mat-icon>shopping_bag</mat-icon>
+                <div class="info-content">
+                  <div class="label">Product</div>
+                  <div class="value">
+                    <span class="product-badge">{{ enquiry.product }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Query -->
+              <div class="info-row">
+                <mat-icon>help_outline</mat-icon>
+                <div class="info-content">
+                  <div class="label">Query</div>
+                  <div class="value">{{ enquiry.query }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+        }
+
+        <!-- Empty State -->
+        @if (enquiries.length === 0) {
+        <div class="no-enquiries">
+          <mat-icon>inbox</mat-icon>
+          <h3>No Enquiries Yet</h3>
+          <p>Customer enquiries will appear here when they submit queries</p>
+        </div>
+        }
+      </div>
+    </div>
+
+    <!-- Testimonials Section -->
+    <div class="testimonials-section">
+      <div class="section-header">
+        <div class="section-title">
+          <mat-icon>star</mat-icon>
+          <h2>Manage Testimonials</h2>
+        </div>
+        @if (testimonials.length > 0) {
+        <div class="testimonial-count">{{ testimonials.length }} Total Testimonials</div>
+        }
+      </div>
+
+      <!-- Add/Edit Testimonial Form -->
+      <div class="testimonial-form-container">
+        <h3>{{ isEditMode ? 'Edit' : 'Add' }} Testimonial</h3>
+        <form class="testimonial-form">
+          <mat-form-field appearance="outline">
+            <mat-label>Category</mat-label>
+            <mat-select 
+              [(ngModel)]="testimonialForm.category" 
+              name="category" 
+              required
+              (selectionChange)="onCategoryChange()">
+              @for (category of categories; track category.path) {
+                <mat-option [value]="category.path">{{ category.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Product Name</mat-label>
+            <mat-select 
+              [(ngModel)]="testimonialForm.product" 
+              name="product" 
+              required
+              [disabled]="!testimonialForm.category"
+              (selectionChange)="onProductChange($event)">
+              @for (product of filteredProducts; track product.id) {
+                <mat-option [value]="product.name" [attr.data-product-id]="product.id">{{ product.name }}</mat-option>
+              }
+            </mat-select>
+            @if (!testimonialForm.category) {
+              <mat-hint>Please select a category first</mat-hint>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Comments</mat-label>
+            <textarea 
+              matInput 
+              [(ngModel)]="testimonialForm.comments" 
+              name="comments"
+              rows="3"
+              required
+              placeholder="Enter customer testimonial..."></textarea>
+          </mat-form-field>
+
+          <div class="rating-field">
+            <label>Rating (optional)</label>
+            <div class="star-rating">
+              @for (star of [1,2,3,4,5]; track star) {
+                <button 
+                  type="button"
+                  mat-icon-button 
+                  (click)="setRating(star)"
+                  [class.selected]="star <= testimonialForm.rating">
+                  <mat-icon>{{ star <= testimonialForm.rating ? 'star' : 'star_border' }}</mat-icon>
+                </button>
+              }
+              @if (testimonialForm.rating > 0) {
+                <span class="rating-value">{{ testimonialForm.rating }}/5</span>
+                <button 
+                  type="button"
+                  mat-icon-button 
+                  (click)="clearRating()"
+                  matTooltip="Clear rating"
+                  class="clear-rating">
+                  <mat-icon>close</mat-icon>
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button mat-raised-button color="primary" type="button" (click)="addOrUpdateTestimonial()">
+              <mat-icon>{{ isEditMode ? 'save' : 'add' }}</mat-icon>
+              {{ isEditMode ? 'Update' : 'Add' }} Testimonial
+            </button>
+            @if (isEditMode) {
+              <button mat-raised-button type="button" (click)="cancelEdit()">
+                <mat-icon>cancel</mat-icon>
+                Cancel
+              </button>
+            }
+          </div>
+        </form>
+      </div>
+
+      <!-- Testimonials Table -->
+      <div class="table-wrapper">
+        @if (testimonials.length > 0) {
+        <table mat-table [dataSource]="testimonials" class="testimonials-table">
+          <!-- ID Column -->
+          <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef>ID</th>
+            <td mat-cell *matCellDef="let testimonial">{{ testimonial.id }}</td>
+          </ng-container>
+
+          <!-- Category Column -->
+          <ng-container matColumnDef="category">
+            <th mat-header-cell *matHeaderCellDef>Category</th>
+            <td mat-cell *matCellDef="let testimonial">
+              <span class="category-badge">{{ testimonial.category }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Product Column -->
+          <ng-container matColumnDef="product">
+            <th mat-header-cell *matHeaderCellDef>Product</th>
+            <td mat-cell *matCellDef="let testimonial">
+              <span class="product-badge">{{ testimonial.product }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Comments Column -->
+          <ng-container matColumnDef="comments">
+            <th mat-header-cell *matHeaderCellDef>Comments</th>
+            <td mat-cell *matCellDef="let testimonial" class="comments-cell">
+              {{ testimonial.comments }}
+            </td>
+          </ng-container>
+
+          <!-- Rating Column -->
+          <ng-container matColumnDef="rating">
+            <th mat-header-cell *matHeaderCellDef>Rating</th>
+            <td mat-cell *matCellDef="let testimonial" class="rating-cell">
+              @if (testimonial.rating > 0) {
+              <div class="rating-display">
+                @for (star of [1,2,3,4,5]; track star) {
+                  <mat-icon [class.filled]="star <= testimonial.rating">
+                    {{ star <= testimonial.rating ? 'star' : 'star_border' }}
+                  </mat-icon>
+                }
+                <span class="rating-number">({{ testimonial.rating }})</span>
+              </div>
+              } @else {
+              <span class="no-rating">No rating</span>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Updated At Column -->
+          <ng-container matColumnDef="updatedAt">
+            <th mat-header-cell *matHeaderCellDef>Updated</th>
+            <td mat-cell *matCellDef="let testimonial">
+              {{ testimonial.updatedAt | date : "MMM dd, yyyy" }}
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let testimonial" class="actions-cell">
+              <button mat-icon-button color="primary" (click)="editTestimonial(testimonial)" matTooltip="Edit">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="deleteTestimonial(testimonial.id)" matTooltip="Delete">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="testimonialColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: testimonialColumns"></tr>
+        </table>
+        } @else {
+        <div class="no-testimonials">
+          <mat-icon>stars</mat-icon>
+          <h3>No Testimonials Yet</h3>
+          <p>Add your first testimonial using the form above</p>
+        </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

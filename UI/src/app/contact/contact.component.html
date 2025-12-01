@@ -2,23 +2,31 @@
   <!-- LEFT: Contact Info Cards -->
   <div class="contact-info">
     @for (info of personalDetails; track info.title) {
-      <mat-card appearance="outlined">
-        <mat-card-header>
-          <mat-card-title-group>
-            <mat-card-title>{{ info.title }}</mat-card-title>
-            @if (info.href) {
-              <mat-card-subtitle>
-                <a class="value" [href]="info.href" target="{{ info.title === 'Instagram' ? '_blank' : '_self' }}">
-                  {{ info.value }}
-                </a>
-              </mat-card-subtitle>
-            } @else {
-              <mat-card-subtitle class="value">{{ info.value }}</mat-card-subtitle>
-            }
-            <img mat-card-sm-image [src]="'assets/images/' + info.icon" alt="{{ info.title }}" />
-          </mat-card-title-group>
-        </mat-card-header>
-      </mat-card>
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title-group>
+          <mat-card-title>{{ info.title }}</mat-card-title>
+          @if (info.href) {
+          <mat-card-subtitle>
+            <a
+              class="value"
+              [href]="info.href"
+              target="{{ info.title === 'Instagram' ? '_blank' : '_self' }}"
+            >
+              {{ info.value }}
+            </a>
+          </mat-card-subtitle>
+          } @else {
+          <mat-card-subtitle class="value">{{ info.value }}</mat-card-subtitle>
+          }
+          <img
+            mat-card-sm-image
+            [src]="'assets/images/' + info.icon"
+            alt="{{ info.title }}"
+          />
+        </mat-card-title-group>
+      </mat-card-header>
+    </mat-card>
     }
   </div>
 
@@ -40,18 +48,23 @@
       </div>
 
       <p class="subtitle">
-        We’d love to hear from you. Fill out the form and our team will reach out within 24 hours.
+        We’d love to hear from you. Fill out the form and our team will reach
+        out within 24 hours.
       </p>
 
       <!-- Contact Form -->
-      <form [formGroup]="contactForm" (ngSubmit)="onSubmit()" class="contact-form">
+      <form
+        [formGroup]="contactForm"
+        (ngSubmit)="onSubmit()"
+        class="contact-form"
+      >
         <!-- Name -->
         <mat-form-field appearance="outline">
           <mat-label>Name</mat-label>
           <input matInput formControlName="name" placeholder="Your name" />
           <mat-hint align="start">Min 2, Max 30 characters</mat-hint>
           @if (contactForm.get('name')?.hasError('required')) {
-            <mat-error>Name is required</mat-error>
+          <mat-error>Name is required</mat-error>
           }
         </mat-form-field>
 
@@ -62,12 +75,17 @@
             <input
               matInput
               formControlName="phone"
-              placeholder="10-digit phone number"
-              maxlength="10"
+              type="tel"
+              placeholder="Contact number"
+              maxlength="20"
+              autocomplete="tel"
             />
-            <mat-hint align="start">10 digits only</mat-hint>
+            <mat-hint align="start"
+              >Examples: 9876543210, +1 555 123 4567, +44-7911-123456, +91 (987)
+              654-3210</mat-hint
+            >
             @if (contactForm.get('phone')?.hasError('pattern')) {
-              <mat-error>Enter valid 10-digit number</mat-error>
+            <mat-error>Enter valid number</mat-error>
             }
           </mat-form-field>
         </div>
@@ -75,38 +93,45 @@
         <!-- Email -->
         <mat-form-field appearance="outline">
           <mat-label>Email</mat-label>
-          <input matInput formControlName="email" placeholder="your@email.com" />
+          <input
+            matInput
+            formControlName="email"
+            placeholder="your@email.com"
+          />
           <mat-hint align="start">Example: sample@gmail.com</mat-hint>
           @if (contactForm.get('email')?.hasError('email')) {
-            <mat-error>Enter valid email address</mat-error>
+          <mat-error>Enter valid email address</mat-error>
           }
         </mat-form-field>
 
         <!-- Shared validation for phone/email -->
-        @if (contactForm.hasError('phoneOrEmailRequired') && (contactForm.dirty || contactForm.touched)) {
-          <mat-error>Phone number or Email is required</mat-error>
+        @if (contactForm.hasError('phoneOrEmailRequired') && (contactForm.dirty
+        || contactForm.touched)) {
+        <mat-error>Phone number or Email is required</mat-error>
         }
 
         <!-- Query Type -->
         <label class="radio-label">Query Type</label>
         <mat-radio-group formControlName="queryType" class="radio-group">
           <mat-radio-button value="general">General Query</mat-radio-button>
-          <mat-radio-button value="product">Product Specific Query</mat-radio-button>
+          <mat-radio-button value="product"
+            >Product Specific Query</mat-radio-button
+          >
         </mat-radio-group>
 
         <!-- Product dropdown -->
         @if (contactForm.get('queryType')?.value === 'product') {
-          <mat-form-field appearance="outline">
-            <mat-label>Product</mat-label>
-            <mat-select formControlName="product">
-              @for (p of productsList; track p) {
-                <mat-option [value]="p">{{ p }}</mat-option>
-              }
-            </mat-select>
-            @if (contactForm.get('product')?.hasError('required')) {
-              <mat-error>Product selection is required</mat-error>
+        <mat-form-field appearance="outline">
+          <mat-label>Product</mat-label>
+          <mat-select formControlName="product">
+            @for (p of productsList; track p) {
+            <mat-option [value]="p">{{ p }}</mat-option>
             }
-          </mat-form-field>
+          </mat-select>
+          @if (contactForm.get('product')?.hasError('required')) {
+          <mat-error>Product selection is required</mat-error>
+          }
+        </mat-form-field>
         }
 
         <!-- Message -->
@@ -120,13 +145,17 @@
           ></textarea>
           <mat-hint align="start">Minimum 10 characters required</mat-hint>
           @if (contactForm.get('query')?.hasError('required')) {
-            <mat-error>Message is required (Minimum 10 characters)</mat-error>
+          <mat-error>Message is required (Minimum 10 characters)</mat-error>
           }
         </mat-form-field>
 
         <!-- Submit -->
         <div class="cta-row">
-          <button mat-raised-button color="primary" [disabled]="contactForm.invalid">
+          <button
+            mat-raised-button
+            color="primary"
+            [disabled]="contactForm.invalid"
+          >
             <mat-icon>send</mat-icon>
             <span>Send Message</span>
           </button>

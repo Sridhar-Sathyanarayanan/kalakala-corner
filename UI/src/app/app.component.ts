@@ -74,6 +74,6 @@ export class AppComponent implements OnInit {
   }
   navigateTo(route: string) {
     this.router.navigateByUrl(route);
-    this.mobileMenuOpen = false; // optional: close mobile menu after navigation
+    this.mobileMenuOpen = false;
   }
 }

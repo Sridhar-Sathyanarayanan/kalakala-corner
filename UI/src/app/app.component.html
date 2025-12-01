@@ -2,13 +2,21 @@
   <!-- Left: Logo / Brand -->
   <div class="brand-container">
     <a routerLink="/" class="brand">
-      <img src="assets/images/logo.jpeg" alt="Kalakala Corner Logo" class="logo" />
+      <img
+        src="assets/images/logo.jpeg"
+        alt="Kalakala Corner Logo"
+        class="logo"
+      />
       <h3>Kalakala Corner</h3>
     </a>
   </div>
 
   <!-- Hamburger for mobile -->
-  <button class="hamburger" (click)="toggleMobileMenu()" aria-label="Toggle menu">
+  <button
+    class="hamburger"
+    (click)="toggleMobileMenu()"
+    aria-label="Toggle menu"
+  >
     <mat-icon class="menu">menu</mat-icon>
   </button>
 
@@ -25,7 +33,7 @@
         <mat-menu #categoryMenu="matMenu" class="category-menu">
           @for (item of menuItems; track item.path) {
           <button mat-menu-item (click)="navigateTo('/catalogue/' + item.path)">
-            {{item.icon}} {{ item.name }}
+            {{ item.icon }} {{ item.name }}
           </button>
           <mat-divider></mat-divider>
           }
@@ -36,6 +44,7 @@
       <li (click)="navigateTo('/contact')">Contact</li>
 
       @if (admin) {
+      <li (click)="navigateTo('/admin')">Admin</li>
       <li (click)="logout($event)">Logout</li>
       }
     </ul>
@@ -51,23 +60,6 @@
         <span class="greeting-text">Hi, Admin</span>
         <small class="role-text">Welcome back!</small>
       </div>
-    </div>
-
-    <!-- Actions dropdown -->
-    <div class="add-dropdown">
-      <button mat-raised-button color="accent" [matMenuTriggerFor]="addMenu">
-        Actions <mat-icon>arrow_drop_down</mat-icon>
-      </button>
-      <mat-menu #addMenu="matMenu">
-        <button mat-menu-item (click)="navigateTo('/add-product')">
-          <mat-icon>note_add</mat-icon>
-          Add Product
-        </button>
-        <button mat-menu-item (click)="navigateTo('/modify-category')">
-          <mat-icon>category</mat-icon>
-          Add/Edit Category
-        </button>
-      </mat-menu>
     </div>
   </div>
   }

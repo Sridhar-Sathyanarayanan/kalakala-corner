@@ -43,4 +43,8 @@ export class AppService {
   sendSMS(params) {
     return this.http.post(`${environment.apiURL}/sendSMS`, params);
   }
+
+  sendEmail(params) {
+    return this.http.post(`${environment.apiURL}/sendEmail`, params);
+  }
 }

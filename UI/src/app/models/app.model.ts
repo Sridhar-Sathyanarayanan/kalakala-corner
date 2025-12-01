@@ -24,6 +24,29 @@ export interface Category {
   items: CategoryPayload[];
 }
 
+export interface Customerenquiry {
+  date: Date;
+  name: string;
+  phone: string;
+  email: string;
+  product: string;
+  query: string;
+}
+
+export interface Testimonial {
+  id: number;
+  category: string;
+  product: string;
+  "product-id": string;
+  comments: string;
+  rating: number;
+  updatedAt: string;
+}
+
+export interface TestimonialResponse {
+  items: Testimonial[];
+}
+
 export const personalDetails = [
   {
     title: "Email",
@@ -58,3 +81,12 @@ export const emojis = [
   "💝",
   "💛",
 ];
+
+export interface ProductWithPricing extends ProductPayload {
+  displayMinPrice?: number;
+  displayMaxPrice?: number;
+  originalMinPrice?: number;
+  originalMaxPrice?: number;
+  maxDiscountPercent?: number;
+  hasDiscount?: boolean;
+}

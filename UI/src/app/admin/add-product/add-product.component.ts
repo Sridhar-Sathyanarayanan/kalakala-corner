@@ -55,9 +55,11 @@ export class AddProductComponent implements OnInit {
 
   /** Load product in edit mode */
   private loadProduct(id: string) {
+    this.spinner.show();
     this.productService
       .getAProduct(id)
       .subscribe((res: { items: ProductPayload }) => {
+        this.spinner.hide();
         this.createForm(res.items);
         if (res.items.images?.length) this.loadExistingImages(res.items.images);
       });
@@ -91,7 +93,7 @@ export class AddProductComponent implements OnInit {
         data?.desc || "",
         [Validators.required, Validators.maxLength(500)],
       ],
-      category: [data?.category || "", Validators.required],
+      category: [data?.category || [], Validators.required],
       variants: this.fb.array(variantsArray),
       notes: this.fb.array(notesArray),
     });
@@ -211,7 +213,9 @@ export class AddProductComponent implements OnInit {
       formData.append(`variants[${i}][price]`, v.price);
       formData.append(`variants[${i}][discountedPrice]`, v.discountedPrice);
     });
-    formData.append("category", this.productForm.value.category);
+    this.productForm.value.category.forEach((cat: string, i: number) => {
+      formData.append(`category[${i}]`, cat);
+    });
     // Append notes as array of strings
     this.productForm.value.notes.forEach((v, i) => {
       formData.append(`notes[${i}]`, v);

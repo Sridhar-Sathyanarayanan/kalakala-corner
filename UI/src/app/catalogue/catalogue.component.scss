@@ -7,7 +7,7 @@
 
   // Header Section
   .catalogue-header {
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
 
     .header-content {
       display: flex;
@@ -76,6 +76,162 @@
     }
   }
 
+  // Paginator Styling
+  .paginator-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 1.5rem 0;
+
+    &.top-paginator {
+      margin-bottom: 2rem;
+    }
+
+    &.bottom-paginator {
+      margin-top: 3rem;
+    }
+  }
+
+  .catalogue-paginator {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 0.8rem 1.5rem;
+    box-shadow: 0 4px 20px rgba(255, 105, 180, 0.15);
+    border: 2px solid rgba(255, 105, 180, 0.1);
+
+    ::ng-deep {
+      .mat-mdc-paginator-container {
+        padding: 0;
+        min-height: 48px;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .mat-mdc-paginator-page-size {
+        align-items: center;
+        margin-right: 1rem;
+
+        .mat-mdc-paginator-page-size-label {
+          color: #ff1493;
+          font-weight: 600;
+          font-size: 0.9rem;
+          margin: 0 0.5rem 0 0;
+        }
+
+        .mat-mdc-form-field {
+          margin: 0 0.5rem;
+        }
+
+        .mat-mdc-select {
+          .mat-mdc-select-value {
+            color: #ff1493;
+            font-weight: 600;
+          }
+
+          .mat-mdc-select-arrow {
+            color: #ff1493;
+          }
+        }
+      }
+
+      .mat-mdc-paginator-range-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        .mat-mdc-paginator-range-label {
+          color: #ff1493;
+          font-weight: 600;
+          font-size: 0.9rem;
+          margin: 0 1rem;
+          white-space: nowrap;
+        }
+
+        .mat-mdc-paginator-navigation-first,
+        .mat-mdc-paginator-navigation-previous,
+        .mat-mdc-paginator-navigation-next,
+        .mat-mdc-paginator-navigation-last {
+          width: 40px;
+          height: 40px;
+          border-radius: 12px;
+          background: rgba(255, 105, 180, 0.1);
+          transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
+
+          .mat-mdc-button-touch-target {
+            width: 40px;
+            height: 40px;
+          }
+
+          .mat-mdc-paginator-icon {
+            fill: #ff1493;
+            width: 20px;
+            height: 20px;
+            transition: all 0.3s ease;
+          }
+
+          &:hover:not([disabled]) {
+            background: linear-gradient(135deg, #ff1493, #ff69b4);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 20, 147, 0.3);
+
+            .mat-mdc-paginator-icon {
+              fill: white;
+            }
+          }
+
+          &:active:not([disabled]) {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(255, 20, 147, 0.2);
+          }
+
+          &[disabled] {
+            background: rgba(200, 200, 200, 0.15);
+            cursor: not-allowed;
+            pointer-events: none;
+
+            .mat-mdc-paginator-icon {
+              fill: #d0d0d0;
+              opacity: 0.5;
+            }
+
+            &::before {
+              content: "";
+              position: absolute;
+              top: 50%;
+              left: -100%;
+              width: 200%;
+              height: 1px;
+              background: #d0d0d0;
+              transform: rotate(-45deg);
+              opacity: 0.4;
+            }
+          }
+        }
+      }
+
+      // Select dropdown styling
+      .mat-mdc-select-panel {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+
+        .mat-mdc-option {
+          &:hover {
+            background: rgba(255, 105, 180, 0.1);
+          }
+
+          &.mat-mdc-option-active {
+            background: rgba(255, 105, 180, 0.15);
+            color: #ff1493;
+          }
+        }
+      }
+    }
+  }
+
   // Products Grid
   .products-grid {
     display: grid;
@@ -114,7 +270,6 @@
       transition: opacity 0.4s ease;
     }
 
-    // Special styling for discounted products
     &.has-discount {
       box-shadow: 0 10px 40px rgba(255, 20, 147, 0.2);
 
@@ -150,7 +305,6 @@
       }
     }
 
-    // Discount ribbon
     .discount-ribbon {
       position: absolute;
       top: 20px;
@@ -228,12 +382,6 @@
         font-weight: bold;
         background-color: styles.$theme2;
         color: #fff;
-        .price-row {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-          align-items: flex-end;
-        }
 
         &.original-price {
           color: #999;
@@ -445,6 +593,67 @@
     .product-card .card-image-wrapper {
       height: 240px;
     }
+
+    .catalogue-paginator {
+      padding: 0.6rem 1rem;
+
+      ::ng-deep {
+        .mat-mdc-paginator-page-size {
+          margin-right: 0.5rem;
+
+          .mat-mdc-paginator-page-size-label {
+            font-size: 0.85rem;
+          }
+        }
+
+        .mat-mdc-paginator-range-actions {
+          .mat-mdc-paginator-range-label {
+            font-size: 0.85rem;
+            margin: 0 0.5rem;
+          }
+
+          .mat-mdc-paginator-navigation-first,
+          .mat-mdc-paginator-navigation-previous,
+          .mat-mdc-paginator-navigation-next,
+          .mat-mdc-paginator-navigation-last {
+            width: 36px;
+            height: 36px;
+            position: relative;
+            overflow: hidden;
+
+            .mat-mdc-button-touch-target {
+              width: 36px;
+              height: 36px;
+            }
+
+            .mat-mdc-paginator-icon {
+              transition: all 0.3s ease;
+            }
+
+            &[disabled] {
+              background: rgba(200, 200, 200, 0.15);
+
+              .mat-mdc-paginator-icon {
+                fill: #d0d0d0;
+                opacity: 0.5;
+              }
+
+              &::before {
+                content: "";
+                position: absolute;
+                top: 50%;
+                left: -100%;
+                width: 200%;
+                height: 1px;
+                background: #d0d0d0;
+                transform: rotate(-45deg);
+                opacity: 0.4;
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   // Mobile Large (600px - 768px)
@@ -452,7 +661,7 @@
     padding: 1.5rem 1rem;
 
     .catalogue-header {
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
 
       .header-content {
         padding: 1.5rem;
@@ -475,6 +684,93 @@
         .download-btn {
           width: 100%;
           justify-content: center;
+        }
+      }
+    }
+
+    .paginator-wrapper {
+      margin: 1rem 0;
+
+      &.top-paginator {
+        margin-bottom: 1.5rem;
+      }
+
+      &.bottom-paginator {
+        margin-top: 2rem;
+      }
+    }
+
+    .catalogue-paginator {
+      width: 100%;
+      max-width: 100%;
+      padding: 0.5rem 0.8rem;
+      border-radius: 16px;
+
+      ::ng-deep {
+        .mat-mdc-paginator-container {
+          flex-direction: column;
+          gap: 0.8rem;
+        }
+
+        .mat-mdc-paginator-page-size {
+          margin: 0;
+          justify-content: center;
+
+          .mat-mdc-paginator-page-size-label {
+            font-size: 0.8rem;
+          }
+        }
+
+        .mat-mdc-paginator-range-actions {
+          width: 100%;
+          justify-content: center;
+
+          .mat-mdc-paginator-range-label {
+            font-size: 0.8rem;
+            margin: 0 0.3rem;
+          }
+
+          .mat-mdc-paginator-navigation-first,
+          .mat-mdc-paginator-navigation-previous,
+          .mat-mdc-paginator-navigation-next,
+          .mat-mdc-paginator-navigation-last {
+            width: 32px;
+            height: 32px;
+            position: relative;
+            overflow: hidden;
+
+            .mat-mdc-button-touch-target {
+              width: 32px;
+              height: 32px;
+            }
+
+            .mat-mdc-paginator-icon {
+              width: 18px;
+              height: 18px;
+              transition: all 0.3s ease;
+            }
+
+            &[disabled] {
+              background: rgba(200, 200, 200, 0.15);
+
+              .mat-mdc-paginator-icon {
+                fill: #d0d0d0;
+                opacity: 0.5;
+              }
+
+              &::before {
+                content: "";
+                position: absolute;
+                top: 50%;
+                left: -100%;
+                width: 200%;
+                height: 1px;
+                background: #d0d0d0;
+                transform: rotate(-45deg);
+                opacity: 0.4;
+              }
+            }
+          }
         }
       }
     }
@@ -508,7 +804,7 @@
     padding: 1rem 0.8rem;
 
     .catalogue-header {
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
 
       .header-content {
         padding: 1.2rem;
@@ -530,6 +826,86 @@
       .header-actions .download-btn {
         height: 44px;
         font-size: 0.9rem;
+      }
+    }
+
+    .paginator-wrapper {
+      &.top-paginator {
+        margin-bottom: 1rem;
+      }
+
+      &.bottom-paginator {
+        margin-top: 1.5rem;
+      }
+    }
+
+    .catalogue-paginator {
+      border-radius: 12px;
+      padding: 0.4rem 0.6rem;
+
+      ::ng-deep {
+        .mat-mdc-paginator-page-size {
+          .mat-mdc-paginator-page-size-label {
+            font-size: 0.75rem;
+            margin-right: 0.3rem;
+          }
+
+          .mat-mdc-form-field {
+            margin: 0 0.3rem;
+          }
+        }
+
+        .mat-mdc-paginator-range-actions {
+          gap: 0.3rem;
+
+          .mat-mdc-paginator-range-label {
+            font-size: 0.75rem;
+            margin: 0 0.2rem;
+          }
+
+          .mat-mdc-paginator-navigation-first,
+          .mat-mdc-paginator-navigation-previous,
+          .mat-mdc-paginator-navigation-next,
+          .mat-mdc-paginator-navigation-last {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+
+            .mat-mdc-button-touch-target {
+              width: 28px;
+              height: 28px;
+            }
+
+            .mat-mdc-paginator-icon {
+              width: 16px;
+              height: 16px;
+              transition: all 0.3s ease;
+            }
+
+            &[disabled] {
+              background: rgba(200, 200, 200, 0.15);
+
+              .mat-mdc-paginator-icon {
+                fill: #d0d0d0;
+                opacity: 0.5;
+              }
+
+              &::before {
+                content: "";
+                position: absolute;
+                top: 50%;
+                left: -100%;
+                width: 200%;
+                height: 1px;
+                background: #d0d0d0;
+                transform: rotate(-45deg);
+                opacity: 0.3;
+              }
+            }
+          }
+        }
       }
     }
 
@@ -562,17 +938,10 @@
         .price-badge {
           padding: 0.4rem 0.8rem;
           border-radius: 16px;
+          font-size: 0.85rem;
 
-          .discounted-price {
-            font-size: 0.95rem;
-          }
-
-          .original-price {
-            font-size: 0.75rem;
-          }
-
-          .regular-price {
-            font-size: 0.95rem;
+          &.original-price {
+            font-size: 0.7rem;
           }
         }
       }
@@ -647,6 +1016,19 @@
 
     .product-card .card-image-wrapper {
       height: 200px;
+    }
+
+    .catalogue-paginator {
+      ::ng-deep {
+        .mat-mdc-paginator-container {
+          gap: 0.6rem;
+        }
+
+        .mat-mdc-paginator-page-size,
+        .mat-mdc-paginator-range-actions {
+          font-size: 0.7rem;
+        }
+      }
     }
   }
 }

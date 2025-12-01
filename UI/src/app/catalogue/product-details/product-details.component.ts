@@ -29,6 +29,8 @@ export class ProductDetailsComponent implements OnInit {
     maxDiscountPercent: 0,
     hasDiscount: false,
   };
+  hasAnyOfferPrice = false;
+  displayedColumns: string[] = [];
 
   constructor(
     public dialogRef: MatDialogRef<ProductDetailsComponent>,
@@ -37,6 +39,32 @@ export class ProductDetailsComponent implements OnInit {
 
   ngOnInit(): void {
     this.calculatePriceRange();
+    this.checkForOfferPrices();
+    this.setDisplayedColumns();
+  }
+
+  /**
+   * Check if any variants have offer prices
+   */
+  checkForOfferPrices(): void {
+    if (!this.data.variants || this.data.variants.length === 0) {
+      this.hasAnyOfferPrice = false;
+      return;
+    }
+
+    this.hasAnyOfferPrice = this.data.variants.some((variant: any) => {
+      const discountedPrice = this.parsePrice(variant.discountedPrice);
+      return discountedPrice !== null && discountedPrice > 0;
+    });
+  }
+
+  /**
+   * Set displayed columns based on whether offer prices exist
+   */
+  setDisplayedColumns(): void {
+    this.displayedColumns = this.hasAnyOfferPrice
+      ? ["size", "price", "discountedPrice"]
+      : ["size", "price"];
   }
 
   /**
@@ -99,8 +127,8 @@ export class ProductDetailsComponent implements OnInit {
     // Calculate maximum discount percentage
     this.priceRange.hasDiscount = priceDiscountPairs.length > 0;
     if (this.priceRange.hasDiscount) {
-      const discountPercentages = priceDiscountPairs.map(
-        (pair) => Math.round(((pair.original - pair.discounted) / pair.original) * 100)
+      const discountPercentages = priceDiscountPairs.map((pair) =>
+        Math.round(((pair.original - pair.discounted) / pair.original) * 100)
       );
       this.priceRange.maxDiscountPercent = Math.max(...discountPercentages);
     } else {
@@ -141,7 +169,7 @@ export class ProductDetailsComponent implements OnInit {
     if (!this.priceRange.hasDiscount) {
       return false;
     }
-    
+
     return (
       this.priceRange.originalMinPrice !== this.priceRange.displayMinPrice ||
       this.priceRange.originalMaxPrice !== this.priceRange.displayMaxPrice

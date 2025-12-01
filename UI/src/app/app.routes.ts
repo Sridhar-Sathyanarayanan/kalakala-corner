@@ -26,21 +26,21 @@ export const routes: Routes = [
   {
     path: "add-product",
     loadComponent: () =>
-      import("./catalogue/add-product/add-product.component").then(
+      import("./admin/add-product/add-product.component").then(
         (m) => m.AddProductComponent
       ),
   },
   {
     path: "modify-category",
     loadComponent: () =>
-      import("./catalogue/modify-category/modify-category.component").then(
+      import("./admin/modify-category/modify-category.component").then(
         (m) => m.ModifyCategoryComponent
       ),
   },
   {
     path: "edit-product/:id",
     loadComponent: () =>
-      import("./catalogue/add-product/add-product.component").then(
+      import("./admin/add-product/add-product.component").then(
         (m) => m.AddProductComponent
       ),
   },
@@ -53,5 +53,12 @@ export const routes: Routes = [
     path: "contact",
     loadComponent: () =>
       import("./contact/contact.component").then((m) => m.ContactComponent),
+  },
+  {
+    path: "admin",
+    loadComponent: () =>
+      import("./admin/admin.component").then(
+        (m) => m.AdminComponent
+      ),
   },
 ];
