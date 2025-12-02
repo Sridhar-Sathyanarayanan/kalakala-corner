@@ -14,7 +14,7 @@ import { MessageModalComponent } from "../shared/message/message-modal.component
 @Component({
   selector: "app-contact",
   templateUrl: "./contact.component.html",
-  styleUrls: ["./contact.component.scss"],
+  styleUrl: "./contact.component.scss",
   imports: [MaterialStandaloneModules],
 })
 export class ContactComponent implements OnInit {

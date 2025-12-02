@@ -50,7 +50,6 @@ export async function allProductsWithCategory(category: string) {
     };
     const command = new ScanCommand(params);
     const data = await ddbDocClient.send(command);
-    console.log(11111111111111, data.Items)
     return data.Items;
   } catch (error) {
     logger.error("Unable to fetch data for category:", category);
@@ -258,12 +257,21 @@ export async function deleteProduct(id: string) {
 }
 
 export async function downloadCatalogue(
+  category: string | undefined,
   res: Response<any, Record<string, any>>
 ) {
   try {
-    const params = { TableName: "product-catalogue" };
-    const command = new ScanCommand(params);
-    const data = await ddbDocClient.send(command);
+    let data;
+    if (category && category !== 'all') {
+      // Fetch products for specific category
+      const items = await allProductsWithCategory(category);
+      data = { Items: items };
+    } else {
+      // Fetch all products
+      const params = { TableName: "product-catalogue" };
+      const command = new ScanCommand(params);
+      data = await ddbDocClient.send(command);
+    }
     return data.Items;
   } catch (error) {
     logger.error("Unable to fetch catalogue data", error);
@@ -305,8 +313,10 @@ export async function fetchImageFromS3(url: string, res: Response) {
     const body = result.Body as any;
     if (body && typeof body.pipe === "function") {
       body.pipe(res);
-    } else if (body && body instanceof Uint8Array) {
-      res.send(Buffer.from(body));
+    } else if (body instanceof Uint8Array) {
+      res.end(body);
+    } else if (body) {
+      res.send(body);
     } else {
       // Fallback: return 404
       res.status(404).send({ message: "No image body" });

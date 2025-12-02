@@ -1,10 +1,19 @@
 import { CommonModule } from "@angular/common";
-import { Component, OnInit, OnDestroy } from "@angular/core";
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  inject,
+  ViewChild,
+  ElementRef,
+  signal,
+  computed,
+} from "@angular/core";
 import { MatDialog } from "@angular/material/dialog";
 import { ActivatedRoute, Router } from "@angular/router";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { firstValueFrom, Subject, takeUntil } from "rxjs";
+import { firstValueFrom, Subject, takeUntil, forkJoin } from "rxjs";
 import {
   Product,
   ProductPayload,
@@ -23,56 +32,127 @@ import { NgxSpinnerService } from "ngx-spinner";
   selector: "app-catalogue",
   standalone: true,
   templateUrl: "./catalogue.component.html",
-  styleUrls: ["./catalogue.component.scss"],
+  styleUrl: "./catalogue.component.scss",
   imports: [CommonModule, MaterialStandaloneModules],
 })
 export class CatalogueComponent implements OnInit, OnDestroy {
-  products: ProductWithPricing[] = [];
-  category: string;
-  categoryTitle = "";
-  pageSize = 9;
-  currentPage = 0;
-  paginatedProducts: ProductWithPricing[] = [];
-  private destroy$ = new Subject<void>();
-  loading = true;
+  // Constants
+  private readonly DEFAULT_PAGE_SIZE = 9;
+  private readonly PDF_MARGIN = 15;
+  private readonly PDF_IMAGE_WIDTH = 50;
+  private readonly PDF_IMAGE_HEIGHT = 40;
+  private readonly PDF_IMAGE_SPACING = 5;
+  // Modern inject() pattern - Angular 21 best practice
+  private readonly productService = inject(ProductService);
+  readonly appService = inject(AppService);
+  private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly breakpointObserver = inject(BreakpointObserver);
+  private readonly paginatorIntl = inject(MatPaginatorIntl);
+  private readonly spinner = inject(NgxSpinnerService);
 
-  constructor(
-    private productService: ProductService,
-    public appService: AppService,
-    private dialog: MatDialog,
-    private router: Router,
-    private route: ActivatedRoute,
-    private breakpointObserver: BreakpointObserver,
-    private paginatorIntl: MatPaginatorIntl,
-    private spinner: NgxSpinnerService
-  ) {}
+  @ViewChild("catalogueContent", { read: ElementRef })
+  catalogueContent?: ElementRef;
+
+  // Signals for reactive state management (Angular 21 best practice)
+  products = signal<ProductWithPricing[]>([]);
+  category = signal<string>("");
+  categoryTitle = signal<string>("");
+  pageSize = signal<number>(this.DEFAULT_PAGE_SIZE);
+  currentPage = signal<number>(0);
+  loading = signal<boolean>(true);
+  errorMessage = signal<string>("");
+  
+  // Computed signal for paginated products
+  paginatedProducts = computed(() => {
+    const startIndex = this.currentPage() * this.pageSize();
+    const endIndex = startIndex + this.pageSize();
+    return this.products().slice(startIndex, endIndex);
+  });
+
+  private readonly destroy$ = new Subject<void>();
+  private categoryChange$ = new Subject<void>();
 
   ngOnInit(): void {
     this.setPaginatorTooltips();
-    this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
-      this.loading = true;
-      this.category = params.get("category");
-      if (!this.category) {
-        this.router.navigate(["/catalogue/all"]);
-        return;
-      }
-      this.productService
-        .getCategories()
-        .pipe(takeUntil(this.destroy$))
-        .subscribe((data) => {
-          const categoryTitle = data.items.find(
-            (d) => d.path === this.category
-          );
-          this.categoryTitle = categoryTitle ? categoryTitle.name : "All Items";
-        });
+    this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe({
+      next: (params) => {
+        this.loading.set(true);
+        this.errorMessage.set("");
+        const newCategory = params.get("category");
 
-      this.getProductsList(this.category);
+        if (!newCategory) {
+          this.router.navigate(["/catalogue/all"]);
+          return;
+        }
+
+        // Cancel previous requests if category actually changed
+        if (this.category() && this.category() !== newCategory) {
+          this.categoryChange$.next();
+          this.spinner.hide(); // Hide spinner from previous request
+
+          // Create a new Subject for the new category to avoid immediate cancellation
+          this.categoryChange$ = new Subject<void>();
+        }
+
+        this.category.set(newCategory);
+
+        // Load category info and products in parallel
+        this.loadCategoryData(this.category());
+      },
+      error: (error) => {
+        console.error("Error in route params:", error);
+        this.loading.set(false);
+        this.spinner.hide();
+        this.errorMessage.set("Failed to load category information.");
+      },
     });
   }
 
   ngOnDestroy(): void {
+    this.spinner.hide(); 
+    this.categoryChange$.next();
+    this.categoryChange$.complete();
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private loadCategoryData(category: string): void {
+    this.spinner.show();
+
+    forkJoin({
+      categories: this.productService.getCategories(),
+      products: this.productService.getProducts(category),
+    })
+      .pipe(takeUntil(this.categoryChange$), takeUntil(this.destroy$))
+      .subscribe({
+        next: ({ categories, products }) => {
+          // Set category title
+          const categoryData = categories.items.find(
+            (d) => d.path === this.category()
+          );
+          this.categoryTitle.set(categoryData?.name || "All Products");
+          // Set products
+          const productsList = products?.items || [];
+          this.calculateProductPricing(productsList);
+          this.products.set(productsList);
+          this.currentPage.set(0);
+
+          this.loading.set(false);
+          this.spinner.hide();
+        },
+        error: (err) => {
+          console.error("Error loading category data:", err);
+          this.products.set([]);
+          this.categoryTitle.set("");
+          this.loading.set(false);
+          this.spinner.hide();
+          this.errorMessage.set(
+            "Failed to load products. Please try again later."
+          );
+        },
+      });
   }
 
   private setPaginatorTooltips(): void {
@@ -100,23 +180,34 @@ export class CatalogueComponent implements OnInit, OnDestroy {
   }
 
   getProductsList(category?: string): void {
-    this.products = [];
     this.spinner.show();
+    this.errorMessage.set("");
     this.productService
       .getProducts(category)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((data: Product) => {
-        this.spinner.hide();
-        this.loading = false;
-        this.products = data.items;
-        this.currentPage = 0; // Reset to first page when loading new products
-        this.applyPagination();
-        this.calculateProductPricing();
+      .pipe(takeUntil(this.categoryChange$), takeUntil(this.destroy$))
+      .subscribe({
+        next: (data: Product) => {
+          this.spinner.hide();
+          this.loading.set(false);
+          const productsList = data?.items || [];
+          this.calculateProductPricing(productsList);
+          this.products.set(productsList);
+          this.currentPage.set(0);
+        },
+        error: (err) => {
+          this.spinner.hide();
+          this.loading.set(false);
+          this.products.set([]);
+          this.errorMessage.set(
+            "Failed to load products. Please try again later."
+          );
+          console.error("Error loading products:", err);
+        },
       });
   }
 
-  private calculateProductPricing(): void {
-    this.products.forEach((p) => {
+  private calculateProductPricing(products: ProductWithPricing[]): void {
+    products.forEach((p) => {
       if (Array.isArray(p.variants) && p.variants.length > 0) {
         const regularPrices: number[] = [];
         const discountedPrices: number[] = [];
@@ -169,22 +260,17 @@ export class CatalogueComponent implements OnInit, OnDestroy {
     });
   }
 
-  applyPagination(): void {
-    const startIndex = this.currentPage * this.pageSize;
-    const endIndex = startIndex + this.pageSize;
-    this.paginatedProducts = this.products.slice(startIndex, endIndex);
-
-    // Scroll to top of catalogue when page changes
-    const catalogueElement = document.getElementById("catalogue-content");
-    if (catalogueElement) {
-      catalogueElement.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }
-
   onPageChange(event: PageEvent): void {
-    this.currentPage = event.pageIndex;
-    this.pageSize = event.pageSize;
-    this.applyPagination();
+    this.currentPage.set(event.pageIndex);
+    this.pageSize.set(event.pageSize);
+    
+    // Scroll to top of catalogue when page changes
+    if (this.catalogueContent?.nativeElement) {
+      this.catalogueContent.nativeElement.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
   }
 
   calculateDiscount(originalPrice: number, discountedPrice: number): number {
@@ -200,128 +286,187 @@ export class CatalogueComponent implements OnInit, OnDestroy {
     );
   }
 
-  downloadPDF(): void {
-    this.productService
-      .downloadPDF()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(async (data) => {
-        const doc = new jsPDF({
-          orientation: "portrait",
-          unit: "mm",
-          format: "a4",
-        });
-        const margin = 15;
-        const imageWidth = 50;
-        const imageHeight = 40;
-        let y = 40;
+  async downloadPDF(): Promise<void> {
+    this.spinner.show();
+    this.errorMessage.set("");
+    
+    try {
+      const data = await firstValueFrom(
+        this.productService.downloadPDF(this.category()).pipe(takeUntil(this.destroy$))
+      );
 
-        doc.setFontSize(16);
-        doc.text("Products Catalog", doc.internal.pageSize.getWidth() / 2, 15, {
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+      const margin = this.PDF_MARGIN;
+      const imageWidth = this.PDF_IMAGE_WIDTH;
+      const imageHeight = this.PDF_IMAGE_HEIGHT;
+      let y = 40;
+
+      doc.setFontSize(16);
+      const catalogTitle = this.category() === 'all' 
+        ? 'Products Catalog - All Categories'
+        : `Products Catalog - ${this.categoryTitle()}`;
+      doc.text(
+        catalogTitle,
+        doc.internal.pageSize.getWidth() / 2,
+        15,
+        {
           align: "center",
-        });
+        }
+      );
 
-        for (const item of data.items) {
-          if (
-            y + imageHeight + 30 >
-            doc.internal.pageSize.getHeight() - margin
-          ) {
-            doc.addPage();
-            y = margin;
-          }
+      for (const item of data.items) {
+        // Calculate how many images we have and the space needed
+        const imageCount = item.images?.length || 0;
+        const imagesPerRow = 3;
+        const imageRows = Math.ceil(imageCount / imagesPerRow);
+        const totalImageHeight = imageRows > 0 ? imageRows * (imageHeight + this.PDF_IMAGE_SPACING) : 0;
+        
+        // Calculate table height (header + rows)
+        const variantCount = item.variants?.length || 0;
+        const rowHeight = 9; // fontSize 9 + cellPadding 2*2 = ~9mm per row
+        const tableHeight = (variantCount + 1) * rowHeight; // +1 for header
+        
+        // Calculate description height
+        const descLines = doc.splitTextToSize(
+          item.desc,
+          doc.internal.pageSize.getWidth() - 2 * margin - 10
+        );
+        const descHeight = descLines.length * 5; // Approximate height per line
+        
+        // Total content height: title(10) + desc(variable) + images + table + padding
+        const contentHeight = 15 + descHeight + totalImageHeight + tableHeight + 10;
 
-          doc.setDrawColor(180);
-          doc.roundedRect(
-            margin,
-            y,
-            doc.internal.pageSize.getWidth() - 2 * margin,
-            imageHeight + 30,
-            4,
-            4
-          );
+        // Check if we need a new page
+        if (
+          y + contentHeight >
+          doc.internal.pageSize.getHeight() - margin
+        ) {
+          doc.addPage();
+          y = margin;
+        }
 
-          doc.setFont("helvetica", "bold");
-          doc.setFontSize(13);
-          doc.text(item.name, margin + imageWidth + 10, y + 10);
+        const sectionStartY = y;
 
-          doc.setFont("helvetica", "normal");
-          doc.setFontSize(10);
-          const descLines = doc.splitTextToSize(
-            item.desc,
-            doc.internal.pageSize.getWidth() - (margin + imageWidth + 15)
-          );
-          doc.text(descLines, margin + imageWidth + 10, y + 18);
+        // Product title
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(13);
+        doc.text(item.name, margin + 5, y + 10);
 
-          const variantRows = item.variants.map((v: any) => {
-            const hasDiscount =
-              v.discountedPrice && Number(v.discountedPrice) < Number(v.price);
-            if (hasDiscount) {
-              const discount = this.calculateDiscount(
-                Number(v.price),
-                Number(v.discountedPrice)
-              );
-              return [
-                v.size,
-                `₹${v.discountedPrice}`,
-                `₹${v.price}`,
-                `${discount}% OFF`,
-              ];
-            } else {
-              return [v.size, `₹${v.price}`, "-", "-"];
-            }
-          });
+        // Product description
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text(descLines, margin + 5, y + 18);
 
-          autoTable(doc, {
-            startY: y + imageHeight - 2,
-            margin: { left: margin + imageWidth + 10 },
-            head: [["Size", "Price", "Original", "Discount"]],
-            body: variantRows,
-            styles: { fontSize: 9, cellPadding: 2 },
-            headStyles: {
-              fillColor: [255, 20, 147],
-              textColor: 255,
-              fontSize: 9,
-              fontStyle: "bold",
-            },
-            columnStyles: {
-              0: { cellWidth: 20 },
-              1: { cellWidth: 22 },
-              2: { cellWidth: 22 },
-              3: { cellWidth: 22 },
-            },
-            theme: "grid",
-          });
+        // Render all images in a grid
+        if (item.images && item.images.length > 0) {
+          const startY = y + 18 + descHeight + 5;
+          let currentX = margin + 5;
+          let currentY = startY;
+          let imagesInCurrentRow = 0;
 
-          if (item.images && item.images.length > 0) {
+          for (let i = 0; i < item.images.length; i++) {
             try {
-              const imgData = await this.toBase64(item.images[0]);
+              const imgData = await this.toBase64(item.images[i]);
               doc.addImage(
                 imgData,
                 "JPEG",
-                margin + 5,
-                y + 5,
+                currentX,
+                currentY,
                 imageWidth,
                 imageHeight,
                 undefined,
                 "FAST"
               );
             } catch (e) {
+              // Draw placeholder for failed images
               doc.setFillColor(230, 230, 230);
-              doc.rect(margin + 5, y + 5, imageWidth, imageHeight, "F");
+              doc.rect(currentX, currentY, imageWidth, imageHeight, "F");
               doc.setTextColor(150, 150, 150);
               doc.setFontSize(8);
               doc.text(
                 "Image not\navailable",
-                margin + 10,
-                y + imageHeight / 2
+                currentX + 5,
+                currentY + imageHeight / 2
               );
+              doc.setTextColor(0, 0, 0); // Reset text color
+            }
+
+            imagesInCurrentRow++;
+
+            // Move to next position
+            if (imagesInCurrentRow < imagesPerRow) {
+              currentX += imageWidth + this.PDF_IMAGE_SPACING;
+            } else {
+              // Move to next row
+              currentX = margin + 5;
+              currentY += imageHeight + this.PDF_IMAGE_SPACING;
+              imagesInCurrentRow = 0;
             }
           }
-
-          y += imageHeight + 45;
         }
 
-        doc.save("products-catalog.pdf");
-      });
+        // Prepare variant table
+        const variantRows = item.variants.map((v: any) => {
+          const originalPrice = v.price && Number(v.price) > 0 ? `Rs. ${v.price}` : '--';
+          const discountedPrice = v.discountedPrice && Number(v.discountedPrice) > 0 ? `Rs. ${v.discountedPrice}` : '--';
+          
+          return [
+            v.size || '--',
+            originalPrice,
+            discountedPrice
+          ];
+        });
+
+        // Add variant table below images
+        const tableStartY = y + 18 + descHeight + 5 + totalImageHeight + 3;
+        autoTable(doc, {
+          startY: tableStartY,
+          margin: { left: margin + 5, right: margin + 5 },
+          head: [["Size", "Original Price", "Discounted Price"]],
+          body: variantRows,
+          styles: { fontSize: 9, cellPadding: 2 },
+          headStyles: {
+            fillColor: [255, 20, 147],
+            textColor: 255,
+            fontSize: 9,
+            fontStyle: "bold",
+          },
+          columnStyles: {
+            0: { cellWidth: 40 },
+            1: { cellWidth: 40 },
+            2: { cellWidth: 40 },
+          },
+          theme: "grid",
+        });
+
+        // Get the final Y position after the table
+        const finalY = (doc as any).lastAutoTable.finalY;
+
+        // Draw border for product section after all content is rendered
+        doc.setDrawColor(180);
+        doc.roundedRect(
+          margin,
+          sectionStartY,
+          doc.internal.pageSize.getWidth() - 2 * margin,
+          finalY - sectionStartY + 5,
+          4,
+          4
+        );
+
+        y = finalY + 10;
+      }
+
+      doc.save("products-catalog.pdf");
+      this.spinner.hide();
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      this.spinner.hide();
+      this.errorMessage.set("Failed to generate PDF. Please try again.");
+    }
   }
 
   private async toBase64(input: string | Blob): Promise<string> {
@@ -376,15 +521,33 @@ export class CatalogueComponent implements OnInit, OnDestroy {
     dialogRef
       .afterClosed()
       .pipe(takeUntil(this.destroy$))
-      .subscribe((result) => {
-        if (result) {
-          this.productService
-            .deleteProduct(product.id)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe(() => {
-              this.getProductsList(this.category);
-            });
-        }
+      .subscribe({
+        next: (result) => {
+          if (result) {
+            this.spinner.show();
+            this.errorMessage.set("");
+            this.productService
+              .deleteProduct(product.id)
+              .pipe(takeUntil(this.destroy$))
+              .subscribe({
+                next: () => {
+                  this.spinner.hide();
+                  this.getProductsList(this.category());
+                },
+                error: (error) => {
+                  console.error("Error deleting product:", error);
+                  this.spinner.hide();
+                  this.errorMessage.set(
+                    "Failed to delete product. Please try again."
+                  );
+                },
+              });
+          }
+        },
+        error: (error) => {
+          console.error("Error in dialog:", error);
+          this.errorMessage.set("An error occurred. Please try again.");
+        },
       });
   }
 }

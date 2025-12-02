@@ -16,6 +16,7 @@ interface Testimonial {
   "product-id": string;
   comments: string;
   rating: number;
+  customerName?: string;
   updatedAt: string;
 }
 
@@ -37,6 +38,7 @@ export async function addTestimonial(testimonial: {
   "product-id": string;
   comments: string;
   rating: number;
+  customerName?: string;
 }) {
   try {
     // Get the highest current ID and increment
@@ -55,6 +57,7 @@ export async function addTestimonial(testimonial: {
         "product-id": testimonial["product-id"],
         comments: testimonial.comments,
         rating: testimonial.rating,
+        customerName: testimonial.customerName || "",
         updatedAt: new Date().toISOString(),
       },
     };
@@ -75,6 +78,7 @@ export async function updateTestimonial(
     "product-id"?: string;
     comments?: string;
     rating?: number;
+    customerName?: string;
   }
 ) {
   try {
@@ -110,6 +114,12 @@ export async function updateTestimonial(
       updateExpressions.push("#rating = :rating");
       expressionAttributeNames["#rating"] = "rating";
       expressionAttributeValues[":rating"] = testimonial.rating;
+    }
+
+    if (testimonial.customerName !== undefined) {
+      updateExpressions.push("#customerName = :customerName");
+      expressionAttributeNames["#customerName"] = "customerName";
+      expressionAttributeValues[":customerName"] = testimonial.customerName;
     }
 
     updateExpressions.push("#updatedAt = :updatedAt");

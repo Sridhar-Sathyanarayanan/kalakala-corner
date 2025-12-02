@@ -14,7 +14,7 @@ import { ProductService } from "./services/product.service";
   standalone: true,
   imports: [RouterModule, MaterialStandaloneModules],
   templateUrl: "./app.component.html",
-  styleUrls: ["./app.component.scss"],
+  styleUrl: "./app.component.scss",
 })
 export class AppComponent implements OnInit {
   mobileMenuOpen = false;

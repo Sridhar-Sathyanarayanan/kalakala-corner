@@ -40,6 +40,7 @@ export interface Testimonial {
   "product-id": string;
   comments: string;
   rating: number;
+  customerName?: string;
   updatedAt: string;
 }
 

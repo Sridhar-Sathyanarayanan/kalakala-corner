@@ -17,7 +17,7 @@ interface PriceRange {
   standalone: true,
   imports: [CommonModule, MaterialStandaloneModules],
   templateUrl: "./product-details.component.html",
-  styleUrls: ["./product-details.component.scss"],
+  styleUrl: "./product-details.component.scss",
 })
 export class ProductDetailsComponent implements OnInit {
   currentIndex = 0;

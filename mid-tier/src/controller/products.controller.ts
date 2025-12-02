@@ -65,7 +65,8 @@ export const deleteAProduct = async (req: Request, res: Response) => {
 
 export const download = async (req: Request, res: Response) => {
   try {
-    const result = await downloadCatalogue(res);
+    const { category } = req.params;
+    const result = await downloadCatalogue(category, res);
     res.status(200).send({ items: result });
   } catch {
     res.status(500).send({ message: "Internal Server Error" });

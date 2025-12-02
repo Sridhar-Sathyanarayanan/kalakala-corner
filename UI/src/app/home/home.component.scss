@@ -235,20 +235,20 @@
   }
 
   @media (max-width: 480px) {
-  .title {
+    .title {
       font-size: clamp(1rem, 5vw, 5rem) !important;
       font-weight: bold;
-  }
+    }
 
-  .subtitle {
-    font-size: 1.2rem;
-    white-space: normal !important;
-  }
+    .subtitle {
+      font-size: 1.2rem;
+      white-space: normal !important;
+    }
 
-  .typing-animation {
-    font-size: 1.2rem;
+    .typing-animation {
+      font-size: 1.2rem;
+    }
   }
-}
 
   /* 🌟 FEATURED PRODUCT */
   .featured-product {
@@ -542,33 +542,65 @@
   /* ⭐ TESTIMONIALS CAROUSEL */
   .testimonials {
     text-align: center;
-    padding: 4rem 1.5rem;
-    background: linear-gradient(135deg, #fff5f7 0%, #fffafc 40%, #f5f3ff 100%);
+    padding: 1.2rem;
+    background: linear-gradient(
+        135deg,
+        rgba(75, 0, 130, 0.08) 0%,
+        transparent 50%
+      ),
+      linear-gradient(225deg, rgba(138, 43, 226, 0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at top, rgba(186, 85, 211, 0.15), transparent 45%),
+      radial-gradient(
+        ellipse at bottom,
+        rgba(72, 61, 139, 0.1),
+        transparent 50%
+      ),
+      linear-gradient(180deg, #f5f3f8 0%, #e8e4f3 50%, #dad5e8 100%);
     position: relative;
     overflow: hidden;
-    
+
     &::before {
-      content: '';
+      content: "";
       position: absolute;
-      top: -150px;
-      right: -150px;
-      width: 400px;
-      height: 400px;
-      background: radial-gradient(circle, rgba(108, 92, 231, 0.08), transparent);
+      top: -80px;
+      right: -80px;
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(
+        circle,
+        rgba(147, 51, 234, 0.2),
+        transparent 70%
+      );
       border-radius: 50%;
       pointer-events: none;
+      animation: float 8s ease-in-out infinite;
     }
-    
+
     &::after {
-      content: '';
+      content: "";
       position: absolute;
-      bottom: -100px;
-      left: -100px;
-      width: 300px;
-      height: 300px;
-      background: radial-gradient(circle, rgba(255, 122, 162, 0.06), transparent);
+      bottom: -60px;
+      left: -60px;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(
+        circle,
+        rgba(106, 27, 154, 0.18),
+        transparent 70%
+      );
       border-radius: 50%;
       pointer-events: none;
+      animation: float 6s ease-in-out infinite reverse;
+    }
+
+    @keyframes float {
+      0%,
+      100% {
+        transform: translate(0, 0) scale(1);
+      }
+      50% {
+        transform: translate(-20px, 20px) scale(1.1);
+      }
     }
 
     h2 {
@@ -593,11 +625,11 @@
     }
 
     .intro {
-      color: #5b4b7a;
-      margin-bottom: 3rem;
-      font-size: 1.15rem;
-      line-height: 1.7;
-      max-width: 750px;
+      color: #4a3f6b;
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+      line-height: 1.5;
+      max-width: 650px;
       margin-left: auto;
       margin-right: auto;
       position: relative;
@@ -608,7 +640,7 @@
       position: relative;
       max-width: 1000px;
       margin: 0 auto;
-      padding: 2rem 0;
+      padding: 0.5rem 0;
       z-index: 1;
 
       .carousel-viewport {
@@ -624,20 +656,27 @@
 
       .testimonial-card {
         min-width: 100%;
-        padding: 3rem 2.5rem;
-        background: linear-gradient(145deg, #ffffff 0%, #fefefe 100%);
-        border-radius: 24px;
-        box-shadow: 0 16px 56px rgba(108, 92, 231, 0.12), 0 8px 28px rgba(0, 0, 0, 0.06);
+        padding: 1.5rem 1.8rem;
+        background: linear-gradient(
+          145deg,
+          rgba(255, 255, 255, 0.85) 0%,
+          rgba(245, 243, 255, 0.9) 100%
+        );
+        backdrop-filter: blur(12px);
+        border-radius: 18px;
+        box-shadow: 0 10px 35px rgba(75, 0, 130, 0.15),
+          0 5px 18px rgba(138, 43, 226, 0.12);
         position: relative;
         display: flex;
-        gap: 2.5rem;
+        gap: 1.8rem;
         align-items: center;
-        border: 1px solid rgba(108, 92, 231, 0.08);
+        border: 1px solid rgba(186, 85, 211, 0.2);
         transition: transform 0.3s ease, box-shadow 0.3s ease;
-        
+
         &:hover {
           transform: translateY(-4px);
-          box-shadow: 0 24px 72px rgba(108, 92, 231, 0.16), 0 12px 36px rgba(0, 0, 0, 0.08);
+          box-shadow: 0 24px 72px rgba(108, 92, 231, 0.16),
+            0 12px 36px rgba(0, 0, 0, 0.08);
         }
 
         &.active {
@@ -646,32 +685,36 @@
 
         .testimonial-image {
           flex-shrink: 0;
-          width: 320px;
-          height: 320px;
-          border-radius: 20px;
+          width: 220px;
+          height: 220px;
+          border-radius: 14px;
           overflow: hidden;
-          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+          box-shadow: 0 8px 28px rgba(75, 0, 130, 0.2);
           position: relative;
           transition: transform 0.4s ease;
-          
+
           &::before {
-            content: '';
+            content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(135deg, transparent 60%, rgba(108, 92, 231, 0.15));
+            background: linear-gradient(
+              135deg,
+              transparent 60%,
+              rgba(108, 92, 231, 0.15)
+            );
             z-index: 1;
             opacity: 0;
             transition: opacity 0.4s ease;
           }
-          
+
           &:hover {
             transform: scale(1.03);
             box-shadow: 0 16px 56px rgba(0, 0, 0, 0.2);
-            
+
             &::before {
               opacity: 1;
             }
-            
+
             img {
               transform: scale(1.08);
             }
@@ -693,7 +736,7 @@
 
         .quote-icon {
           margin-bottom: 1.2rem;
-          
+
           mat-icon {
             font-size: 56px;
             width: 56px;
@@ -730,20 +773,21 @@
           }
 
           .comment {
-            font-size: 1.25rem;
-            line-height: 1.9;
+            font-size: 1.05rem;
+            line-height: 1.6;
             color: #2c2c2c;
             font-style: italic;
-            margin-bottom: 1.8rem;
-            min-height: 100px;
-            display: flex;
-            align-items: flex-start;
-            justify-content: flex-start;
+            margin-bottom: 1.2rem;
+            min-height: 70px;
             position: relative;
             padding-left: 1rem;
-            
+            padding-right: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+
             &::before {
-              content: '';
+              content: "";
               position: absolute;
               left: 0;
               top: 0;
@@ -752,30 +796,103 @@
               background: linear-gradient(180deg, #6c5ce7, #a29bfe);
               border-radius: 2px;
             }
+
+            .customer-name {
+              display: inline-block;
+              margin-top: 0.8rem;
+              font-weight: 500;
+              font-style: normal;
+              font-size: 0.9rem;
+              align-self: center;
+              position: relative;
+              padding: 0.35rem 0.9rem 0.35rem 2.2rem;
+              background: linear-gradient(
+                135deg,
+                rgba(255, 152, 0, 0.08),
+                rgba(255, 193, 7, 0.05)
+              );
+              border-radius: 6px 0 0 6px;
+              color: #e65100;
+              letter-spacing: 0.3px;
+              border-left: 3px solid #ff9800;
+              box-shadow: -2px 2px 6px rgba(255, 152, 0, 0.15);
+              transition: all 0.3s ease;
+
+              &::before {
+                content: "👤";
+                position: absolute;
+                left: 0.6rem;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 1rem;
+                opacity: 0.7;
+              }
+
+              &:hover {
+                background: linear-gradient(
+                  135deg,
+                  rgba(255, 152, 0, 0.12),
+                  rgba(255, 193, 7, 0.08)
+                );
+                box-shadow: -3px 3px 10px rgba(255, 152, 0, 0.25);
+                padding-right: 1.1rem;
+              }
+            }
+          }
+
+          .testimonial-footer {
+            display: flex;
+            gap: 0.6rem;
+            margin-top: 0.5rem;
+            padding-top: 0.8rem;
+            border-top: 1px solid rgba(108, 92, 231, 0.1);
           }
 
           .product-info {
-            display: inline-flex;
+            display: flex;
             align-items: center;
             gap: 0.6rem;
-            background: linear-gradient(135deg, rgba(108, 92, 231, 0.08), rgba(162, 155, 254, 0.08));
-            color: #6c5ce7;
-            font-weight: 600;
-            font-size: 1.05rem;
-            padding: 0.6rem 1.2rem;
-            border-radius: 12px;
-            border: 1px solid rgba(108, 92, 231, 0.15);
+            color: #424242;
+            font-size: 0.95rem;
             transition: all 0.3s ease;
-            
-            &:hover {
-              background: linear-gradient(135deg, rgba(108, 92, 231, 0.12), rgba(162, 155, 254, 0.12));
-              transform: translateX(4px);
+
+            &::before {
+              content: "";
+              display: block;
+              width: 3px;
+              height: 20px;
+              background: linear-gradient(180deg, #6c5ce7, #5b4cd7);
+              border-radius: 2px;
             }
 
             mat-icon {
-              font-size: 22px;
-              width: 22px;
-              height: 22px;
+              font-size: 20px;
+              width: 20px;
+              height: 20px;
+              color: #6c5ce7;
+            }
+
+            span {
+              font-weight: 600;
+              color: #4a3f6b;
+              position: relative;
+
+              &::after {
+                content: "";
+                position: absolute;
+                bottom: -2px;
+                left: 0;
+                width: 0;
+                height: 2px;
+                background: linear-gradient(90deg, #6c5ce7, transparent);
+                transition: width 0.3s ease;
+              }
+            }
+
+            &:hover {
+              span::after {
+                width: 100%;
+              }
             }
           }
         }
@@ -807,16 +924,16 @@
             transform: scale(1.15);
             box-shadow: 0 8px 28px rgba(108, 92, 231, 0.45);
           }
-          
+
           &:active:not(:disabled) {
             transform: scale(1.05);
           }
-          
+
           &:disabled {
             opacity: 0.3;
             cursor: not-allowed;
           }
-          
+
           mat-icon {
             font-size: 28px;
             width: 28px;
@@ -829,14 +946,12 @@
         display: flex;
         justify-content: center;
         gap: 0.6rem;
-        margin-top: 2rem;
-
         button {
           width: 40px;
           height: 40px;
           padding: 0;
           transition: transform 0.2s ease;
-          
+
           &:hover {
             transform: scale(1.1);
           }
@@ -1057,28 +1172,58 @@
     }
 
     .testimonials {
-      padding: 2rem 1rem;
+      padding: 1.2rem 1rem;
 
       .testimonials-carousel {
         .testimonial-card {
           flex-direction: column;
-          padding: 2rem 1.5rem;
+          padding: 1.2rem 1rem;
 
           .testimonial-image {
             width: 100%;
-            height: 240px;
+            height: 200px;
           }
 
           .testimonial-content {
             .comment {
               font-size: 1rem;
               min-height: 80px;
+              padding-right: 0.8rem;
+
+              .customer-name {
+                font-size: 0.8rem;
+                margin-top: 0.7rem;
+                padding: 0.3rem 0.7rem 0.3rem 1.8rem;
+
+                &::before {
+                  font-size: 0.85rem;
+                  left: 0.5rem;
+                }
+              }
             }
 
             .stars mat-icon {
               font-size: 24px;
               width: 24px;
               height: 24px;
+            }
+
+            .testimonial-footer {
+              gap: 0.5rem;
+            }
+
+            .product-info {
+              font-size: 0.9rem;
+
+              mat-icon {
+                font-size: 18px;
+                width: 18px;
+                height: 18px;
+              }
+
+              &::before {
+                height: 18px;
+              }
             }
           }
         }
@@ -1112,20 +1257,18 @@
         }
       }
     }
-     .list-column {
-       ul {
+    .list-column {
+      ul {
         li {
           margin-bottom: 15px !important;
         }
       }
-     }
-      .about-text {
-
+    }
+    .about-text {
       h2 {
         font-size: clamp(1.3rem, 2.5vw, 2.3rem) !important;
-
       }
-    } 
+    }
 
     .about {
       padding: 1rem;
@@ -1181,16 +1324,16 @@
     }
 
     .testimonials {
-      padding: 1.5rem 0.5rem;
+      padding: 1rem 0.5rem;
 
       .testimonials-carousel {
         .testimonial-card {
           flex-direction: column;
-          padding: 1.5rem 1rem;
+          padding: 1rem 0.8rem;
 
           .testimonial-image {
             width: 100%;
-            height: 200px;
+            height: 180px;
           }
 
           .quote-icon mat-icon {
@@ -1209,15 +1352,36 @@
             .comment {
               font-size: 0.95rem;
               min-height: 60px;
+              padding-right: 0.5rem;
+
+              .customer-name {
+                font-size: 0.75rem;
+                margin-top: 0.6rem;
+                padding: 0.25rem 0.6rem 0.25rem 1.6rem;
+
+                &::before {
+                  font-size: 0.8rem;
+                  left: 0.4rem;
+                }
+              }
+            }
+
+            .testimonial-footer {
+              gap: 0.4rem;
             }
 
             .product-info {
-              font-size: 0.9rem;
+              font-size: 0.85rem;
 
               mat-icon {
-                font-size: 18px;
-                width: 18px;
-                height: 18px;
+                font-size: 16px;
+                width: 16px;
+                height: 16px;
+              }
+
+              &::before {
+                height: 16px;
+                width: 2px;
               }
             }
           }

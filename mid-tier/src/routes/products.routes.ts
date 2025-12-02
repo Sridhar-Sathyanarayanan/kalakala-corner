@@ -30,6 +30,7 @@ router.post(
 );
 router.delete("/delete-product/:id", verifyAdmin, deleteAProduct);
 router.get("/downloadPDF", verifyAdmin, download);
+router.get("/downloadPDF/:category", verifyAdmin, download);
 router.post("/fetch-s3-image", fetchS3Image);
 
 router.get("/categories-list", getAllCategories);

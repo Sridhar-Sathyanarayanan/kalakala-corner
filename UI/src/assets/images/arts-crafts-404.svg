@@ -1,0 +1,56 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Paintbrush and palette illustration -->
+  
+  <!-- Paint palette -->
+  <ellipse cx="100" cy="120" rx="60" ry="45" fill="#8B4513" stroke="#5d2e0f" stroke-width="3"/>
+  <ellipse cx="100" cy="118" rx="55" ry="40" fill="#a0522d"/>
+  
+  <!-- Thumb hole -->
+  <ellipse cx="130" cy="125" rx="8" ry="12" fill="#5d2e0f"/>
+  
+  <!-- Paint blobs -->
+  <circle cx="75" cy="105" r="10" fill="#FF6B6B"/>
+  <circle cx="105" cy="100" r="10" fill="#4ECDC4"/>
+  <circle cx="125" cy="110" r="10" fill="#FFE66D"/>
+  <circle cx="90" cy="125" r="10" fill="#95E1D3"/>
+  <circle cx="115" cy="130" r="10" fill="#A8E6CF"/>
+  
+  <!-- Paint highlights -->
+  <circle cx="77" cy="103" r="3" fill="#FF8E8E" opacity="0.8"/>
+  <circle cx="107" cy="98" r="3" fill="#6EDDD6" opacity="0.8"/>
+  <circle cx="127" cy="108" r="3" fill="#FFED94" opacity="0.8"/>
+  
+  <!-- Paintbrush -->
+  <g transform="rotate(-30 150 70)">
+    <!-- Handle -->
+    <rect x="145" y="30" width="10" height="60" rx="2" fill="#CD853F"/>
+    <rect x="146" y="30" width="8" height="60" rx="1" fill="#DEB887"/>
+    
+    <!-- Ferrule (metal part) -->
+    <rect x="143" y="88" width="14" height="12" fill="#C0C0C0"/>
+    <rect x="144" y="89" width="12" height="10" fill="#E8E8E8"/>
+    
+    <!-- Bristles -->
+    <path d="M 145 100 L 140 115 L 145 112 L 150 115 L 155 112 L 160 115 L 155 100 Z" fill="#4A4A4A"/>
+    <path d="M 147 100 L 145 110 L 150 108 L 155 110 L 153 100 Z" fill="#6A6A6A"/>
+  </g>
+  
+  <!-- Floating craft elements -->
+  <g opacity="0.7">
+    <!-- Scissors -->
+    <path d="M 35 50 L 40 45 L 38 43 L 33 48 Z" fill="#B0B0B0"/>
+    <path d="M 35 50 L 40 55 L 38 57 L 33 52 Z" fill="#B0B0B0"/>
+    <circle cx="32" cy="48" r="3" fill="#D0D0D0"/>
+    <circle cx="32" cy="52" r="3" fill="#D0D0D0"/>
+    
+    <!-- Yarn ball -->
+    <circle cx="170" cy="60" r="8" fill="#FF6B6B"/>
+    <path d="M 165 55 Q 170 58 175 55" stroke="#fff" stroke-width="1" fill="none" opacity="0.6"/>
+    <path d="M 165 60 Q 170 63 175 60" stroke="#fff" stroke-width="1" fill="none" opacity="0.6"/>
+    
+    <!-- Sparkles -->
+    <path d="M 50 120 L 52 122 L 50 124 L 48 122 Z" fill="#FFE66D"/>
+    <path d="M 160 140 L 162 142 L 160 144 L 158 142 Z" fill="#4ECDC4"/>
+    <path d="M 30 80 L 31 81 L 30 82 L 29 81 Z" fill="#A8E6CF"/>
+  </g>
+</svg>

@@ -19,7 +19,7 @@ export async function getAllTestimonials(req: Request, res: Response) {
 
 export async function addATestimonial(req: Request, res: Response) {
   try {
-    const { category, product, "product-id": productId, comments, rating } = req.body;
+    const { category, product, "product-id": productId, comments, rating, customerName } = req.body;
 
     if (!category || !product || !productId || !comments || rating === undefined) {
       return res.status(400).json({
@@ -40,6 +40,7 @@ export async function addATestimonial(req: Request, res: Response) {
       "product-id": productId,
       comments,
       rating: ratingNum,
+      customerName,
     });
 
     res.status(201).json(testimonial);
@@ -56,13 +57,14 @@ export async function updateATestimonial(req: Request, res: Response) {
       return res.status(400).json({ message: "Invalid testimonial ID" });
     }
 
-    const { category, product, "product-id": productId, comments, rating } = req.body;
+    const { category, product, "product-id": productId, comments, rating, customerName } = req.body;
     const updates: any = {};
 
     if (category !== undefined) updates.category = category;
     if (product !== undefined) updates.product = product;
     if (productId !== undefined) updates["product-id"] = productId;
     if (comments !== undefined) updates.comments = comments;
+    if (customerName !== undefined) updates.customerName = customerName;
     if (rating !== undefined) {
       const ratingNum = Number(rating);
       if (isNaN(ratingNum) || ratingNum < 0 || ratingNum > 5) {

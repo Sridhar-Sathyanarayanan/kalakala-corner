@@ -12,7 +12,7 @@ import { NgxSpinnerService } from "ngx-spinner";
   standalone: true,
   imports: [CommonModule, FormsModule, MaterialStandaloneModules],
   templateUrl: "./login.component.html",
-  styleUrls: ["./login.component.scss"],
+  styleUrl: "./login.component.scss",
 })
 export class LoginComponent {
   username: string = "";

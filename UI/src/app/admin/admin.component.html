@@ -40,16 +40,16 @@
           <mat-icon>contact_support</mat-icon>
           <h2>Customer Enquiries</h2>
         </div>
-        @if (enquiries.length > 0) {
-        <div class="enquiry-count">{{ enquiries.length }} Total Enquiries</div>
+        @if (enquiries().length > 0) {
+        <div class="enquiry-count">{{ enquiries().length }} Total Enquiries</div>
         }
       </div>
 
       <!-- Table Content -->
       <div class="table-wrapper">
         <!-- Desktop Table View -->
-        @if (enquiries.length > 0) {
-        <table mat-table [dataSource]="enquiries">
+        @if (enquiries().length > 0) {
+        <table mat-table [dataSource]="enquiries()">
           <!-- Enquiry Date Column -->
           <ng-container matColumnDef="date">
             <th mat-header-cell *matHeaderCellDef>Date</th>
@@ -117,9 +117,9 @@
         }
 
         <!-- Mobile Card View -->
-        @if (enquiries.length > 0) {
+        @if (enquiries().length > 0) {
         <div class="mobile-enquiries-list">
-          @for (enquiry of enquiries; track enquiry) {
+          @for (enquiry of enquiries(); track enquiry) {
           <div class="enquiry-card">
             <div class="card-header">
               <div class="customer-info">
@@ -179,7 +179,7 @@
         }
 
         <!-- Empty State -->
-        @if (enquiries.length === 0) {
+        @if (enquiries().length === 0) {
         <div class="no-enquiries">
           <mat-icon>inbox</mat-icon>
           <h3>No Enquiries Yet</h3>
@@ -196,23 +196,24 @@
           <mat-icon>star</mat-icon>
           <h2>Manage Testimonials</h2>
         </div>
-        @if (testimonials.length > 0) {
-        <div class="testimonial-count">{{ testimonials.length }} Total Testimonials</div>
+        @if (testimonials().length > 0) {
+        <div class="testimonial-count">{{ testimonials().length }} Total Testimonials</div>
         }
       </div>
 
       <!-- Add/Edit Testimonial Form -->
       <div class="testimonial-form-container">
-        <h3>{{ isEditMode ? 'Edit' : 'Add' }} Testimonial</h3>
+        <h3>{{ isEditMode() ? 'Edit' : 'Add' }} Testimonial</h3>
         <form class="testimonial-form">
           <mat-form-field appearance="outline">
             <mat-label>Category</mat-label>
             <mat-select 
-              [(ngModel)]="testimonialForm.category" 
+              [ngModel]="form.category" 
+              (ngModelChange)="updateFormField('category', $event)"
               name="category" 
               required
               (selectionChange)="onCategoryChange()">
-              @for (category of categories; track category.path) {
+              @for (category of categories(); track category.path) {
                 <mat-option [value]="category.path">{{ category.name }}</mat-option>
               }
             </mat-select>
@@ -221,25 +222,37 @@
           <mat-form-field appearance="outline">
             <mat-label>Product Name</mat-label>
             <mat-select 
-              [(ngModel)]="testimonialForm.product" 
+              [ngModel]="form.product" 
+              (ngModelChange)="updateFormField('product', $event)"
               name="product" 
               required
-              [disabled]="!testimonialForm.category"
+              [disabled]="!form.category"
               (selectionChange)="onProductChange($event)">
-              @for (product of filteredProducts; track product.id) {
+              @for (product of filteredProducts(); track product.id) {
                 <mat-option [value]="product.name" [attr.data-product-id]="product.id">{{ product.name }}</mat-option>
               }
             </mat-select>
-            @if (!testimonialForm.category) {
+            @if (!form.category) {
               <mat-hint>Please select a category first</mat-hint>
             }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Customer Name (optional)</mat-label>
+            <input 
+              matInput 
+              [ngModel]="form.customerName" 
+              (ngModelChange)="updateFormField('customerName', $event)"
+              name="customerName"
+              placeholder="Enter customer name (optional)">
           </mat-form-field>
 
           <mat-form-field appearance="outline">
             <mat-label>Comments</mat-label>
             <textarea 
               matInput 
-              [(ngModel)]="testimonialForm.comments" 
+              [ngModel]="form.comments" 
+              (ngModelChange)="updateFormField('comments', $event)"
               name="comments"
               rows="3"
               required
@@ -254,12 +267,12 @@
                   type="button"
                   mat-icon-button 
                   (click)="setRating(star)"
-                  [class.selected]="star <= testimonialForm.rating">
-                  <mat-icon>{{ star <= testimonialForm.rating ? 'star' : 'star_border' }}</mat-icon>
+                  [class.selected]="star <= form.rating">
+                  <mat-icon>{{ star <= form.rating ? 'star' : 'star_border' }}</mat-icon>
                 </button>
               }
-              @if (testimonialForm.rating > 0) {
-                <span class="rating-value">{{ testimonialForm.rating }}/5</span>
+              @if (form.rating > 0) {
+                <span class="rating-value">{{ form.rating }}/5</span>
                 <button 
                   type="button"
                   mat-icon-button 
@@ -274,10 +287,10 @@
 
           <div class="form-actions">
             <button mat-raised-button color="primary" type="button" (click)="addOrUpdateTestimonial()">
-              <mat-icon>{{ isEditMode ? 'save' : 'add' }}</mat-icon>
-              {{ isEditMode ? 'Update' : 'Add' }} Testimonial
+              <mat-icon>{{ isEditMode() ? 'save' : 'add' }}</mat-icon>
+              {{ isEditMode() ? 'Update' : 'Add' }} Testimonial
             </button>
-            @if (isEditMode) {
+            @if (isEditMode()) {
               <button mat-raised-button type="button" (click)="cancelEdit()">
                 <mat-icon>cancel</mat-icon>
                 Cancel
@@ -289,8 +302,8 @@
 
       <!-- Testimonials Table -->
       <div class="table-wrapper">
-        @if (testimonials.length > 0) {
-        <table mat-table [dataSource]="testimonials" class="testimonials-table">
+        @if (testimonials().length > 0) {
+        <table mat-table [dataSource]="testimonials()" class="testimonials-table">
           <!-- ID Column -->
           <ng-container matColumnDef="id">
             <th mat-header-cell *matHeaderCellDef>ID</th>
@@ -310,6 +323,18 @@
             <th mat-header-cell *matHeaderCellDef>Product</th>
             <td mat-cell *matCellDef="let testimonial">
               <span class="product-badge">{{ testimonial.product }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Customer Name Column -->
+          <ng-container matColumnDef="customerName">
+            <th mat-header-cell *matHeaderCellDef>Customer Name</th>
+            <td mat-cell *matCellDef="let testimonial">
+              @if (testimonial.customerName) {
+                <span>{{ testimonial.customerName }}</span>
+              } @else {
+                <span class="no-data">--</span>
+              }
             </td>
           </ng-container>
 

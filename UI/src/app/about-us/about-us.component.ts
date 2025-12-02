@@ -7,7 +7,7 @@ import { MaterialStandaloneModules } from "../shared/material-standalone";
   standalone: true,
   imports: [CommonModule, MaterialStandaloneModules],
   templateUrl: "./about-us.component.html",
-  styleUrls: ["./about-us.component.scss"],
+  styleUrl: "./about-us.component.scss",
 })
 export class AboutUsComponent {
   missions = [

@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "install:all": "npm i && npm --prefix ui i --legacy-peer-deps && npm --prefix mid-tier i --legacy-peer-deps",
-    "dev": "concurrently -n mid-tier,ui --kill-others \"npm --prefix mid-tier run start:dev\" \"npm --prefix ui run start\"",
-    "build": "npm --prefix ui run build && npm --prefix mid-tier run build",
-    "check-for-updates:all": "ncu -u && ncu --prefix ui -u && ncu --prefix mid-tier -u"
+    "install:all": "npm i && npm --prefix UI i --legacy-peer-deps && npm --prefix mid-tier i --legacy-peer-deps",
+    "dev": "concurrently -n mid-tier,UI --kill-others \"npm --prefix mid-tier run start:dev\" \"npm --prefix UI run start\"",
+    "build": "npm --prefix UI run build && npm --prefix mid-tier run build",
+    "check-for-updates:all": "npx npm-check-updates -u && cd UI && npx npm-check-updates -u && cd ../mid-tier && npx npm-check-updates -u && cd .."
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

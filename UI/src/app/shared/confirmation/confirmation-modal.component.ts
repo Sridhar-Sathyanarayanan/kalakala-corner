@@ -4,11 +4,11 @@ import { MAT_DIALOG_DATA, MatDialogRef } from "@angular/material/dialog";
 import { MaterialStandaloneModules } from "../../shared/material-standalone";
 
 @Component({
-  selector: "app-confirm-dialog",
+  selector: "app-confirmation-modal",
   standalone: true,
   imports: [CommonModule, MaterialStandaloneModules],
   templateUrl: "./confirmation-modal.component.html",
-  styleUrls: ["./confirmation-modal.component.scss"],
+  styleUrl: "./confirmation-modal.component.scss",
 })
 export class ConfirmationModalComponent {
   constructor(

@@ -18,9 +18,11 @@
       <mat-form-field appearance="outline" class="full">
         <mat-label>Categories</mat-label>
         <mat-select formControlName="category" multiple>
-          <mat-option *ngFor="let cat of categories" [value]="cat.path">
+          @for (cat of categories; track cat) {
+          <mat-option [value]="cat.path">
             {{ cat.name }}
           </mat-option>
+          }
         </mat-select>
 
         @if (productForm.get('category')?.hasError('required') &&

@@ -14,7 +14,7 @@ import { ProductPayload } from "../../models/app.model";
   standalone: true,
   imports: [MaterialStandaloneModules],
   templateUrl: "./add-product.component.html",
-  styleUrls: ["./add-product.component.scss"],
+  styleUrl: "./add-product.component.scss",
 })
 export class AddProductComponent implements OnInit {
   productForm: FormGroup;
@@ -244,8 +244,7 @@ export class AddProductComponent implements OnInit {
       error: (err) => {
         this.spinner.hide();
         if (err?.error?.message?.includes?.("No token found")) {
-          this.snackBar.open("Please login", undefined, { duration: 3000 });
-          this.router.navigate(["/login"]);
+          this.snackBar.open("Please Login", undefined, { duration: 3000 });
         } else {
           this.snackBar.open("Error Occurred", undefined, { duration: 3000 });
         }

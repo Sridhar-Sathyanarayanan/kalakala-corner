@@ -50,8 +50,11 @@ export class ProductService {
     );
   }
 
-  downloadPDF(): Observable<Product> {
-    return this.http.get<Product>(`${environment.apiURL}/downloadPDF`, {
+  downloadPDF(category?: string): Observable<Product> {
+    const url = category && category !== 'all' 
+      ? `${environment.apiURL}/downloadPDF/${category}`
+      : `${environment.apiURL}/downloadPDF`;
+    return this.http.get<Product>(url, {
       withCredentials: true,
     });
   }

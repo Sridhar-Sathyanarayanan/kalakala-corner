@@ -1,4 +1,6 @@
-<div class="catalogue" id="catalogue-content">
+<ngx-spinner bdColor="rgba(51,51,51,0.8)" size="medium" color="#fff" type="square-jelly-box">
+</ngx-spinner>
+<div class="catalogue" id="catalogue-content" #catalogueContent>
   <div class="catalogue-header">
     <div class="header-content">
       <div class="title-section">
@@ -7,7 +9,7 @@
           Product Catalogue
           <span class="title-icon">✨</span>
         </h1>
-        <h4 class="catalogue-subtitle">{{ categoryTitle }}</h4>
+        <h4 class="catalogue-subtitle">{{ categoryTitle() }}</h4>
       </div>
       @if (appService.isLoggedIn$ | async) {
       <div class="header-actions">
@@ -20,17 +22,24 @@
     </div>
   </div>
 
-  @if(products.length){
+  @if(errorMessage()) {
+  <div class="error-banner">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ errorMessage() }}</span>
+  </div>
+  }
+
+  @if(products().length > 0){
   <!-- Top Paginator -->
   <div class="paginator-wrapper top-paginator">
-    <mat-paginator [length]="products.length" [pageSize]="pageSize" [pageIndex]="currentPage"
+    <mat-paginator [length]="products().length" [pageSize]="pageSize()" [pageIndex]="currentPage()"
       [pageSizeOptions]="[3, 6, 9, 12, 15]" [showFirstLastButtons]="true" (page)="onPageChange($event)"
       class="catalogue-paginator">
     </mat-paginator>
   </div>
 
   <div class="products-grid">
-    @for (product of paginatedProducts; track product.id) {
+    @for (product of paginatedProducts(); track product.id) {
     <div class="product-card" [class.has-discount]="product.hasDiscount" (click)="openProductModal(product)">
       @if(product.hasDiscount) {
       <div class="discount-ribbon">
@@ -112,12 +121,12 @@
 
   <!-- Bottom Paginator -->
   <div class="paginator-wrapper bottom-paginator">
-    <mat-paginator [length]="products.length" [pageSize]="pageSize" [pageIndex]="currentPage"
+    <mat-paginator [length]="products().length" [pageSize]="pageSize()" [pageIndex]="currentPage()"
       [pageSizeOptions]="[3, 6, 9, 12, 15]" [showFirstLastButtons]="true" (page)="onPageChange($event)"
       class="catalogue-paginator">
     </mat-paginator>
   </div>
-  } @else if(!(products.length || loading)) {
+  } @else if(!(products().length || loading())) {
   <div class="empty-state">
     <img src="assets/images/no_data_found.png" alt="No Data Found" class="empty-image" />
     <h3 class="empty-title">No products found</h3>

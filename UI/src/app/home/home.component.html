@@ -57,58 +57,15 @@
 
         <!-- dots -->
         <div class="dots">
-          <button mat-icon-button *ngFor="let s of slides; let i = index" (click)="goToSlide(i)">
+          @for (s of slides; track s; let i = $index) {
+          <button mat-icon-button (click)="goToSlide(i)">
             <span class="dot" [class.active]="currentIndex() === i"></span>
           </button>
-        </div>
-      </div>
-    </div>
-  </section>
-  
-  <!-- FEATURED PRODUCT -->
-  @if (featuredProduct && featuredProductImageUrl) {
-  <section class="featured-product">
-    <h2>
-      <span class="highlight">Featured </span>
-      <span class="accent">Product</span>
-    </h2>
-
-    <div class="featured-content">
-      <div class="featured-image">
-        <img [src]="featuredProductImageUrl" [alt]="featuredProduct.name" />
-        <div class="image-badge">
-          <mat-icon>star</mat-icon>
-          <span>Featured</span>
-        </div>
-      </div>
-
-      <div class="featured-details">
-        <h3>{{ featuredProduct.name }}</h3>
-        <p class="description">{{ featuredProduct.desc }}</p>
-        
-        @if (featuredProduct.variants && featuredProduct.variants.length > 0) {
-        <div class="price-info">
-          <span class="price">₹{{ featuredProduct.variants[0].price }}</span>
-          @if (featuredProduct.variants[0].discountedPrice && featuredProduct.variants[0].discountedPrice < featuredProduct.variants[0].price) {
-            <span class="discounted-price">₹{{ featuredProduct.variants[0].discountedPrice }}</span>
           }
         </div>
-        }
-
-        <div class="featured-actions">
-          <button mat-raised-button color="primary" [routerLink]="['/catalogue', featuredProduct.category || 'all']">
-            <mat-icon>shopping_cart</mat-icon>
-            View in Catalogue
-          </button>
-          <button mat-raised-button routerLink="/contact">
-            <mat-icon>contact_support</mat-icon>
-            Enquire Now
-          </button>
-        </div>
       </div>
     </div>
   </section>
-  }
 
   <!-- ABOUT (image left / text right on desktop) -->
   <section class="about">
@@ -215,11 +172,18 @@
                 </div>
                 }
                 
-                <p class="comment">{{ testimonial.comments }}</p>
+                <p class="comment">
+                  {{ testimonial.comments }}
+                  @if (testimonial.customerName) {
+                  <span class="customer-name">— {{ testimonial.customerName }}</span>
+                  }
+                </p>
                 
-                <div class="product-info">
-                  <mat-icon>shopping_bag</mat-icon>
-                  <span>{{ testimonial.product }}</span>
+                <div class="testimonial-footer">
+                  <div class="product-info">
+                    <mat-icon>shopping_bag</mat-icon>
+                    <span>{{ testimonial.product }}</span>
+                  </div>
                 </div>
               </div>
             </div>

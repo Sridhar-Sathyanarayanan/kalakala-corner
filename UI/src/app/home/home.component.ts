@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterLink } from "@angular/router";
 import { DomSanitizer, SafeUrl } from "@angular/platform-browser";
+import { Subject, takeUntil } from "rxjs";
 
 import { MaterialStandaloneModules } from "../shared/material-standalone";
 import { TestimonialsService } from "../services/testimonials.service";
@@ -13,7 +14,7 @@ import { Testimonial, ProductPayload } from "../models/app.model";
   standalone: true,
   imports: [CommonModule, RouterLink, MaterialStandaloneModules],
   templateUrl: "./home.component.html",
-  styleUrls: ["./home.component.scss"],
+  styleUrl: "./home.component.scss",
 })
 export class HomeComponent implements OnInit, OnDestroy {
   // Angular 20 signals for reactive state
@@ -21,11 +22,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   currentTestimonialIndex = signal(0);
   autoplayTimer: any;
   testimonialTimer: any;
+  private destroy$ = new Subject<void>();
   
   testimonials: Testimonial[] = [];
   testimonialProductImages: Map<number, SafeUrl> = new Map();
-  featuredProduct: ProductPayload | null = null;
-  featuredProductImageUrl: SafeUrl | null = null;
 
   catalogItems = [
     {
@@ -134,14 +134,13 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     // Load testimonials
-    this.testimonialsService.getTestimonials().subscribe((res) => {
-      this.testimonials = res.items || [];
-      // Load product images for each testimonial
-      this.loadTestimonialProductImages();
-    });
-
-    // Load featured product
-    this.loadFeaturedProduct();
+    this.testimonialsService.getTestimonials()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((res) => {
+        this.testimonials = res.items || [];
+        // Load product images for each testimonial
+        this.loadTestimonialProductImages();
+      });
 
     // autoplay slides — gentle cadence
     this.autoplayTimer = setInterval(() => {
@@ -159,6 +158,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
     clearInterval(this.autoplayTimer);
     clearInterval(this.testimonialTimer);
   }
@@ -200,53 +201,34 @@ export class HomeComponent implements OnInit, OnDestroy {
       .map((_, i) => i < Math.floor(rating));
   }
 
-  loadFeaturedProduct(): void {
-    this.productService.getProducts("all").subscribe((res) => {
-      if (res.items && res.items.length > 0) {
-        // Get a random product
-        const randomIndex = Math.floor(Math.random() * res.items.length);
-        this.featuredProduct = res.items[randomIndex];
-        
-        // Load the first image if available
-        if (this.featuredProduct.images && this.featuredProduct.images.length > 0) {
-          this.productService.fetchS3Image(this.featuredProduct.images[0]).subscribe(
-            (blob) => {
-              const objectURL = URL.createObjectURL(blob);
-              this.featuredProductImageUrl = this.sanitizer.bypassSecurityTrustUrl(objectURL);
-            },
-            (error) => {
-              console.error("Error loading product image:", error);
-            }
-          );
-        }
-      }
-    });
-  }
-
   loadTestimonialProductImages(): void {
     this.testimonials.forEach((testimonial) => {
       if (testimonial["product-id"]) {
-        this.productService.getAProduct(testimonial["product-id"]).subscribe(
-          (res) => {
-            const product = res.items;
-            if (product && product.images && product.images.length > 0) {
-              // Load the first image
-              this.productService.fetchS3Image(product.images[0]).subscribe(
-                (blob) => {
-                  const objectURL = URL.createObjectURL(blob);
-                  const safeUrl = this.sanitizer.bypassSecurityTrustUrl(objectURL);
-                  this.testimonialProductImages.set(testimonial.id, safeUrl);
-                },
-                (error) => {
-                  console.error(`Error loading image for testimonial ${testimonial.id}:`, error);
-                }
-              );
+        this.productService.getAProduct(testimonial["product-id"])
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: (res) => {
+              const product = res.items;
+              if (product && product.images && product.images.length > 0) {
+                // Load the first image
+                this.productService.fetchS3Image(product.images[0])
+                  .pipe(takeUntil(this.destroy$))
+                  .subscribe({
+                    next: (blob) => {
+                      const objectURL = URL.createObjectURL(blob);
+                      const safeUrl = this.sanitizer.bypassSecurityTrustUrl(objectURL);
+                      this.testimonialProductImages.set(testimonial.id, safeUrl);
+                    },
+                    error: (error) => {
+                      console.error(`Error loading image for testimonial ${testimonial.id}:`, error);
+                    }
+                  });
+              }
+            },
+            error: (error) => {
+              console.error(`Error loading product for testimonial ${testimonial.id}:`, error);
             }
-          },
-          (error) => {
-            console.error(`Error loading product for testimonial ${testimonial.id}:`, error);
-          }
-        );
+          });
       }
     });
   }

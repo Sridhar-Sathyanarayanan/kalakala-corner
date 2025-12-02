@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, signal, inject } from "@angular/core";
 import { Customerenquiry, Testimonial } from "../models/app.model";
 import { CustomerEnquiriesService } from "../services/customer-enquiries.service";
 import { TestimonialsService } from "../services/testimonials.service";
@@ -13,7 +13,7 @@ import { ConfirmationModalComponent } from "../shared/confirmation/confirmation-
 @Component({
   selector: "app-admin",
   templateUrl: "./admin.component.html",
-  styleUrls: ["./admin.component.scss"],
+  styleUrl: "./admin.component.scss",
   imports: [MaterialStandaloneModules],
 })
 export class AdminComponent implements OnInit {
@@ -30,32 +30,44 @@ export class AdminComponent implements OnInit {
     "id",
     "category",
     "product",
+    "customerName",
     "comments",
     "rating",
     "updatedAt",
     "actions",
   ];
 
-  // enquiries data
-  enquiries: Customerenquiry[] = [];
-  
-  // testimonials data
-  testimonials: Testimonial[] = [];
-  categories: any[] = [];
-  allProducts: any[] = [];
-  filteredProducts: any[] = [];
-  
+  // Signals for reactive state management (Angular 21 best practice)
+  enquiries = signal<Customerenquiry[]>([]);
+  testimonials = signal<Testimonial[]>([]);
+  categories = signal<any[]>([]);
+  allProducts = signal<any[]>([]);
+  filteredProducts = signal<any[]>([]);
+
   // testimonial form
-  testimonialForm = {
+  testimonialForm = signal({
     category: "",
     product: "",
     "product-id": "",
     comments: "",
     rating: 0,
-  };
-  
-  editingTestimonial: Testimonial | null = null;
-  isEditMode = false;
+    customerName: "",
+  });
+
+  editingTestimonial = signal<Testimonial | null>(null);
+  isEditMode = signal<boolean>(false);
+
+  // Helper getters/setters for ngModel compatibility
+  get form() {
+    return this.testimonialForm();
+  }
+
+  updateFormField(field: string, value: any): void {
+    this.testimonialForm.set({
+      ...this.testimonialForm(),
+      [field]: value,
+    });
+  }
 
   constructor(
     private customerEnquiries: CustomerEnquiriesService,
@@ -72,7 +84,7 @@ export class AdminComponent implements OnInit {
     this.appService.isLoggedIn$.subscribe((status) => {
       if (!status) this.router.navigate(["/login"]);
     });
-    
+
     this.loadEnquiries();
     this.loadTestimonials();
     this.loadCategories();
@@ -83,99 +95,119 @@ export class AdminComponent implements OnInit {
     this.customerEnquiries
       .getEnquiriesList()
       .subscribe((res: Customerenquiry[]) => {
-        this.enquiries = res;
+        this.enquiries.set(res);
       });
   }
 
   loadTestimonials(): void {
     this.testimonialsService.getTestimonials().subscribe((res) => {
-      this.testimonials = res.items || [];
+      this.testimonials.set(res.items || []);
     });
   }
 
   loadCategories(): void {
     this.productService.getCategories().subscribe((res) => {
-      this.categories = res.items || [];
+      this.categories.set(res.items || []);
     });
   }
 
   loadAllProducts(): void {
     this.productService.getProducts("all").subscribe((res) => {
-      this.allProducts = res.items || [];
-      console.log('Loaded all products:', this.allProducts.length);
+      this.allProducts.set(res.items || []);
+
       // If editing and category is already set, filter products
-      if (this.testimonialForm.category && this.isEditMode) {
+      if (this.testimonialForm().category && this.isEditMode()) {
         this.onCategoryChange();
       }
     });
   }
 
   onCategoryChange(): void {
-    this.testimonialForm.product = ""; // Reset product selection
-    this.testimonialForm["product-id"] = ""; // Reset product-id
-    if (this.testimonialForm.category) {
+    const currentForm = this.testimonialForm();
+
+    // Only reset product fields if not in edit mode
+    if (!this.isEditMode()) {
+      this.testimonialForm.set({
+        ...currentForm,
+        product: "",
+        "product-id": "",
+      });
+    }
+
+    if (currentForm.category) {
       // If products aren't loaded yet, load them for the selected category
-      if (this.allProducts.length === 0) {
-        this.productService.getProducts(this.testimonialForm.category).subscribe((res) => {
-          this.filteredProducts = res.items || [];
-          console.log('Loaded products for category:', this.filteredProducts);
-        });
+      if (this.allProducts().length === 0) {
+        this.productService
+          .getProducts(currentForm.category)
+          .subscribe((res) => {
+            this.filteredProducts.set(res.items || []);
+          });
       } else {
-        // Log all product categories to debug
-        console.log('All product categories:', this.allProducts.map(p => p.category));
-        console.log('Selected category:', this.testimonialForm.category);
-        
-        this.filteredProducts = this.allProducts.filter((p) => {
+        const filtered = this.allProducts().filter((p) => {
           if (!p.category) return false;
-          
+
           // Check if category is an array
           if (Array.isArray(p.category)) {
-            return p.category.some(cat => 
-              String(cat).toLowerCase() === String(this.testimonialForm.category).toLowerCase()
+            return p.category.some(
+              (cat) =>
+                String(cat).toLowerCase() ===
+                String(currentForm.category).toLowerCase()
             );
           }
-          
+
           // If category is a string
-          return String(p.category).toLowerCase() === String(this.testimonialForm.category).toLowerCase();
+          return (
+            String(p.category).toLowerCase() ===
+            String(currentForm.category).toLowerCase()
+          );
         });
-        
-        console.log('Filtered products:', this.filteredProducts);
-        
+
+        this.filteredProducts.set(filtered);
+
         // If no products found, try loading from API
-        if (this.filteredProducts.length === 0) {
-          console.log('No products found in cache, loading from API...');
-          this.productService.getProducts(this.testimonialForm.category).subscribe((res) => {
-            this.filteredProducts = res.items || [];
-            console.log('API loaded products:', this.filteredProducts);
-          });
+        if (filtered.length === 0) {
+          this.productService
+            .getProducts(currentForm.category)
+            .subscribe((res) => {
+              this.filteredProducts.set(res.items || []);
+            });
         }
       }
     } else {
-      this.filteredProducts = [];
+      this.filteredProducts.set([]);
     }
   }
 
   onProductChange(event: any): void {
     // Find the selected product and set the product-id
-    const selectedProduct = this.filteredProducts.find(
-      (p) => p.name === this.testimonialForm.product
+    const currentForm = this.testimonialForm();
+    const selectedProduct = this.filteredProducts().find(
+      (p) => p.name === currentForm.product
     );
     if (selectedProduct) {
-      this.testimonialForm["product-id"] = selectedProduct.id;
+      this.testimonialForm.set({
+        ...currentForm,
+        "product-id": selectedProduct.id,
+      });
     }
   }
 
   addOrUpdateTestimonial(): void {
-    if (!this.testimonialForm.category || !this.testimonialForm.product || !this.testimonialForm.comments) {
+    const currentForm = this.testimonialForm();
+    if (
+      !currentForm.category ||
+      !currentForm.product ||
+      !currentForm.comments
+    ) {
       this.snackBar.open("Please fill all required fields", "Close", {
         duration: 3000,
       });
       return;
     }
 
-    if (this.isEditMode && this.editingTestimonial) {
+    if (this.isEditMode() && this.editingTestimonial()) {
       this.testimonialsService
-        .updateTestimonial(this.editingTestimonial.id, this.testimonialForm)
+        .updateTestimonial(this.editingTestimonial()!.id, currentForm)
         .subscribe({
           next: () => {
             this.snackBar.open("Testimonial updated successfully", "Close", {
@@ -185,13 +217,19 @@ export class AdminComponent implements OnInit {
             this.resetForm();
           },
           error: (err) => {
-            this.snackBar.open("Error updating testimonial", "Close", {
-              duration: 3000,
-            });
+            if (err?.error?.message?.includes?.("No token found")) {
+              this.snackBar.open("Please Login", "Close", {
+                duration: 3000,
+              });
+            } else {
+              this.snackBar.open("Error updating testimonial", "Close", {
+                duration: 3000,
+              });
+            }
           },
         });
     } else {
-      this.testimonialsService.addTestimonial(this.testimonialForm).subscribe({
+      this.testimonialsService.addTestimonial(currentForm).subscribe({
         next: () => {
           this.snackBar.open("Testimonial added successfully", "Close", {
             duration: 3000,
@@ -200,31 +238,70 @@ export class AdminComponent implements OnInit {
           this.resetForm();
         },
         error: (err) => {
-          this.snackBar.open("Error adding testimonial", "Close", {
-            duration: 3000,
-          });
+          if (err?.error?.message?.includes?.("No token found")) {
+            this.snackBar.open("Please Login", "Close", {
+              duration: 3000,
+            });
+          } else {
+            this.snackBar.open("Error adding testimonial", "Close", {
+              duration: 3000,
+            });
+          }
         },
       });
     }
   }
 
   editTestimonial(testimonial: Testimonial): void {
-    this.isEditMode = true;
-    this.editingTestimonial = testimonial;
-    this.testimonialForm = {
+    this.isEditMode.set(true);
+    this.editingTestimonial.set(testimonial);
+
+    // First set the form with all values
+    this.testimonialForm.set({
       category: testimonial.category,
       product: testimonial.product,
       "product-id": testimonial["product-id"],
       comments: testimonial.comments,
       rating: testimonial.rating,
-    };
-    // Load products for the selected category
-    if (this.allProducts.length > 0) {
-      this.onCategoryChange();
+      customerName: testimonial.customerName || "",
+    });
+
+    // Load products for the selected category without resetting product field
+    if (this.allProducts().length > 0) {
+      // Filter products but preserve the current product selection
+      const filtered = this.allProducts().filter((p) => {
+        if (!p.category) return false;
+
+        // Check if category is an array
+        if (Array.isArray(p.category)) {
+          return p.category.some(
+            (cat) =>
+              String(cat).toLowerCase() ===
+              String(testimonial.category).toLowerCase()
+          );
+        }
+
+        // If category is a string
+        return (
+          String(p.category).toLowerCase() ===
+          String(testimonial.category).toLowerCase()
+        );
+      });
+
+      this.filteredProducts.set(filtered);
+
+      // If no products found in cache, try loading from API
+      if (filtered.length === 0) {
+        this.productService
+          .getProducts(testimonial.category)
+          .subscribe((res) => {
+            this.filteredProducts.set(res.items || []);
+          });
+      }
     } else {
       // Products not loaded yet, load them for this category
       this.productService.getProducts(testimonial.category).subscribe((res) => {
-        this.filteredProducts = res.items || [];
+        this.filteredProducts.set(res.items || []);
       });
     }
   }
@@ -250,9 +327,15 @@ export class AdminComponent implements OnInit {
             this.loadTestimonials();
           },
           error: (err) => {
-            this.snackBar.open("Error deleting testimonial", "Close", {
-              duration: 3000,
-            });
+            if (err?.error?.message?.includes?.("No token found")) {
+              this.snackBar.open("Please Login", "Close", {
+                duration: 3000,
+              });
+            } else {
+              this.snackBar.open("Error deleting testimonial", "Close", {
+                duration: 3000,
+              });
+            }
           },
         });
       }
@@ -260,27 +343,34 @@ export class AdminComponent implements OnInit {
   }
 
   resetForm(): void {
-    this.testimonialForm = {
+    this.testimonialForm.set({
       category: "",
       product: "",
       "product-id": "",
       comments: "",
       rating: 0,
-    };
-    this.filteredProducts = [];
-    this.isEditMode = false;
-    this.editingTestimonial = null;
+      customerName: "",
+    });
+    this.filteredProducts.set([]);
+    this.isEditMode.set(false);
+    this.editingTestimonial.set(null);
   }
-  
+
   cancelEdit(): void {
     this.resetForm();
   }
 
   setRating(rating: number): void {
-    this.testimonialForm.rating = rating;
+    this.testimonialForm.set({
+      ...this.testimonialForm(),
+      rating,
+    });
   }
 
   clearRating(): void {
-    this.testimonialForm.rating = 0;
+    this.testimonialForm.set({
+      ...this.testimonialForm(),
+      rating: 0,
+    });
   }
 }

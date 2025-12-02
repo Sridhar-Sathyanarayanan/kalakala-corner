@@ -8,7 +8,7 @@ import { MaterialStandaloneModules } from "../../shared/material-standalone";
   standalone: true,
   imports: [CommonModule, MaterialStandaloneModules],
   templateUrl: "./message-modal.component.html",
-  styleUrls: ["./message-modal.component.scss"],
+  styleUrl: "./message-modal.component.scss",
 })
 export class MessageModalComponent {
   constructor(

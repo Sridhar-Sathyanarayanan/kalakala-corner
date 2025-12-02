@@ -16,7 +16,7 @@ import { MessageModalComponent } from "../../shared/message/message-modal.compon
 @Component({
   selector: "app-modify-category",
   templateUrl: "./modify-category.component.html",
-  styleUrls: ["./modify-category.component.scss"],
+  styleUrl: "./modify-category.component.scss",
   standalone: true,
   imports: [MaterialStandaloneModules],
 })
@@ -190,9 +190,15 @@ export class ModifyCategoryComponent implements OnInit {
           this.loadCategories();
         },
         error: (err) => {
-          this.snackBar.open("Failed to save categories", "Close", {
-            duration: 2000,
-          });
+          if (err?.error?.message?.includes?.("No token found")) {
+            this.snackBar.open("Please Login", "Close", {
+              duration: 3000,
+            });
+          } else {
+            this.snackBar.open("Failed to save categories", "Close", {
+              duration: 2000,
+            });
+          }
           console.error(err);
         },
       });
