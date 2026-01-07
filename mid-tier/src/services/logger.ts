@@ -12,8 +12,8 @@ const logger = createLogger({
   format: combine(
     timestamp(),
     errors({ stack: true }),
-    process.env.ENVIRONMENT === "production" ? json() : colorize({ all: true }),
-    process.env.ENVIRONMENT === "production" ? json() : logFormat
+    process.env.NODE_ENV === "production" ? json() : colorize({ all: true }),
+    process.env.NODE_ENV === "production" ? json() : logFormat
   ),
   transports: [new transports.Console()],
 });

@@ -1,117 +1,129 @@
+<!-- add-product.component.html -->
 <div class="add-product-container">
   <div class="content">
     <h1>{{ id ? "Edit" : "Add New" }} Product</h1>
     <mat-divider></mat-divider>
-
+    @if(productForm){
     <form [formGroup]="productForm" (ngSubmit)="submit()">
-      <!-- Name -->
       <mat-form-field appearance="outline" class="full">
         <mat-label>Product Name</mat-label>
-        <input matInput formControlName="name" />
+        <input matInput formControlName="name" placeholder="e.g., Classic T-shirt" />
         @if (productForm.get('name')?.hasError('required')) {
         <mat-error>Name is required</mat-error>
         } @if (productForm.get('name')?.hasError('maxlength')) {
         <mat-error>Max 120 chars</mat-error>
         }
+        <mat-hint align="end">{{ productForm.get("name")?.value?.length || 0 }}/120</mat-hint>
       </mat-form-field>
-
-      <!-- Categories -->
       <mat-form-field appearance="outline" class="full">
         <mat-label>Categories</mat-label>
         <mat-select formControlName="category" multiple>
-          @for (cat of categories; track cat.path) {
+          @for (cat of categories; track cat) {
           <mat-option [value]="cat.path">
             {{ cat.name }}
           </mat-option>
           }
         </mat-select>
-        @if ( productForm.get('category')?.hasError('required') &&
-        productForm.get('category')?.touched ) {
-        <mat-error>At least one category required</mat-error>
+
+        @if (productForm.get('category')?.hasError('required') &&
+        productForm.get('category')?.touched) {
+        <mat-error>At least one category is required</mat-error>
         }
       </mat-form-field>
 
-      <!-- Description -->
       <mat-form-field appearance="outline" class="full">
-        <mat-label>Description</mat-label>
-        <textarea matInput rows="4" formControlName="desc"></textarea>
+        <mat-label>Product Description</mat-label>
+        <textarea matInput rows="4" formControlName="desc" placeholder="Short description"></textarea>
+        @if (productForm.get('desc')?.hasError('required')) {
+        <mat-error>Description is required</mat-error>
+        } @if (productForm.get('desc')?.hasError('maxlength')) {
+        <mat-error>Max 500 chars</mat-error>
+        }
       </mat-form-field>
 
-      <!-- Variants -->
-      <div class="variants" formArrayName="variants">
+      <div class="variants">
         <h3>Sizes & Rates</h3>
+        <div formArrayName="variants">
+          @for (v of variants.controls; track v) {
+          <div class="variant-row" [formGroupName]="$index">
+            <mat-form-field appearance="outline">
+              <mat-label>Size</mat-label>
+              <input matInput formControlName="size" />
+              @if (v.get('size')?.invalid && v.get('size')?.touched) {
+              <mat-error>Required</mat-error>
+              }
+            </mat-form-field>
 
-        @for (v of variants.controls; let i = $index; track i) {
-        <div class="variant-row" [formGroupName]="i">
-          <mat-form-field appearance="outline">
-            <mat-label>Size</mat-label>
-            <input matInput formControlName="size" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Rate</mat-label>
-            <input matInput type="number" formControlName="price" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Discounted Rate</mat-label>
-            <input matInput type="number" formControlName="discountedPrice" />
-          </mat-form-field>
-
-          <button mat-icon-button color="warn" type="button" (click)="removeVariant(i)">
-            <mat-icon>remove_circle</mat-icon>
-          </button>
-        </div>
-        }
-
-        <button mat-stroked-button type="button" (click)="addVariant()">
-          <mat-icon>add</mat-icon>
-          Add size/rate
-        </button>
-      </div>
-
-      <!-- Notes -->
-      <div class="notes-section" formArrayName="notes">
-        <h3>Notes</h3>
-
-        @for (n of notes.controls; let i = $index; track i) {
-        <div class="note-row">
-          <mat-form-field appearance="outline">
-            <mat-label>Note</mat-label>
-            <input matInput [formControlName]="i" />
-          </mat-form-field>
-
-          @if (notes.length > 1) {
-          <button mat-icon-button color="warn" type="button" (click)="removeNote(i)">
-            <mat-icon>remove_circle</mat-icon>
-          </button>
+            <mat-form-field appearance="outline">
+              <mat-label>Rate</mat-label>
+              <input matInput formControlName="price" placeholder="1000" type="number" />
+              @if (v.get('price')?.invalid && v.get('price')?.touched) {
+              <mat-error>Must be ≥ 0</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Discounted Rate</mat-label>
+              <input matInput formControlName="discountedPrice" type="number" />
+              @if (v.get('discountedPrice')?.invalid &&
+              v.get('discountedPrice')?.touched) {
+              <mat-error>Must be ≥ 0</mat-error>
+              }
+            </mat-form-field>
+            <button mat-icon-button color="warn" aria-label="remove variant" (click)="removeVariant($index)">
+              <mat-icon>remove_circle</mat-icon>
+            </button>
+          </div>
           }
         </div>
-        }
 
-        <button mat-stroked-button type="button" (click)="addNote()">
-          <mat-icon>add</mat-icon>
-          Add Note
-        </button>
+        <div class="variant-actions">
+          <button mat-stroked-button type="button" (click)="addVariant()">
+            <mat-icon>add</mat-icon>
+            Add size/rate
+          </button>
+        </div>
+      </div>
+      <div class="notes-section">
+        <h3>Notes</h3>
+        <div formArrayName="notes">
+          @for (note of notes.controls; track note; let i = $index) {
+          <div class="note-row">
+            <mat-form-field class="note-field" appearance="outline">
+              <mat-label>Note</mat-label>
+              <input matInput [formControlName]="i" placeholder="Enter note" />
+            </mat-form-field>
+
+            @if (notes.length > 1) {
+            <button mat-icon-button color="warn" aria-label="remove note" type="button" (click)="removeNote(i)">
+              <mat-icon>remove_circle</mat-icon>
+            </button>
+            }
+          </div>
+          }
+          <div class="variant-actions">
+            <button mat-stroked-button type="button" (click)="addNote()">
+              <mat-icon>add</mat-icon>
+              Add Note
+            </button>
+          </div>
+        </div>
       </div>
 
-      <!-- Images -->
       <div class="image-upload">
         <h3>Images *</h3>
-
-        <input id="imageInput" type="file" hidden multiple accept="image/*" (change)="onFilesSelected($event)" />
-
-        <button mat-flat-button color="primary" type="button" (click)="uploadImages()">
-          <mat-icon>upload</mat-icon>
-          Upload Images
-        </button>
-
+        <input id="imageInput" type="file" multiple accept="image/*" hidden (change)="onFilesSelected($event)" />
+        <div class="upload-actions">
+          <button mat-flat-button color="primary" type="button" (click)="uploadImages()">
+            <mat-icon>upload</mat-icon> Upload images
+          </button>
+          <span class="hint">Max size per image: 5MB</span>
+        </div>
         @if (imagePreviews.length) {
         <div class="previews">
-          @for (img of imagePreviews; let i = $index; track i) {
+          @for (p of imagePreviews; track p) {
           <div class="preview">
-            <img [src]="img" />
-            <button mat-mini-button color="warn" (click)="removeImage(i)">
+            <img [src]="p" alt="preview" />
+            <button mat-mini-button color="warn" class="remove" (click)="removeImage($index)">
               <mat-icon>close</mat-icon>
             </button>
           </div>
@@ -120,16 +132,15 @@
         }
       </div>
 
-      <!-- Actions -->
       <div class="actions">
-        <button mat-flat-button color="primary" type="submit" [disabled]="
-            productForm.invalid &&
+        <button [disabled]="
+            productForm.invalid ||
             !(imageFiles.length || existingImageUrls.length)
-          ">
-          <mat-icon>save</mat-icon>
-          Save
+          " mat-flat-button color="primary" type="submit">
+          <mat-icon>save</mat-icon> Save
         </button>
       </div>
     </form>
+  }
   </div>
 </div>

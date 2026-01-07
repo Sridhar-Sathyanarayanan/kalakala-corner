@@ -9,7 +9,6 @@ import {
   signal,
   computed,
 } from "@angular/core";
-import { FormsModule } from "@angular/forms";
 import { MatDialog } from "@angular/material/dialog";
 import { ActivatedRoute, Router } from "@angular/router";
 import jsPDF from "jspdf";
@@ -19,7 +18,6 @@ import {
   Product,
   ProductPayload,
   ProductWithPricing,
-  CategoryPayload,
 } from "../models/app.model";
 import { AppService } from "../services/app.service";
 import { ProductService } from "../services/product.service";
@@ -35,7 +33,7 @@ import { NgxSpinnerService } from "ngx-spinner";
   standalone: true,
   templateUrl: "./catalogue.component.html",
   styleUrl: "./catalogue.component.scss",
-  imports: [CommonModule, FormsModule, MaterialStandaloneModules],
+  imports: [CommonModule, MaterialStandaloneModules],
 })
 export class CatalogueComponent implements OnInit, OnDestroy {
   // Constants
@@ -61,7 +59,6 @@ export class CatalogueComponent implements OnInit, OnDestroy {
   products = signal<ProductWithPricing[]>([]);
   category = signal<string>("");
   categoryTitle = signal<string>("");
-  categoryIcon = signal<string>("");
   pageSize = signal<number>(this.DEFAULT_PAGE_SIZE);
   currentPage = signal<number>(0);
   loading = signal<boolean>(true);
@@ -137,7 +134,7 @@ export class CatalogueComponent implements OnInit, OnDestroy {
   paginatedProducts = computed(() => {
     const startIndex = this.currentPage() * this.pageSize();
     const endIndex = startIndex + this.pageSize();
-    return this.filteredProducts().slice(startIndex, endIndex);
+    return this.products().slice(startIndex, endIndex);
   });
 
   private readonly destroy$ = new Subject<void>();
@@ -208,14 +205,12 @@ export class CatalogueComponent implements OnInit, OnDestroy {
           // Set category title
           const categoryData = categories.items.find(
             (d) => d.path === this.category()
-          ) as CategoryPayload & { icon?: string };
+          );
           this.categoryTitle.set(categoryData?.name || "All Products");
-          this.categoryIcon.set(categoryData?.icon || "🔥");
           // Set products
           const productsList = products?.items || [];
           this.calculateProductPricing(productsList);
           this.products.set(productsList);
-          this.updatePriceRange(productsList);
           this.currentPage.set(0);
 
           this.loading.set(false);
@@ -235,9 +230,10 @@ export class CatalogueComponent implements OnInit, OnDestroy {
   }
 
   private setPaginatorTooltips(): void {
-    this.paginatorIntl.firstPageLabel = "First page";
-    this.paginatorIntl.previousPageLabel = "Previous page";
+    this.paginatorIntl.itemsPerPageLabel = "Items per page";
     this.paginatorIntl.nextPageLabel = "Next page";
+    this.paginatorIntl.previousPageLabel = "Previous page";
+    this.paginatorIntl.firstPageLabel = "First page";
     this.paginatorIntl.lastPageLabel = "Last page";
     this.paginatorIntl.getRangeLabel = (
       page: number,
