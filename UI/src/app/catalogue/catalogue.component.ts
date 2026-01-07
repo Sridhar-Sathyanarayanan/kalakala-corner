@@ -66,7 +66,7 @@ export class CatalogueComponent implements OnInit, OnDestroy {
   currentPage = signal<number>(0);
   loading = signal<boolean>(true);
   errorMessage = signal<string>("");
-  
+
   // Price filter signals
   minPriceFilter = signal<number | null>(null);
   maxPriceFilter = signal<number | null>(null);
@@ -75,58 +75,64 @@ export class CatalogueComponent implements OnInit, OnDestroy {
   minPriceAvailable = signal<number>(0);
   maxPriceAvailable = signal<number>(10000);
   filterPanelExpanded = signal<boolean>(false);
-  
+
   // Search filter signals
-  searchFilter = signal<string>('');
-  searchInput = signal<string>(''); // Temporary input value
-  
+  searchFilter = signal<string>("");
+  searchInput = signal<string>(""); // Temporary input value
+
   // Computed signals for filter state
   hasActiveFilters = computed(() => {
-    return this.searchFilter() !== '' || 
-           this.minPriceFilter() !== null || 
-           this.maxPriceFilter() !== null;
+    return (
+      this.searchFilter() !== "" ||
+      this.minPriceFilter() !== null ||
+      this.maxPriceFilter() !== null
+    );
   });
-  
+
   hasFilterInputs = computed(() => {
-    return this.searchInput() !== '' || 
-           this.minPriceInput() !== null || 
-           this.maxPriceInput() !== null;
+    return (
+      this.searchInput() !== "" ||
+      this.minPriceInput() !== null ||
+      this.maxPriceInput() !== null
+    );
   });
-  
+
   // Computed signal for filtered products
   filteredProducts = computed(() => {
     const allProducts = this.products();
     const minPrice = this.minPriceFilter();
     const maxPrice = this.maxPriceFilter();
     const searchText = this.searchFilter().toLowerCase().trim();
-    
-    return allProducts.filter(product => {
+
+    return allProducts.filter((product) => {
       // Search filter
       if (searchText) {
-        const nameMatch = product.name?.toLowerCase().includes(searchText) ?? false;
-        const descMatch = product.desc?.toLowerCase().includes(searchText) ?? false;
+        const nameMatch =
+          product.name?.toLowerCase().includes(searchText) ?? false;
+        const descMatch =
+          product.desc?.toLowerCase().includes(searchText) ?? false;
         if (!nameMatch && !descMatch) {
           return false;
         }
       }
-      
+
       // Price filter
       if (minPrice !== null || maxPrice !== null) {
         const productMinPrice = product.displayMinPrice ?? 0;
         const productMaxPrice = product.displayMaxPrice ?? productMinPrice;
-        
+
         const filterMin = minPrice ?? 0;
         const filterMax = maxPrice ?? Number.MAX_SAFE_INTEGER;
-        
+
         if (!(productMinPrice <= filterMax && productMaxPrice >= filterMin)) {
           return false;
         }
       }
-      
+
       return true;
     });
   });
-  
+
   // Computed signal for paginated products
   paginatedProducts = computed(() => {
     const startIndex = this.currentPage() * this.pageSize();
@@ -160,7 +166,7 @@ export class CatalogueComponent implements OnInit, OnDestroy {
         }
 
         this.category.set(newCategory);
-        
+
         // Clear filters when category changes
         this.resetFilters();
 
@@ -177,15 +183,15 @@ export class CatalogueComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.spinner.hide(); 
+    this.spinner.hide();
     this.categoryChange$.next();
     this.categoryChange$.complete();
     this.destroy$.next();
     this.destroy$.complete();
-    
+
     // Cleanup: restore body scroll
-    if (typeof document !== 'undefined') {
-      document.body.style.overflow = '';
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = "";
     }
   }
 
@@ -335,7 +341,7 @@ export class CatalogueComponent implements OnInit, OnDestroy {
   onPageChange(event: PageEvent): void {
     this.currentPage.set(event.pageIndex);
     this.pageSize.set(event.pageSize);
-    
+
     // Scroll to top of catalogue when page changes
     if (this.catalogueContent?.nativeElement) {
       this.catalogueContent.nativeElement.scrollIntoView({
@@ -351,11 +357,11 @@ export class CatalogueComponent implements OnInit, OnDestroy {
       this.maxPriceAvailable.set(10000);
       return;
     }
-    
+
     const prices = products
-      .map(p => p.displayMinPrice ?? 0)
-      .filter(price => price > 0);
-    
+      .map((p) => p.displayMinPrice ?? 0)
+      .filter((price) => price > 0);
+
     if (prices.length > 0) {
       this.minPriceAvailable.set(Math.floor(Math.min(...prices)));
       this.maxPriceAvailable.set(Math.ceil(Math.max(...prices)));
@@ -367,40 +373,40 @@ export class CatalogueComponent implements OnInit, OnDestroy {
     this.minPriceFilter.set(this.minPriceInput());
     this.maxPriceFilter.set(this.maxPriceInput());
     this.currentPage.set(0); // Reset to first page when filter changes
-    
+
     // Close filter panel on mobile after applying filters
-    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+    if (typeof window !== "undefined" && window.innerWidth <= 768) {
       this.filterPanelExpanded.set(false);
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     }
   }
 
   resetFilters(): void {
-    this.searchFilter.set('');
-    this.searchInput.set('');
+    this.searchFilter.set("");
+    this.searchInput.set("");
     this.minPriceFilter.set(null);
     this.maxPriceFilter.set(null);
     this.minPriceInput.set(null);
     this.maxPriceInput.set(null);
     this.currentPage.set(0);
-    
+
     // Close filter panel on mobile after clearing filters
-    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+    if (typeof window !== "undefined" && window.innerWidth <= 768) {
       this.filterPanelExpanded.set(false);
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     }
   }
 
   toggleFilterPanel(): void {
     const newState = !this.filterPanelExpanded();
     this.filterPanelExpanded.set(newState);
-    
+
     // Prevent body scroll on mobile when filter is expanded
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       if (newState && window.innerWidth <= 768) {
-        document.body.style.overflow = 'hidden';
+        document.body.style.overflow = "hidden";
       } else {
-        document.body.style.overflow = '';
+        document.body.style.overflow = "";
       }
     }
   }
@@ -409,8 +415,8 @@ export class CatalogueComponent implements OnInit, OnDestroy {
     const img = event.target as HTMLImageElement;
     const placeholder = img.nextElementSibling as HTMLElement;
     if (img && placeholder) {
-      img.style.display = 'none';
-      placeholder.style.display = 'flex';
+      img.style.display = "none";
+      placeholder.style.display = "flex";
     }
   }
 
@@ -430,10 +436,12 @@ export class CatalogueComponent implements OnInit, OnDestroy {
   async downloadPDF(): Promise<void> {
     this.spinner.show();
     this.errorMessage.set("");
-    
+
     try {
       const data = await firstValueFrom(
-        this.productService.downloadPDF(this.category()).pipe(takeUntil(this.destroy$))
+        this.productService
+          .downloadPDF(this.category())
+          .pipe(takeUntil(this.destroy$))
       );
 
       const doc = new jsPDF({
@@ -447,45 +455,42 @@ export class CatalogueComponent implements OnInit, OnDestroy {
       let y = 40;
 
       doc.setFontSize(16);
-      const catalogTitle = this.category() === 'all' 
-        ? 'Products Catalog - All Categories'
-        : `Products Catalog - ${this.categoryTitle()}`;
-      doc.text(
-        catalogTitle,
-        doc.internal.pageSize.getWidth() / 2,
-        15,
-        {
-          align: "center",
-        }
-      );
+      const catalogTitle =
+        this.category() === "all"
+          ? "Products Catalog - All Categories"
+          : `Products Catalog - ${this.categoryTitle()}`;
+      doc.text(catalogTitle, doc.internal.pageSize.getWidth() / 2, 15, {
+        align: "center",
+      });
 
       for (const item of data.items) {
         // Calculate how many images we have and the space needed
         const imageCount = item.images?.length || 0;
         const imagesPerRow = 3;
         const imageRows = Math.ceil(imageCount / imagesPerRow);
-        const totalImageHeight = imageRows > 0 ? imageRows * (imageHeight + this.PDF_IMAGE_SPACING) : 0;
-        
+        const totalImageHeight =
+          imageRows > 0
+            ? imageRows * (imageHeight + this.PDF_IMAGE_SPACING)
+            : 0;
+
         // Calculate table height (header + rows)
         const variantCount = item.variants?.length || 0;
         const rowHeight = 9; // fontSize 9 + cellPadding 2*2 = ~9mm per row
         const tableHeight = (variantCount + 1) * rowHeight; // +1 for header
-        
+
         // Calculate description height
         const descLines = doc.splitTextToSize(
           item.desc,
           doc.internal.pageSize.getWidth() - 2 * margin - 10
         );
         const descHeight = descLines.length * 5; // Approximate height per line
-        
+
         // Total content height: title(10) + desc(variable) + images + table + padding
-        const contentHeight = 15 + descHeight + totalImageHeight + tableHeight + 10;
+        const contentHeight =
+          15 + descHeight + totalImageHeight + tableHeight + 10;
 
         // Check if we need a new page
-        if (
-          y + contentHeight >
-          doc.internal.pageSize.getHeight() - margin
-        ) {
+        if (y + contentHeight > doc.internal.pageSize.getHeight() - margin) {
           doc.addPage();
           y = margin;
         }
@@ -552,14 +557,14 @@ export class CatalogueComponent implements OnInit, OnDestroy {
 
         // Prepare variant table
         const variantRows = item.variants.map((v: any) => {
-          const originalPrice = v.price && Number(v.price) > 0 ? `Rs. ${v.price}` : '--';
-          const discountedPrice = v.discountedPrice && Number(v.discountedPrice) > 0 ? `Rs. ${v.discountedPrice}` : '--';
-          
-          return [
-            v.size || '--',
-            originalPrice,
-            discountedPrice
-          ];
+          const originalPrice =
+            v.price && Number(v.price) > 0 ? `Rs. ${v.price}` : "--";
+          const discountedPrice =
+            v.discountedPrice && Number(v.discountedPrice) > 0
+              ? `Rs. ${v.discountedPrice}`
+              : "--";
+
+          return [v.size || "--", originalPrice, discountedPrice];
         });
 
         // Add variant table below images
@@ -648,7 +653,7 @@ export class CatalogueComponent implements OnInit, OnDestroy {
     const url = this.router.serializeUrl(
       this.router.createUrlTree(["/edit-product", product.id])
     );
-    window.open(url, '_blank');
+    window.open(url, "_blank");
   }
 
   delete(product: ProductPayload): void {

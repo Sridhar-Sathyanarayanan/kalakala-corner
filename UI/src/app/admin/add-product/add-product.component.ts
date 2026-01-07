@@ -28,7 +28,6 @@ export class AddProductComponent implements OnInit {
   imagePreviews: SafeUrl[] = [];
   imageFiles: File[] = [];
   existingImageUrls: string[] = [];
-
   constructor(
     private fb: FormBuilder,
     private productService: ProductService,
@@ -86,7 +85,7 @@ export class AddProductComponent implements OnInit {
   get variants(): FormArray {
     return this.productForm.get("variants") as FormArray;
   }
-
+  ;
   get notes(): FormArray {
     return this.productForm.get("notes") as FormArray;
   }
@@ -155,7 +154,6 @@ export class AddProductComponent implements OnInit {
       ? this.variants.removeAt(index)
       : this.variants.at(0).reset();
   }
-
   addNote() {
     this.notes.push(this.fb.control("", Validators.maxLength(250)));
   }
@@ -212,10 +210,15 @@ export class AddProductComponent implements OnInit {
     this.imagePreviews.splice(index, 1);
   }
 
+  /** Check if the image is from existing URLs */
+  isExisting(index: number): boolean {
+    return index < this.existingImageUrls.length;
+  }
+
+  /** Trigger file input */
   uploadImages() {
     document.getElementById("imageInput")?.click();
   }
-
   // --------------------------------
   // Submit
   // --------------------------------

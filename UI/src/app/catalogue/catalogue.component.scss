@@ -1653,6 +1653,8 @@
 
       ::ng-deep {
         .mat-mdc-paginator-container {
+          flex-direction: column;
+
           gap: 0.8rem;
         }
 
