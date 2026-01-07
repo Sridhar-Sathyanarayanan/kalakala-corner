@@ -9,7 +9,6 @@ import {
   signal,
   computed,
 } from "@angular/core";
-import { FormsModule } from "@angular/forms";
 import { MatDialog } from "@angular/material/dialog";
 import { ActivatedRoute, Router } from "@angular/router";
 import jsPDF from "jspdf";
@@ -19,7 +18,6 @@ import {
   Product,
   ProductPayload,
   ProductWithPricing,
-  CategoryPayload,
 } from "../models/app.model";
 import { AppService } from "../services/app.service";
 import { ProductService } from "../services/product.service";
@@ -35,7 +33,7 @@ import { NgxSpinnerService } from "ngx-spinner";
   standalone: true,
   templateUrl: "./catalogue.component.html",
   styleUrl: "./catalogue.component.scss",
-  imports: [CommonModule, FormsModule, MaterialStandaloneModules],
+  imports: [CommonModule, MaterialStandaloneModules],
 })
 export class CatalogueComponent implements OnInit, OnDestroy {
   // Constants
@@ -61,77 +59,16 @@ export class CatalogueComponent implements OnInit, OnDestroy {
   products = signal<ProductWithPricing[]>([]);
   category = signal<string>("");
   categoryTitle = signal<string>("");
-  categoryIcon = signal<string>("");
   pageSize = signal<number>(this.DEFAULT_PAGE_SIZE);
   currentPage = signal<number>(0);
   loading = signal<boolean>(true);
   errorMessage = signal<string>("");
   
-  // Price filter signals
-  minPriceFilter = signal<number | null>(null);
-  maxPriceFilter = signal<number | null>(null);
-  minPriceInput = signal<number | null>(null); // Temporary input value
-  maxPriceInput = signal<number | null>(null); // Temporary input value
-  minPriceAvailable = signal<number>(0);
-  maxPriceAvailable = signal<number>(10000);
-  filterPanelExpanded = signal<boolean>(false);
-  
-  // Search filter signals
-  searchFilter = signal<string>('');
-  searchInput = signal<string>(''); // Temporary input value
-  
-  // Computed signals for filter state
-  hasActiveFilters = computed(() => {
-    return this.searchFilter() !== '' || 
-           this.minPriceFilter() !== null || 
-           this.maxPriceFilter() !== null;
-  });
-  
-  hasFilterInputs = computed(() => {
-    return this.searchInput() !== '' || 
-           this.minPriceInput() !== null || 
-           this.maxPriceInput() !== null;
-  });
-  
-  // Computed signal for filtered products
-  filteredProducts = computed(() => {
-    const allProducts = this.products();
-    const minPrice = this.minPriceFilter();
-    const maxPrice = this.maxPriceFilter();
-    const searchText = this.searchFilter().toLowerCase().trim();
-    
-    return allProducts.filter(product => {
-      // Search filter
-      if (searchText) {
-        const nameMatch = product.name?.toLowerCase().includes(searchText) ?? false;
-        const descMatch = product.desc?.toLowerCase().includes(searchText) ?? false;
-        if (!nameMatch && !descMatch) {
-          return false;
-        }
-      }
-      
-      // Price filter
-      if (minPrice !== null || maxPrice !== null) {
-        const productMinPrice = product.displayMinPrice ?? 0;
-        const productMaxPrice = product.displayMaxPrice ?? productMinPrice;
-        
-        const filterMin = minPrice ?? 0;
-        const filterMax = maxPrice ?? Number.MAX_SAFE_INTEGER;
-        
-        if (!(productMinPrice <= filterMax && productMaxPrice >= filterMin)) {
-          return false;
-        }
-      }
-      
-      return true;
-    });
-  });
-  
   // Computed signal for paginated products
   paginatedProducts = computed(() => {
     const startIndex = this.currentPage() * this.pageSize();
     const endIndex = startIndex + this.pageSize();
-    return this.filteredProducts().slice(startIndex, endIndex);
+    return this.products().slice(startIndex, endIndex);
   });
 
   private readonly destroy$ = new Subject<void>();
@@ -160,9 +97,6 @@ export class CatalogueComponent implements OnInit, OnDestroy {
         }
 
         this.category.set(newCategory);
-        
-        // Clear filters when category changes
-        this.resetFilters();
 
         // Load category info and products in parallel
         this.loadCategoryData(this.category());
@@ -182,11 +116,6 @@ export class CatalogueComponent implements OnInit, OnDestroy {
     this.categoryChange$.complete();
     this.destroy$.next();
     this.destroy$.complete();
-    
-    // Cleanup: restore body scroll
-    if (typeof document !== 'undefined') {
-      document.body.style.overflow = '';
-    }
   }
 
   private loadCategoryData(category: string): void {
@@ -202,14 +131,12 @@ export class CatalogueComponent implements OnInit, OnDestroy {
           // Set category title
           const categoryData = categories.items.find(
             (d) => d.path === this.category()
-          ) as CategoryPayload & { icon?: string };
+          );
           this.categoryTitle.set(categoryData?.name || "All Products");
-          this.categoryIcon.set(categoryData?.icon || "🔥");
           // Set products
           const productsList = products?.items || [];
           this.calculateProductPricing(productsList);
           this.products.set(productsList);
-          this.updatePriceRange(productsList);
           this.currentPage.set(0);
 
           this.loading.set(false);
@@ -229,9 +156,10 @@ export class CatalogueComponent implements OnInit, OnDestroy {
   }
 
   private setPaginatorTooltips(): void {
-    this.paginatorIntl.firstPageLabel = "First page";
-    this.paginatorIntl.previousPageLabel = "Previous page";
+    this.paginatorIntl.itemsPerPageLabel = "Items per page";
     this.paginatorIntl.nextPageLabel = "Next page";
+    this.paginatorIntl.previousPageLabel = "Previous page";
+    this.paginatorIntl.firstPageLabel = "First page";
     this.paginatorIntl.lastPageLabel = "Last page";
     this.paginatorIntl.getRangeLabel = (
       page: number,
@@ -342,75 +270,6 @@ export class CatalogueComponent implements OnInit, OnDestroy {
         behavior: "smooth",
         block: "start",
       });
-    }
-  }
-
-  private updatePriceRange(products: ProductWithPricing[]): void {
-    if (products.length === 0) {
-      this.minPriceAvailable.set(0);
-      this.maxPriceAvailable.set(10000);
-      return;
-    }
-    
-    const prices = products
-      .map(p => p.displayMinPrice ?? 0)
-      .filter(price => price > 0);
-    
-    if (prices.length > 0) {
-      this.minPriceAvailable.set(Math.floor(Math.min(...prices)));
-      this.maxPriceAvailable.set(Math.ceil(Math.max(...prices)));
-    }
-  }
-
-  applyFilters(): void {
-    this.searchFilter.set(this.searchInput());
-    this.minPriceFilter.set(this.minPriceInput());
-    this.maxPriceFilter.set(this.maxPriceInput());
-    this.currentPage.set(0); // Reset to first page when filter changes
-    
-    // Close filter panel on mobile after applying filters
-    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
-      this.filterPanelExpanded.set(false);
-      document.body.style.overflow = '';
-    }
-  }
-
-  resetFilters(): void {
-    this.searchFilter.set('');
-    this.searchInput.set('');
-    this.minPriceFilter.set(null);
-    this.maxPriceFilter.set(null);
-    this.minPriceInput.set(null);
-    this.maxPriceInput.set(null);
-    this.currentPage.set(0);
-    
-    // Close filter panel on mobile after clearing filters
-    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
-      this.filterPanelExpanded.set(false);
-      document.body.style.overflow = '';
-    }
-  }
-
-  toggleFilterPanel(): void {
-    const newState = !this.filterPanelExpanded();
-    this.filterPanelExpanded.set(newState);
-    
-    // Prevent body scroll on mobile when filter is expanded
-    if (typeof window !== 'undefined') {
-      if (newState && window.innerWidth <= 768) {
-        document.body.style.overflow = 'hidden';
-      } else {
-        document.body.style.overflow = '';
-      }
-    }
-  }
-
-  onImageError(event: Event): void {
-    const img = event.target as HTMLImageElement;
-    const placeholder = img.nextElementSibling as HTMLElement;
-    if (img && placeholder) {
-      img.style.display = 'none';
-      placeholder.style.display = 'flex';
     }
   }
 
@@ -645,10 +504,7 @@ export class CatalogueComponent implements OnInit, OnDestroy {
   }
 
   edit(product: ProductPayload): void {
-    const url = this.router.serializeUrl(
-      this.router.createUrlTree(["/edit-product", product.id])
-    );
-    window.open(url, '_blank');
+    this.router.navigate(["/edit-product", product.id]);
   }
 
   delete(product: ProductPayload): void {

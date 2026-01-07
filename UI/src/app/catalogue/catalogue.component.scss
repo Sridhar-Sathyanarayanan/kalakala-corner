@@ -1,28 +1,5 @@
 @use "../../styles/styles.scss" as styles;
 
-// Animations
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
 .catalogue {
   min-height: 100vh;
   background: linear-gradient(135deg, #fff5f7 0%, #ffe4e9 50%, #ffd4e0 100%);
@@ -69,22 +46,11 @@
     }
 
     .catalogue-subtitle {
-      display: inline-block;
-      font-size: 0.95rem;
-      color: #ff1493;
-      font-weight: 600;
+      font-size: 1.1rem;
+      color: #666;
+      font-weight: 500;
       margin: 0;
       letter-spacing: 0.5px;
-      background: rgba(255, 105, 180, 0.1);
-      padding: 0.4rem 1rem;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 20, 147, 0.2);
-      animation: slideInLeft 0.6s ease;
-
-      .category-icon {
-        margin-right: 0.5rem;
-        opacity: 0.9;
-      }
     }
 
     .header-actions {
@@ -110,465 +76,10 @@
     }
   }
 
-  // Catalogue Layout with Sidebar
-  .catalogue-layout {
-    display: flex;
-    gap: 2rem;
-    align-items: flex-start;
-  }
-
-  // Filter Sidebar
-  .filter-sidebar {
-    position: sticky;
-    top: 2rem;
-    width: 300px;
-    flex-shrink: 0;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-    &.collapsed {
-      width: 60px;
-
-      .filter-card {
-        padding: 0;
-        border-color: rgba(255, 105, 180, 0.3);
-        box-shadow: 0 4px 20px rgba(255, 105, 180, 0.25);
-      }
-
-      .filter-header {
-        flex-direction: column;
-        padding: 1rem 0.5rem;
-
-        .filter-title {
-          flex-direction: column;
-          position: relative;
-
-          h3 {
-            display: none;
-          }
-
-          .active-filter-indicator {
-            display: block !important;
-          }
-        }
-      }
-    }
-
-    .filter-card {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 20px;
-      padding: 0;
-      box-shadow: 0 4px 20px rgba(255, 105, 180, 0.15);
-      border: 2px solid rgba(255, 105, 180, 0.1);
-      overflow: hidden;
-      transition: all 0.3s ease;
-
-      .filter-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 1.25rem 1.5rem;
-        background: linear-gradient(
-          135deg,
-          rgba(255, 20, 147, 0.05),
-          rgba(255, 105, 180, 0.05)
-        );
-        border-bottom: 2px solid rgba(255, 105, 180, 0.1);
-        cursor: pointer;
-        transition: all 0.3s ease;
-
-        &:hover {
-          background: linear-gradient(
-            135deg,
-            rgba(255, 20, 147, 0.1),
-            rgba(255, 105, 180, 0.1)
-          );
-        }
-
-        .filter-title {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          position: relative;
-
-          mat-icon {
-            color: #ff1493;
-            font-size: 24px;
-            width: 24px;
-            height: 24px;
-          }
-
-          h3 {
-            margin: 0;
-            font-size: 1.25rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #ff1493, #ff69b4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-          }
-
-          .active-filter-indicator {
-            display: none;
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            width: 12px;
-            height: 12px;
-            background: linear-gradient(135deg, #ff1493, #ff69b4);
-            border-radius: 50%;
-            border: 2px solid white;
-            animation: pulse 2s ease-in-out infinite;
-            box-shadow: 0 0 8px rgba(255, 20, 147, 0.6);
-          }
-        }
-
-        .collapse-btn {
-          mat-icon {
-            transition: transform 0.3s ease;
-          }
-        }
-      }
-
-      .filter-content {
-        padding: 1.5rem;
-        animation: slideDown 0.3s ease;
-
-        .filter-section {
-          margin-bottom: 1.5rem;
-
-          &:last-of-type {
-            margin-bottom: 0.5rem;
-          }
-        }
-
-        .filter-section-title {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          margin-bottom: 1rem;
-          padding-bottom: 0.75rem;
-          border-bottom: 1px solid rgba(255, 105, 180, 0.2);
-
-          span {
-            font-weight: 600;
-            color: #333;
-            font-size: 0.95rem;
-          }
-        }
-
-        .search-field {
-          width: 100%;
-
-          ::ng-deep {
-            .mat-mdc-form-field-focus-overlay {
-              background-color: rgba(255, 20, 147, 0.05);
-            }
-
-            .mat-mdc-text-field-wrapper {
-              background: white;
-            }
-
-            .mdc-notched-outline__leading,
-            .mdc-notched-outline__notch,
-            .mdc-notched-outline__trailing {
-              border-color: rgba(255, 105, 180, 0.3);
-            }
-
-            &.mat-focused {
-              .mdc-notched-outline__leading,
-              .mdc-notched-outline__notch,
-              .mdc-notched-outline__trailing {
-                border-color: #ff1493;
-                border-width: 2px;
-              }
-            }
-
-            .mat-mdc-form-field-label {
-              color: #666;
-            }
-
-            input {
-              color: #333;
-              font-weight: 500;
-            }
-
-            .mat-mdc-input-element::placeholder {
-              color: #999;
-            }
-
-            .mat-icon {
-              color: rgba(255, 20, 147, 0.6);
-            }
-          }
-        }
-
-        .price-inputs {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-          margin-bottom: 1.25rem;
-
-          .price-field {
-            width: 100%;
-
-            ::ng-deep {
-              .mat-mdc-form-field-focus-overlay {
-                background-color: rgba(255, 20, 147, 0.05);
-              }
-
-              .mat-mdc-text-field-wrapper {
-                background: white;
-              }
-
-              .mdc-notched-outline__leading,
-              .mdc-notched-outline__notch,
-              .mdc-notched-outline__trailing {
-                border-color: rgba(255, 105, 180, 0.3);
-              }
-
-              &.mat-focused {
-                .mdc-notched-outline__leading,
-                .mdc-notched-outline__notch,
-                .mdc-notched-outline__trailing {
-                  border-color: #ff1493;
-                  border-width: 2px;
-                }
-              }
-
-              .mat-mdc-form-field-label {
-                color: #ff1493;
-              }
-
-              input {
-                color: #333;
-                font-weight: 500;
-              }
-
-              .mat-mdc-input-element::placeholder {
-                color: #999;
-              }
-            }
-          }
-        }
-
-        .filter-actions {
-          margin-bottom: 1rem;
-          display: flex;
-          flex-direction: column;
-          gap: 0.75rem;
-
-          .apply-filter-btn {
-            width: 100%;
-            background: linear-gradient(135deg, #ff1493, #ff69b4);
-            color: white;
-            font-weight: 600;
-            border-radius: 12px;
-            padding: 0.5rem 1rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(255, 20, 147, 0.3);
-
-            mat-icon {
-              margin-right: 0.5rem;
-              font-size: 18px;
-              width: 18px;
-              height: 18px;
-            }
-
-            &:hover:not([disabled]) {
-              transform: translateY(-2px);
-              box-shadow: 0 4px 12px rgba(255, 20, 147, 0.4);
-            }
-
-            &[disabled] {
-              opacity: 0.5;
-              cursor: not-allowed;
-              background: rgba(200, 200, 200, 0.3);
-              color: #999;
-              box-shadow: none;
-            }
-          }
-
-          .reset-filter-btn {
-            width: 100%;
-            border-color: #ff1493;
-            color: #ff1493;
-            font-weight: 600;
-            border-radius: 12px;
-            padding: 0.5rem 1rem;
-            transition: all 0.3s ease;
-
-            mat-icon {
-              margin-right: 0.5rem;
-              font-size: 18px;
-              width: 18px;
-              height: 18px;
-            }
-
-            &:hover:not([disabled]) {
-              background: linear-gradient(135deg, #ff1493, #ff69b4);
-              color: white;
-              border-color: transparent;
-              transform: translateY(-2px);
-              box-shadow: 0 4px 12px rgba(255, 20, 147, 0.3);
-            }
-
-            &[disabled] {
-              opacity: 0.5;
-              cursor: not-allowed;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  // Main Content Area
-  .catalogue-main-content {
-    flex: 1;
-    min-width: 0; // Important for flex children
-  }
-
-  // Filter Section (Legacy - kept for compatibility)
-  .filter-section {
-    margin: 1.5rem 0;
-
-    .filter-card {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 20px;
-      padding: 1.5rem;
-      box-shadow: 0 4px 20px rgba(255, 105, 180, 0.15);
-      border: 2px solid rgba(255, 105, 180, 0.1);
-
-      .filter-header {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 1.5rem;
-
-        mat-icon {
-          color: #ff1493;
-          font-size: 24px;
-          width: 24px;
-          height: 24px;
-        }
-
-        h3 {
-          margin: 0;
-          font-size: 1.25rem;
-          font-weight: 700;
-          background: linear-gradient(135deg, #ff1493, #ff69b4);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-      }
-
-      .filter-content {
-        .price-inputs {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          margin-bottom: 1rem;
-          flex-wrap: wrap;
-
-          .price-field {
-            flex: 1;
-            min-width: 150px;
-
-            ::ng-deep {
-              .mat-mdc-form-field-focus-overlay {
-                background-color: rgba(255, 20, 147, 0.05);
-              }
-
-              .mat-mdc-text-field-wrapper {
-                background: white;
-              }
-
-              .mdc-notched-outline__leading,
-              .mdc-notched-outline__notch,
-              .mdc-notched-outline__trailing {
-                border-color: rgba(255, 105, 180, 0.3);
-              }
-
-              &.mat-focused {
-                .mdc-notched-outline__leading,
-                .mdc-notched-outline__notch,
-                .mdc-notched-outline__trailing {
-                  border-color: #ff1493;
-                  border-width: 2px;
-                }
-              }
-
-              .mat-mdc-form-field-label {
-                color: #ff1493;
-              }
-
-              input {
-                color: #333;
-                font-weight: 500;
-              }
-
-              .mat-mdc-input-element::placeholder {
-                color: #999;
-              }
-            }
-          }
-
-          .price-separator {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #ff1493;
-            margin: 0 0.25rem;
-          }
-        }
-
-        .filter-actions {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 1rem;
-
-          .reset-filter-btn {
-            border-color: #ff1493;
-            color: #ff1493;
-            font-weight: 600;
-            border-radius: 12px;
-            padding: 0 1.25rem;
-            transition: all 0.3s ease;
-
-            mat-icon {
-              margin-right: 0.5rem;
-              font-size: 20px;
-              width: 20px;
-              height: 20px;
-            }
-
-            &:hover:not([disabled]) {
-              background: linear-gradient(135deg, #ff1493, #ff69b4);
-              color: white;
-              border-color: transparent;
-              transform: translateY(-2px);
-              box-shadow: 0 4px 12px rgba(255, 20, 147, 0.3);
-            }
-
-            &[disabled] {
-              opacity: 0.5;
-              cursor: not-allowed;
-            }
-          }
-        }
-      }
-    }
-  }
-
   // Paginator Styling
   .paginator-wrapper {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    justify-content: center;
     margin: 1.5rem 0;
 
     &.top-paginator {
@@ -587,51 +98,54 @@
     padding: 0.8rem 1.5rem;
     box-shadow: 0 4px 20px rgba(255, 105, 180, 0.15);
     border: 2px solid rgba(255, 105, 180, 0.1);
-    width: 100%;
 
     ::ng-deep {
       .mat-mdc-paginator-container {
         padding: 0;
         min-height: 48px;
-        justify-content: space-between;
-        flex-wrap: nowrap;
-        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
       }
 
       .mat-mdc-paginator-page-size {
-        display: none; // Hide page size selector
+        align-items: center;
+        margin-right: 1rem;
+
+        .mat-mdc-paginator-page-size-label {
+          color: #ff1493;
+          font-weight: 600;
+          font-size: 0.9rem;
+          margin: 0 0.5rem 0 0;
+        }
+
+        .mat-mdc-form-field {
+          margin: 0 0.5rem;
+        }
+
+        .mat-mdc-select {
+          .mat-mdc-select-value {
+            color: #ff1493;
+            font-weight: 600;
+          }
+
+          .mat-mdc-select-arrow {
+            color: #ff1493;
+          }
+        }
       }
 
       .mat-mdc-paginator-range-actions {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        width: 100%;
         gap: 0.5rem;
 
         .mat-mdc-paginator-range-label {
-          display: none; // Hide the range label
-        }
-
-        // Left side navigation (first & previous)
-        .mat-mdc-paginator-navigation-first,
-        .mat-mdc-paginator-navigation-previous {
-          order: 1;
-        }
-
-        // Right side navigation (next & last)
-        .mat-mdc-paginator-navigation-next,
-        .mat-mdc-paginator-navigation-last {
-          order: 2;
-        }
-
-        // Create spacing between left and right groups
-        .mat-mdc-paginator-navigation-previous {
-          margin-right: auto;
-        }
-
-        .mat-mdc-paginator-navigation-next {
-          margin-left: auto;
+          color: #ff1493;
+          font-weight: 600;
+          font-size: 0.9rem;
+          margin: 0 1rem;
+          white-space: nowrap;
         }
 
         .mat-mdc-paginator-navigation-first,
@@ -836,34 +350,6 @@
         height: 100%;
         object-fit: cover;
         transition: transform 0.5s ease;
-      }
-
-      .image-placeholder {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 0.75rem;
-        background: linear-gradient(135deg, #ffeef4, #ffe0e9);
-
-        mat-icon {
-          font-size: 64px;
-          width: 64px;
-          height: 64px;
-          color: rgba(255, 20, 147, 0.3);
-        }
-
-        span {
-          color: rgba(255, 20, 147, 0.6);
-          font-weight: 600;
-          font-size: 0.9rem;
-          text-align: center;
-        }
       }
 
       .price-badge-container {
@@ -1093,59 +579,6 @@
     }
   }
 
-  .no-filter-results {
-    text-align: center;
-    padding: 4rem 2rem;
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 24px;
-    box-shadow: 0 8px 24px rgba(255, 105, 180, 0.15);
-    border: 2px dashed rgba(255, 105, 180, 0.3);
-    max-width: 600px;
-    margin: 3rem auto;
-    animation: fadeIn 0.5s ease;
-
-    mat-icon {
-      font-size: 80px;
-      width: 80px;
-      height: 80px;
-      color: rgba(255, 20, 147, 0.4);
-      margin-bottom: 1.5rem;
-    }
-
-    h3 {
-      font-size: 1.5rem;
-      color: #2d2d2d;
-      margin: 0 0 1rem 0;
-      font-weight: 700;
-      background: linear-gradient(135deg, #ff1493, #ff69b4);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    p {
-      font-size: 1rem;
-      color: #666;
-      margin: 0 0 2rem 0;
-      line-height: 1.6;
-    }
-
-    .clear-filters-btn {
-      background: linear-gradient(135deg, #ff1493, #ff69b4);
-      color: white;
-      font-weight: 600;
-      padding: 0.75rem 2rem;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(255, 20, 147, 0.3);
-      transition: all 0.3s ease;
-
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(255, 20, 147, 0.4);
-      }
-    }
-  }
-
   // Animations
   @keyframes fadeIn {
     from {
@@ -1295,344 +728,6 @@
       }
     }
 
-    // Responsive layout: stack sidebar below on mobile
-    .catalogue-layout {
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-
-    .filter-sidebar {
-      position: fixed;
-      bottom: 20px;
-      right: 16px;
-      left: auto;
-      top: auto;
-      width: auto;
-      z-index: 100;
-
-      &.collapsed {
-        width: auto;
-
-        .filter-card {
-          padding: 0;
-          border-radius: 50%;
-          width: 56px;
-          height: 56px;
-          background: linear-gradient(135deg, #ff1493, #ff69b4);
-          box-shadow: 0 4px 20px rgba(255, 20, 147, 0.4);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-          overflow: visible;
-
-          &::after {
-            content: "";
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 12px;
-            height: 12px;
-            background: linear-gradient(135deg, #ff6b00, #ff0000);
-            border-radius: 50%;
-            border: 2px solid white;
-            animation: pulse 2s ease-in-out infinite;
-            box-shadow: 0 0 8px rgba(255, 0, 0, 0.6);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-          }
-        }
-
-        &.has-active-filters .filter-card::after {
-          opacity: 1;
-        }
-
-        .filter-header {
-          padding: 0;
-          width: 56px;
-          height: 56px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: transparent;
-          border: none;
-          cursor: pointer;
-          margin: 0;
-
-          .filter-title {
-            display: none;
-
-            .active-filter-indicator {
-              display: none !important;
-            }
-          }
-
-          .collapse-btn {
-            color: white;
-            padding: 0;
-            margin: 0;
-            min-width: auto;
-            min-height: auto;
-            width: 56px;
-            height: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: absolute;
-            top: 0;
-            left: 0;
-
-            mat-icon {
-              font-size: 26px;
-              width: 26px;
-              height: 26px;
-              line-height: 26px;
-            }
-          }
-        }
-      }
-
-      &:not(.collapsed) {
-        position: fixed;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        width: 100vw;
-        height: 100vh;
-        background: rgba(0, 0, 0, 0.5);
-        animation: fadeIn 0.3s ease;
-        overflow: hidden;
-        z-index: 1000;
-
-        .filter-card {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          overflow: hidden;
-          border-radius: 0;
-          box-shadow: none;
-          background: white;
-          animation: slideInFromRight 0.3s ease;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .filter-header {
-          position: relative;
-          flex: 0 0 auto;
-          background: linear-gradient(135deg, #ff1493, #ff69b4);
-          color: white;
-          padding: 1rem 1.25rem;
-          border-bottom: none;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-          z-index: 1;
-
-          .filter-title {
-            h3 {
-              color: white;
-              font-size: 1.2rem;
-              font-weight: 600;
-            }
-
-            mat-icon {
-              color: white;
-              font-size: 24px;
-              width: 24px;
-              height: 24px;
-            }
-          }
-
-          .collapse-btn {
-            color: white;
-
-            mat-icon {
-              font-size: 28px;
-              width: 28px;
-              height: 28px;
-              color: black;
-            }
-          }
-        }
-
-        .filter-content {
-          position: relative;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          -webkit-overflow-scrolling: touch;
-          padding: 1.25rem;
-          padding-bottom: 0;
-
-          .filter-scrollable-content {
-            height: 90%;
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding-bottom: 100px;
-          }
-        }
-      }
-
-      .filter-card {
-        .filter-header {
-          padding: 0.75rem 1rem;
-          background: linear-gradient(
-            135deg,
-            rgba(255, 20, 147, 0.08),
-            rgba(255, 105, 180, 0.08)
-          );
-          border-bottom: 1px solid rgba(255, 105, 180, 0.2);
-
-          .filter-title {
-            h3 {
-              font-size: 1rem;
-            }
-
-            mat-icon {
-              font-size: 20px;
-              width: 20px;
-              height: 20px;
-            }
-          }
-        }
-
-        .filter-content {
-          padding: 1.25rem;
-
-          .filter-section {
-            margin-bottom: 1.5rem;
-          }
-
-          .filter-section-title {
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-
-            mat-icon {
-              font-size: 20px;
-              width: 20px;
-              height: 20px;
-            }
-          }
-
-          .search-field,
-          .price-field {
-            margin-bottom: 0.5rem;
-
-            ::ng-deep {
-              .mat-mdc-form-field-label {
-                font-size: 0.9rem;
-              }
-
-              input {
-                font-size: 1rem;
-              }
-
-              // Ensure input is scrollable into view
-              .mat-mdc-text-field-wrapper {
-                scroll-margin-bottom: 140px;
-              }
-            }
-          }
-
-          .price-inputs {
-            gap: 1rem;
-
-            .price-field {
-              scroll-margin-bottom: 140px;
-            }
-          }
-
-          .filter-actions {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: white;
-            padding: 0.875rem 1.25rem;
-            padding-bottom: max(0.875rem, env(safe-area-inset-bottom));
-            margin: 0;
-            gap: 0.75rem;
-            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
-            border-top: 1px solid rgba(255, 105, 180, 0.15);
-            z-index: 10;
-
-            button {
-              font-size: 0.95rem;
-              padding: 0.75rem 1.5rem;
-              height: 48px;
-
-              mat-icon {
-                font-size: 20px;
-                width: 20px;
-                height: 20px;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    @keyframes slideInFromRight {
-      from {
-        transform: translateX(100%);
-      }
-      to {
-        transform: translateX(0);
-      }
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-      }
-      to {
-        opacity: 1;
-      }
-    }
-
-    .filter-section {
-      .filter-card {
-        padding: 1.25rem;
-        border-radius: 16px;
-
-        .filter-header {
-          margin-bottom: 1.25rem;
-
-          h3 {
-            font-size: 1.1rem;
-          }
-        }
-
-        .filter-content {
-          .price-inputs {
-            flex-direction: column;
-            gap: 0.75rem;
-
-            .price-field {
-              width: 100%;
-              min-width: 100%;
-            }
-
-            .price-separator {
-              display: none;
-            }
-          }
-
-          .filter-actions {
-            flex-direction: column;
-            align-items: stretch;
-
-            .reset-filter-btn {
-              width: 100%;
-              justify-content: center;
-            }
-          }
-        }
-      }
-    }
-
     .paginator-wrapper {
       margin: 1rem 0;
 
@@ -1653,6 +748,7 @@
 
       ::ng-deep {
         .mat-mdc-paginator-container {
+          flex-direction: column;
           gap: 0.8rem;
         }
 
@@ -1811,34 +907,20 @@
           .mat-mdc-paginator-navigation-previous,
           .mat-mdc-paginator-navigation-next,
           .mat-mdc-paginator-navigation-last {
-            width: 28px !important;
-            height: 28px !important;
-            min-width: 28px !important;
+            width: 28px;
+            height: 28px;
             border-radius: 8px;
             position: relative;
-            overflow: visible !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            padding: 0 !important;
+            overflow: hidden;
 
             .mat-mdc-button-touch-target {
               width: 28px;
               height: 28px;
             }
 
-            .mdc-button__label {
-              display: flex !important;
-              align-items: center !important;
-              justify-content: center !important;
-            }
-
             .mat-mdc-paginator-icon {
-              width: 16px !important;
-              height: 16px !important;
-              min-width: 16px !important;
-              min-height: 16px !important;
-              display: block !important;
+              width: 16px;
+              height: 16px;
               transition: all 0.3s ease;
             }
 
@@ -1985,22 +1067,6 @@
         .mat-mdc-paginator-page-size,
         .mat-mdc-paginator-range-actions {
           font-size: 0.7rem;
-        }
-
-        .mat-mdc-paginator-range-actions {
-          .mat-mdc-paginator-navigation-first,
-          .mat-mdc-paginator-navigation-previous,
-          .mat-mdc-paginator-navigation-next,
-          .mat-mdc-paginator-navigation-last {
-            width: 32px !important;
-            height: 32px !important;
-            min-width: 32px !important;
-
-            .mat-mdc-paginator-icon {
-              width: 18px !important;
-              height: 18px !important;
-            }
-          }
         }
       }
     }

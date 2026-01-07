@@ -1,14 +1,12 @@
 import { Component, OnInit } from "@angular/core";
 import { FormArray, FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { DomSanitizer, SafeUrl } from "@angular/platform-browser";
-import { ActivatedRoute, Router } from "@angular/router";
-import { MatSnackBar } from "@angular/material/snack-bar";
-import { NgxSpinnerService } from "ngx-spinner";
-import { forkJoin } from "rxjs";
-
 import { MaterialStandaloneModules } from "../../shared/material-standalone";
 import { ProductService } from "../../services/product.service";
+import { MatSnackBar } from "@angular/material/snack-bar";
+import { Router, ActivatedRoute } from "@angular/router";
 import { AppService } from "../../services/app.service";
+import { NgxSpinnerService } from "ngx-spinner";
 import { ProductPayload } from "../../models/app.model";
 
 @Component({
@@ -19,15 +17,14 @@ import { ProductPayload } from "../../models/app.model";
   styleUrl: "./add-product.component.scss",
 })
 export class AddProductComponent implements OnInit {
-  productForm!: FormGroup;
+  productForm: FormGroup;
 
-  categories: any[] = [];
+  // Image handling
+  imagePreviews: SafeUrl[] = []; // For UI preview
+  existingImageUrls: string[] = []; // Already in S3
+  imageFiles: File[] = []; // Newly uploaded files
+  categories = [];
   id = "";
-
-  // Images
-  imagePreviews: SafeUrl[] = [];
-  imageFiles: File[] = [];
-  existingImageUrls: string[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -35,125 +32,75 @@ export class AddProductComponent implements OnInit {
     private sanitizer: DomSanitizer,
     private snackBar: MatSnackBar,
     private router: Router,
-    private route: ActivatedRoute,
     private appService: AppService,
-    private spinner: NgxSpinnerService
+    private spinner: NgxSpinnerService,
+    private activatedRoute: ActivatedRoute
   ) {}
 
-  // --------------------------------
-  // Lifecycle
-  // --------------------------------
   ngOnInit(): void {
-    this.initForm();
-
+    // Check login
     this.appService.isLoggedIn$.subscribe((status) => {
       if (!status) this.router.navigate(["/login"]);
     });
-
-    this.id = this.route.snapshot.paramMap.get("id") || "";
-
+    this.id = this.activatedRoute.snapshot.paramMap.get("id") || "";
     if (this.id) {
-      this.loadEditData();
+      this.loadProduct(this.id);
     } else {
-      this.loadCategoriesOnly();
+      this.createForm(); // Add mode
     }
+    this.productService.getCategories().subscribe((data) => {
+      this.categories = data.items;
+    });
   }
 
-  // --------------------------------
-  // Form Init
-  // --------------------------------
-  private initForm() {
+  /** Load product in edit mode */
+  private loadProduct(id: string) {
+    this.spinner.show();
+    this.productService
+      .getAProduct(id)
+      .subscribe((res: { items: ProductPayload }) => {
+        this.spinner.hide();
+        this.createForm(res.items);
+        if (res.items.images?.length) this.loadExistingImages(res.items.images);
+      });
+  }
+
+  /** Load existing images for preview and tracking */
+  private loadExistingImages(urls: string[]) {
+    this.existingImageUrls = [...urls];
+    urls.forEach((url) =>
+      this.imagePreviews.push(this.sanitizer.bypassSecurityTrustUrl(url))
+    );
+  }
+
+  /** Form creation */
+  private createForm(data?: ProductPayload) {
+    const variantsArray = data?.variants
+      ? data.variants.map((v: any) => this.createVariantGroup(v))
+      : [this.createVariantGroup()];
+
+    const notesArray =
+      data?.notes && data.notes.length
+        ? data.notes.map((n: string) => this.fb.control(n, Validators.required))
+        : [this.fb.control("", Validators.required)];
+
     this.productForm = this.fb.group({
-      name: ["", [Validators.required, Validators.maxLength(120)]],
-      desc: ["", [Validators.required, Validators.maxLength(500)]],
-      category: [[], Validators.required],
-      variants: this.fb.array([this.createVariantGroup()]),
-      notes: this.fb.array([this.fb.control("", Validators.required)]),
+      name: [
+        data?.name || "",
+        [Validators.required, Validators.maxLength(120)],
+      ],
+      desc: [
+        data?.desc || "",
+        [Validators.required, Validators.maxLength(500)],
+      ],
+      category: [data?.category || [], Validators.required],
+      variants: this.fb.array(variantsArray),
+      notes: this.fb.array(notesArray),
     });
-  }
-
-  private createVariantGroup(data?: any): FormGroup {
-    return this.fb.group({
-      size: [data?.size || "", Validators.required],
-      price: [data?.price ?? 0, Validators.min(0)],
-      discountedPrice: [data?.discountedPrice ?? 0, Validators.min(0)],
-    });
-  }
-
-  // --------------------------------
-  // Getters
-  // --------------------------------
-  get variants(): FormArray {
-    return this.productForm.get("variants") as FormArray;
   }
 
   get notes(): FormArray {
     return this.productForm.get("notes") as FormArray;
-  }
-
-  // --------------------------------
-  // Data Loading (forkJoin)
-  // --------------------------------
-  private loadEditData() {
-    this.spinner.show();
-
-    forkJoin({
-      categories: this.productService.getCategories(),
-      product: this.productService.getAProduct(this.id),
-    }).subscribe({
-      next: ({ categories, product }) => {
-        this.spinner.hide();
-        this.categories = categories.items;
-        this.populateForm(product.items);
-      },
-      error: () => this.spinner.hide(),
-    });
-  }
-
-  private loadCategoriesOnly() {
-    this.productService.getCategories().subscribe((res) => {
-      this.categories = res.items;
-    });
-  }
-
-  private populateForm(data: ProductPayload) {
-    this.productForm.patchValue({
-      name: data.name,
-      desc: data.desc,
-      category: data.category, // ✅ categories already loaded
-    });
-
-    this.setVariants(data.variants);
-    this.setNotes(data.notes);
-
-    if (data.images?.length) {
-      this.loadExistingImages(data.images);
-    }
-  }
-
-  private setVariants(list: any[]) {
-    this.variants.clear();
-    list.forEach((v) => this.variants.push(this.createVariantGroup(v)));
-  }
-
-  private setNotes(list: string[]) {
-    this.notes.clear();
-    list.forEach((n) =>
-      this.notes.push(this.fb.control(n, Validators.required))
-    );
-  }
-
-  // --------------------------------
-  // Variants / Notes Actions
-  // --------------------------------
-  addVariant() {
-    this.variants.push(this.createVariantGroup());
-  }
-
-  removeVariant(index: number) {
-    this.variants.length > 1
-      ? this.variants.removeAt(index)
-      : this.variants.at(0).reset();
   }
 
   addNote() {
@@ -161,23 +108,51 @@ export class AddProductComponent implements OnInit {
   }
 
   removeNote(index: number) {
-    this.notes.length > 1
-      ? this.notes.removeAt(index)
-      : this.notes.at(0).reset();
+    if (this.notes.length > 1) {
+      this.notes.removeAt(index);
+    } else {
+      this.notes.at(0).reset();
+    }
   }
 
-  // --------------------------------
-  // Image Handling
-  // --------------------------------
-  onFilesSelected(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (!input.files) return;
+  private createVariantGroup(variant?: any): FormGroup {
+    return this.fb.group({
+      size: [variant?.size || null, [Validators.required]],
+      price: [variant?.price || null, [Validators.min(0)]],
+      discountedPrice: [variant?.discountedPrice || null, [Validators.min(0)]],
+    });
+  }
 
-    Array.from(input.files).forEach((file) => {
+  get variants(): FormArray {
+    return this.productForm.get("variants") as FormArray;
+  }
+
+  addVariant() {
+    this.variants.push(this.createVariantGroup());
+  }
+
+  removeVariant(index: number) {
+    if (this.variants.length > 1) {
+      this.variants.removeAt(index);
+    } else {
+      this.variants.at(0).reset();
+    }
+  }
+
+  trackByIndex(index: number): number {
+    return index;
+  }
+
+  /** Handle new file selection */
+  onFilesSelected(event: Event) {
+    const target = event.target as HTMLInputElement;
+    if (!target.files) return;
+
+    Array.from(target.files).forEach((file) => {
       if (!file.type.startsWith("image/")) return;
 
       if (file.size > 5 * 1024 * 1024) {
-        this.snackBar.open(`${file.name} > 5MB skipped`, undefined, {
+        this.snackBar.open(`${file.name} is > 5MB. Skipped.`, undefined, {
           duration: 2500,
         });
         return;
@@ -186,90 +161,93 @@ export class AddProductComponent implements OnInit {
       this.imageFiles.push(file);
 
       const reader = new FileReader();
-      reader.onload = () =>
+      reader.onload = (e) =>
         this.imagePreviews.push(
-          this.sanitizer.bypassSecurityTrustUrl(reader.result as string)
+          this.sanitizer.bypassSecurityTrustUrl(e.target!.result as string)
         );
       reader.readAsDataURL(file);
     });
 
-    input.value = "";
+    target.value = "";
   }
 
-  private loadExistingImages(urls: string[]) {
-    this.existingImageUrls = [...urls];
-    urls.forEach((url) =>
-      this.imagePreviews.push(this.sanitizer.bypassSecurityTrustUrl(url))
-    );
-  }
-
+  /** Remove image (existing or new) */
   removeImage(index: number) {
-    if (index < this.existingImageUrls.length) {
-      this.existingImageUrls.splice(index, 1);
+    if (this.isExisting(index)) {
+      const existingIndex = index;
+      this.existingImageUrls.splice(existingIndex, 1);
     } else {
-      this.imageFiles.splice(index - this.existingImageUrls.length, 1);
+      const newIndex = index - this.existingImageUrls.length;
+      this.imageFiles.splice(newIndex, 1);
     }
     this.imagePreviews.splice(index, 1);
   }
 
+  /** Check if the image is from existing URLs */
+  isExisting(index: number): boolean {
+    return index < this.existingImageUrls.length;
+  }
+
+  /** Trigger file input */
   uploadImages() {
     document.getElementById("imageInput")?.click();
   }
 
-  // --------------------------------
-  // Submit
-  // --------------------------------
+  /** Submit form */
   submit() {
     if (this.productForm.invalid) {
       this.productForm.markAllAsTouched();
-      this.snackBar.open("Fix validation errors", undefined, {
+      this.snackBar.open("Please fix validation errors", undefined, {
         duration: 2500,
       });
       return;
     }
 
     this.spinner.show();
-    const v = this.productForm.value;
-    const fd = new FormData();
 
-    fd.append("name", v.name);
-    fd.append("desc", v.desc);
-
-    v.category.forEach((c: string, i: number) =>
-      fd.append(`category[${i}]`, c)
-    );
-
-    v.variants.forEach((vr: any, i: number) => {
-      fd.append(`variants[${i}][size]`, vr.size);
-      fd.append(`variants[${i}][price]`, vr.price);
-      fd.append(`variants[${i}][discountedPrice]`, vr.discountedPrice);
+    const formData = new FormData();
+    formData.append("name", this.productForm.value.name);
+    formData.append("desc", this.productForm.value.desc);
+    this.productForm.value.variants.forEach((v, i) => {
+      formData.append(`variants[${i}][size]`, v.size);
+      formData.append(`variants[${i}][price]`, v.price);
+      formData.append(`variants[${i}][discountedPrice]`, v.discountedPrice);
     });
+    this.productForm.value.category.forEach((cat: string, i: number) => {
+      formData.append(`category[${i}]`, cat);
+    });
+    // Append notes as array of strings
+    this.productForm.value.notes.forEach((v, i) => {
+      formData.append(`notes[${i}]`, v);
+    });
+    // Append new images
+    this.imageFiles.forEach((file) => formData.append("images", file));
 
-    v.notes.forEach((n: string, i: number) => fd.append(`notes[${i}]`, n));
-
-    this.imageFiles.forEach((f) => fd.append("images", f));
-
+    // Append existing image URLs
     if (this.existingImageUrls.length) {
-      fd.append("existingImages", JSON.stringify(this.existingImageUrls));
+      formData.append("existingImages", JSON.stringify(this.existingImageUrls));
     }
 
     const action = this.id ? "updateProduct" : "addProduct";
-
-    this.productService[action](fd, this.id).subscribe({
+    this.productService[action](formData, this.id).subscribe({
       next: () => {
         this.spinner.hide();
         this.snackBar.open(
           `Product ${this.id ? "updated" : "added"} successfully`,
           undefined,
-          { duration: 3000 }
+          {
+            duration: 3000,
+          }
         );
         this.router.navigate(["/catalogue/all"]);
       },
-      error: () => {
+      error: (err) => {
         this.spinner.hide();
-        this.snackBar.open("Error occurred", undefined, {
-          duration: 3000,
-        });
+        if (err?.error?.message?.includes?.("No token found")) {
+          this.snackBar.open("Please Login", undefined, { duration: 3000 });
+        } else {
+          this.snackBar.open("Error Occurred", undefined, { duration: 3000 });
+        }
       },
     });
   }

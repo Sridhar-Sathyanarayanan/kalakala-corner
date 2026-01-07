@@ -23,7 +23,6 @@ import { MatTooltipModule } from "@angular/material/tooltip";
 import { MatDividerModule } from "@angular/material/divider";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { MatRadioModule } from "@angular/material/radio";
-import { MatCheckboxModule } from "@angular/material/checkbox";
 import { MatPaginatorModule } from "@angular/material/paginator";
 export const MaterialStandaloneModules = [
   CommonModule,
@@ -53,6 +52,5 @@ export const MaterialStandaloneModules = [
   FormsModule,
   MatProgressSpinnerModule,
   MatRadioModule,
-  MatCheckboxModule,
   MatPaginatorModule,
 ];

@@ -87,8 +87,7 @@ export class ContactComponent implements OnInit {
           width: isMobile ? "90%" : "55%",
           maxWidth: "95vw",
         });
-        this.contactForm.reset({ queryType: "general" });
-        this.contactForm.markAsUntouched();
+        this.router.navigate([""]);
       },
       error: () => {
         this.spinner.hide();

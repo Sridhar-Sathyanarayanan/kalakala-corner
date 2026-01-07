@@ -19,7 +19,6 @@ export interface Product {
 export interface CategoryPayload {
   path: string;
   name: string;
-  icon?: string;
 }
 export interface Category {
   items: CategoryPayload[];
