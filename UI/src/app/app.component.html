@@ -1,0 +1,78 @@
+<header class="navbar">
+  <!-- Left: Logo / Brand -->
+  <div class="brand-container">
+    <a routerLink="/" class="brand">
+      <img
+        src="assets/images/logo.jpeg"
+        alt="Kalakala Corner Logo"
+        class="logo"
+      />
+      <h3>Kalakala Corner</h3>
+    </a>
+  </div>
+
+  <!-- Hamburger for mobile -->
+  <button
+    class="hamburger"
+    (click)="toggleMobileMenu()"
+    aria-label="Toggle menu"
+  >
+    <mat-icon class="menu">menu</mat-icon>
+  </button>
+
+  <!-- Desktop & Mobile Nav -->
+  <nav [class.open]="mobileMenuOpen">
+    <ul>
+      <li (click)="navigateTo('/')">Home</li>
+
+      <li>
+        <!-- Keep dropdown trigger on <a> -->
+        <a [matMenuTriggerFor]="categoryMenu" class="menu-trigger">
+          Catalogue <mat-icon>arrow_drop_down</mat-icon>
+        </a>
+        <mat-menu #categoryMenu="matMenu" class="category-menu">
+          @for (item of menuItems; track item.path) {
+          <button mat-menu-item (click)="navigateTo('/catalogue/' + item.path)">
+            {{ item.icon }} {{ item.name }}
+          </button>
+          <mat-divider></mat-divider>
+          }
+        </mat-menu>
+      </li>
+
+      <li (click)="navigateTo('/about-us')">About Us</li>
+      <li (click)="navigateTo('/contact')">Contact</li>
+
+      @if (admin) {
+      <li (click)="navigateTo('/admin')">Admin</li>
+      <li (click)="logout($event)">Logout</li>
+      }
+    </ul>
+  </nav>
+</header>
+
+<main class="main-content">
+  @if (appService.isLoggedIn$ | async) {
+  <div class="greeting-container mat-elevation-z2">
+    <div class="admin-info">
+      <mat-icon color="primary">account_circle</mat-icon>
+      <div class="admin-text">
+        <span class="greeting-text">Hi, Admin</span>
+        <small class="role-text">Welcome back!</small>
+      </div>
+    </div>
+  </div>
+  }
+
+  <router-outlet></router-outlet>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-main">
+    <div class="footer-left">
+      <h4>Kalakala Corner</h4>
+      <p>Creativity · Culture · Tradition</p>
+    </div>
+  </div>
+  <div class="footer-bottom">© 2025 Kalakala Corner · All Rights Reserved</div>
+</footer>

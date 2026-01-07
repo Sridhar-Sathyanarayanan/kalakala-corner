@@ -1,0 +1,39 @@
+<ngx-spinner bdColor="rgba(51,51,51,0.8)" size="medium" color="#fff" type="square-jelly-box">
+</ngx-spinner>
+
+<div class="login-container">
+  <mat-card class="login-card mat-elevation-z8">
+    <div class="login-header">
+      <mat-icon class="login-icon">lock</mat-icon>
+      <h2>Welcome</h2>
+      <p>Login to your account</p>
+    </div>
+
+    <!-- Username -->
+    <mat-form-field appearance="fill" class="full-width">
+      <mat-label>Username</mat-label>
+      <input matInput placeholder="Enter your username" [(ngModel)]="username" required />
+      <mat-icon matSuffix>person</mat-icon>
+    </mat-form-field>
+
+    <!-- Password -->
+    <mat-form-field appearance="fill" class="full-width">
+      <mat-label>Password</mat-label>
+      <input matInput [type]="hidePassword ? 'password' : 'text'" placeholder="Enter your password"
+        [(ngModel)]="password" required />
+      <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword">
+        <mat-icon>{{
+          hidePassword ? "visibility_off" : "visibility"
+          }}</mat-icon>
+      </button>
+    </mat-form-field>
+
+    <!-- Submit Button -->
+    <button mat-raised-button color="primary" class="login-btn full-width" (click)="login()">
+      Login
+    </button>
+    @if (error) {
+    <p class="error">Invalid credentials</p>
+    }
+  </mat-card>
+</div>

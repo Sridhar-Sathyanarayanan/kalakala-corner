@@ -1,0 +1,417 @@
+@use "../styles/styles.scss" as styles;
+
+.logo-center {
+  flex: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .logo-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease;
+    background: linear-gradient(135deg, #ff5c8a, #ffb347);
+    padding: 3px;
+    border-radius: 50%;
+    &:hover {
+      transform: scale(1.05);
+    }
+
+    .center-logo {
+      width: 64px;
+      height: 64px;
+      object-fit: cover;
+      border-radius: 50%;
+      background: #fff;
+      border-radius: 50%;
+      padding: 6px;
+    }
+  }
+}
+.menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 600;
+  color: wheat;
+  border-radius: var(14px);
+  transition: 0.2s;
+
+  mat-icon {
+    font-size: 20px;
+    vertical-align: middle;
+    line-height: 1;
+  }
+
+  &:hover {
+    background: styles.$theme1;
+    color: styles.$theme2;
+  }
+}
+::ng-deep .mat-menu-panel {
+  background: styles.$theme2;
+  color: wheat;
+  border-radius: var(14px);
+  padding: 0.2rem 0;
+
+  .mat-menu-item {
+    font-weight: 600;
+
+    &:hover {
+      background: styles.$theme1;
+      color: styles.$theme2;
+    }
+  }
+}
+/* NAVBAR */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: styles.$theme2;
+  border-radius: 10px;
+  margin: 12px;
+  position: relative;
+  z-index: 10;
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: wheat;
+    font-weight: 800;
+    text-decoration: none;
+    h3 {
+      font-size: clamp(1.3rem, 2vw, 1.7rem);
+      font-weight: 900;
+      margin: 0;
+      background: linear-gradient(90deg, #f9d423, #ff4e50); // try others!
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-fill-color: transparent;
+      letter-spacing: 0.05em;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+      white-space: nowrap;
+      background-size: 200% auto;
+      transition: background-position 0.4s ease;
+      &:hover {
+        text-shadow: 0 0 8px rgba(255, 200, 150, 0.4);
+        transform: scale(1.02);
+        background-position: right center;
+      }
+    }
+    .logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+      &:hover {
+        transform: scale(1.05);
+      }
+    }
+  }
+  @media (max-width: 600px) {
+    .brand h3 {
+      font-size: 1.2rem;
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
+    }
+  }
+
+  nav {
+    ul {
+      display: flex;
+      list-style: none;
+      gap: 3rem;
+      margin: 0;
+      padding: 0;
+      align-items: center;
+
+      li {
+        position: relative;
+        cursor: pointer; // Make entire li feel clickable
+        color: wheat;
+        font-weight: 600;
+        padding: 0.4rem 0.8rem;
+        border-radius: var(14px);
+        transition: 0.2s;
+
+        // Highlight li on hover
+        &:hover {
+          background: styles.$theme1;
+          color: styles.$theme2;
+          border-radius: 10px;
+        }
+
+        // Style internal a tags for safety
+        a {
+          text-decoration: none;
+          color: inherit; // use li color
+          display: block;
+          width: 100%;
+          height: 100%;
+        }
+
+        /* Submenu logic */
+        &.has-submenu:hover .submenu {
+          display: block;
+        }
+
+        .submenu {
+          display: none;
+          position: absolute;
+          top: 100%;
+          left: 0;
+          background: styles.$theme2;
+          border-radius: var(14px);
+          margin-top: 0.2rem;
+          min-width: 140px;
+          flex-direction: column;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+          li {
+            padding: 0.5rem 1rem;
+            color: wheat;
+            cursor: pointer;
+
+            &:hover {
+              background: styles.$theme1;
+              color: styles.$theme2;
+            }
+
+            a {
+              text-decoration: none;
+              color: inherit;
+              display: block;
+              width: 100%;
+              height: 100%;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /* Hamburger */
+  .hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+
+    .menu {
+      color: wheat;
+    }
+  }
+}
+
+// Mobile styles
+@media (max-width: 992px) {
+  ::ng-deep .mat-menu-panel {
+    max-width: 100vw;
+    min-width: 100%;
+  }
+
+  .navbar {
+    .hamburger {
+      display: flex;
+    }
+
+    nav {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 100%;
+      background: styles.$theme2;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+
+      ul {
+        flex-direction: column;
+        gap: 0;
+        line-height: 3em;
+
+        li {
+          width: 100%;
+          padding: 1rem;
+          text-align: left;
+
+          &:hover {
+            background: styles.$theme1;
+            color: styles.$theme2;
+          }
+
+          .submenu {
+            position: static;
+            display: none;
+            background: rgba(255, 255, 255, 0.05);
+          }
+
+          &.has-submenu.open .submenu {
+            display: flex;
+            flex-direction: column;
+          }
+        }
+      }
+
+      &.open {
+        max-height: 500px; // arbitrary large value
+      }
+    }
+  }
+  .logo-center {
+    margin: 10px 0;
+
+    .center-logo {
+      width: 56px;
+      height: 56px;
+    }
+  }
+}
+
+/* Main content */
+.main-content {
+  padding: 0 1rem;
+  .user {
+    display: grid;
+    grid-template-columns: 90% 10%;
+    color: red;
+  }
+}
+
+/* Footer */
+.site-footer {
+  margin: 12px;
+  border-radius: 10px;
+  background: styles.$theme2;
+  padding: 1rem;
+
+  .footer-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    color: wheat;
+    .footer-left h3 {
+      margin: 0;
+      font-weight: 800;
+      background: var(--accent-gradient);
+      /* Disable lint for vendor prefixed property */
+      -webkit-background-clip: text; /* stylelint-disable-line property-no-unknown */
+      background-clip: text; /* standard property */
+      /* Removed -webkit-text-fill-color as it's not a standard property */
+
+      /* Optionally, for similar effect in supporting browsers, you can use background-clip along with color adjustments if needed */
+    }
+  }
+
+  .footer-bottom {
+    text-align: center;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.8);
+  }
+}
+.greeting-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  background: #fff;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  margin: 1rem auto;
+  max-width: 15%;
+}
+
+.admin-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.greeting-text {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.role-text {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .greeting-container {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    max-width: 50%;
+  }
+}
+
+.admin-avatar {
+  color: styles.$theme3;
+}
+/* Scrollable category submenu */
+::ng-deep .mat-mdc-menu-panel.category-menu {
+  max-height: 300px; /* or whatever height fits your design */
+  overflow-y: auto;
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: styles.$theme2 transparent;
+
+  /* Keep your theme aesthetics */
+
+  color: wheat;
+  border-radius: var(14px);
+  padding: 0.2rem 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* WebKit Scrollbar (Chrome, Edge, Safari) */
+::ng-deep .mat-mdc-menu-panel.category-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+::ng-deep .mat-mdc-menu-panel.category-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::ng-deep .mat-mdc-menu-panel.category-menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+::ng-deep .mat-mdc-menu-panel.category-menu::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Keep hover theme for items inside this submenu */
+::ng-deep .mat-mdc-menu-panel.category-menu .mat-mdc-menu-item {
+  padding: 5%;
+  &:hover {
+    background: styles.$theme1;
+    color: styles.$theme2;
+  }
+}

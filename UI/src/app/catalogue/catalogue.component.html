@@ -1,0 +1,236 @@
+<ngx-spinner bdColor="rgba(51,51,51,0.8)" size="medium" color="#fff" type="square-jelly-box">
+</ngx-spinner>
+<div class="catalogue" id="catalogue-content" #catalogueContent>
+  <div class="catalogue-header">
+    <div class="header-content">
+      <div class="title-section">
+        <h1 class="catalogue-title">
+          <span class="title-icon">✨</span>
+          Product Catalogue
+          <span class="title-icon">✨</span>
+        </h1>
+        <h4 class="catalogue-subtitle">
+          <span class="category-icon">{{ categoryIcon() }}</span>
+          {{ categoryTitle() }}
+        </h4>
+      </div>
+      @if (appService.isLoggedIn$ | async) {
+      <div class="header-actions">
+        <button mat-fab extended aria-label="Download PDF" (click)="downloadPDF()" class="download-btn">
+          <mat-icon>file_download</mat-icon>
+          Download PDF
+        </button>
+      </div>
+      }
+    </div>
+  </div>
+
+  @if(errorMessage()) {
+  <div class="error-banner">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ errorMessage() }}</span>
+  </div>
+  } @if(products().length > 0){
+  <div class="catalogue-layout">
+    <!-- Left Sidebar Filter -->
+    <aside class="filter-sidebar" [class.collapsed]="!filterPanelExpanded()"
+      [class.has-active-filters]="hasActiveFilters()">
+      <div class="filter-card">
+        <div class="filter-header" (click)="toggleFilterPanel()">
+          <div class="filter-title">
+            <h3>Filters</h3>
+            @if(!filterPanelExpanded() && hasActiveFilters()) {
+            <span class="active-filter-indicator"></span>
+            }
+          </div>
+          <button mat-icon-button class="collapse-btn" [attr.aria-label]="
+              filterPanelExpanded() ? 'Collapse filters' : 'Expand filters'
+            ">
+            <mat-icon>{{ filterPanelExpanded() ? "close" : "tune" }}</mat-icon>
+          </button>
+        </div>
+
+        @if(filterPanelExpanded()) {
+        <div class="filter-content">
+          <div class="filter-scrollable-content">
+            <!-- Search Filter Section -->
+            <div class="filter-section">
+              <div class="filter-section-title">
+                <mat-icon>search</mat-icon>
+                <span>Search Products</span>
+              </div>
+
+              <mat-form-field appearance="outline" class="search-field">
+                <mat-label>Search by name or description</mat-label>
+                <input matInput type="text" [ngModel]="searchInput()" (ngModelChange)="searchInput.set($event)"
+                  placeholder="Enter search text" />
+                <mat-icon matPrefix>search</mat-icon>
+              </mat-form-field>
+            </div>
+
+            <!-- Price Range Filter Section -->
+            <div class="filter-section">
+              <div class="filter-section-title">
+                <span>₹ Price Range</span>
+              </div>
+
+              <div class="price-inputs">
+                <mat-form-field appearance="outline" class="price-field">
+                  <mat-label>Min Price</mat-label>
+                  <input matInput type="number" [(ngModel)]="minPriceInput" [min]="minPriceAvailable()"
+                    [max]="maxPriceAvailable()" placeholder="{{ minPriceAvailable() }}" />
+                  <span matPrefix>₹&nbsp;</span>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="price-field">
+                  <mat-label>Max Price</mat-label>
+                  <input matInput type="number" [(ngModel)]="maxPriceInput" [min]="minPriceAvailable()"
+                    [max]="maxPriceAvailable()" placeholder="{{ maxPriceAvailable() }}" />
+                  <span matPrefix>₹&nbsp;</span>
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+          <div class="filter-actions">
+            <button mat-raised-button (click)="applyFilters()" [disabled]="!hasFilterInputs()" class="apply-filter-btn">
+              <mat-icon>check</mat-icon>
+              Apply Filters
+            </button>
+            <button mat-stroked-button (click)="resetFilters()" [disabled]="!hasActiveFilters()"
+              class="reset-filter-btn">
+              <mat-icon>clear</mat-icon>
+              Clear
+            </button>
+          </div>
+        </div>
+        }
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="catalogue-main-content">
+      <!-- Top Paginator -->
+      <div class="paginator-wrapper top-paginator">
+        <mat-paginator [length]="filteredProducts().length" [pageSize]="pageSize()" [pageIndex]="currentPage()"
+          [showFirstLastButtons]="true" [hidePageSize]="true" (page)="onPageChange($event)" class="catalogue-paginator">
+        </mat-paginator>
+      </div>
+
+      @if(filteredProducts().length === 0 && products().length > 0) {
+      <div class="no-filter-results">
+        <mat-icon>filter_list_off</mat-icon>
+        <h3>No products match your filters</h3>
+        <p>
+          Try adjusting your filter criteria or clear the filters to see all
+          products
+        </p>
+        <button mat-raised-button (click)="resetFilters()" class="clear-filters-btn">
+          Clear Filters
+        </button>
+      </div>
+      }
+
+      <div class="products-grid">
+        @for (product of paginatedProducts(); track product.id) {
+        <div class="product-card" [class.has-discount]="product.hasDiscount" (click)="openProductModal(product)">
+          @if(product.hasDiscount) {
+          <div class="discount-ribbon">
+            <span>OFFER</span>
+          </div>
+          }
+
+          <div class="card-image-wrapper">
+            <img [src]="product.images[0]" [alt]="product.name" class="product-image" loading="lazy"
+              (error)="onImageError($event)" />
+            <div class="image-placeholder" style="display: none">
+              <mat-icon>image_not_supported</mat-icon>
+              <span>No Image Available</span>
+            </div>
+
+            @if(product.displayMinPrice !== undefined && product.displayMaxPrice
+            !== undefined) {
+            <div class="price-badge-container">
+              @if(product.maxDiscountPercent && product.maxDiscountPercent > 0)
+              {
+              <div class="discount-badge">
+                UP TO {{ product.maxDiscountPercent }}% OFF
+              </div>
+              }
+
+              <div class="price-badge">
+                @if(product.displayMinPrice === product.displayMaxPrice) {
+                <span class="price-single">₹{{ product.displayMinPrice }}</span>
+                } @else {
+                <span class="price-range">₹{{ product.displayMinPrice }} - ₹{{
+                  product.displayMaxPrice
+                  }}</span>
+                }
+              </div>
+
+              @if(product.hasDiscount && (product.originalMinPrice !==
+              product.displayMinPrice || product.originalMaxPrice !==
+              product.displayMaxPrice)) {
+              <div class="price-badge original-price">
+                <span class="original-price-range">
+                  @if(product.originalMinPrice === product.originalMaxPrice) {
+                  ₹{{ product.originalMinPrice }} } @else { ₹{{
+                  product.originalMinPrice
+                  }}
+                  - ₹{{ product.originalMaxPrice }}
+                  }
+                </span>
+              </div>
+              }
+            </div>
+            }
+          </div>
+
+          <div class="card-content">
+            <h3 class="product-name" [matTooltip]="product.name">
+              {{ product.name }}
+            </h3>
+            <p class="product-desc" [matTooltip]="product.desc">
+              {{ product.desc }}
+            </p>
+
+            @if (appService.isLoggedIn$ | async) {
+            <div class="admin-actions" (click)="$event.stopPropagation()">
+              <button mat-stroked-button class="edit-btn" (click)="edit(product)" aria-label="Edit product">
+                <mat-icon>edit</mat-icon>
+                Edit
+              </button>
+              <button mat-stroked-button class="delete-btn" (click)="delete(product)" aria-label="Delete product">
+                <mat-icon>delete</mat-icon>
+                Delete
+              </button>
+            </div>
+            } @else {
+            <div class="view-details-btn">
+              <span>View Details</span>
+              <mat-icon>arrow_forward</mat-icon>
+            </div>
+            }
+          </div>
+        </div>
+        }
+      </div>
+
+      <!-- Bottom Paginator -->
+      <div class="paginator-wrapper bottom-paginator">
+        <mat-paginator [length]="filteredProducts().length" [pageSize]="pageSize()" [pageIndex]="currentPage()"
+          [showFirstLastButtons]="true" [hidePageSize]="true" (page)="onPageChange($event)" class="catalogue-paginator">
+        </mat-paginator>
+      </div>
+    </div>
+  </div>
+  } @else if(!(products().length || loading())) {
+  <div class="empty-state">
+    <img src="assets/images/no_data_found.png" alt="No Data Found" class="empty-image" />
+    <h3 class="empty-title">No products found</h3>
+    <p class="empty-subtitle">
+      Please <a routerLink="/contact" class="contact-link">contact us</a> for
+      more information
+    </p>
+  </div>
+  }
+</div>

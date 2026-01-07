@@ -1,0 +1,167 @@
+<section class="contact-panel">
+  <!-- LEFT: Contact Info Cards -->
+  <div class="contact-info">
+    @for (info of personalDetails; track info.title) {
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title-group>
+          <mat-card-title>{{ info.title }}</mat-card-title>
+          @if (info.href) {
+          <mat-card-subtitle>
+            <a
+              class="value"
+              [href]="info.href"
+              target="{{ info.title === 'Instagram' ? '_blank' : '_self' }}"
+            >
+              {{ info.value }}
+            </a>
+          </mat-card-subtitle>
+          } @else {
+          <mat-card-subtitle class="value">{{ info.value }}</mat-card-subtitle>
+          }
+          <img
+            mat-card-sm-image
+            [src]="'assets/images/' + info.icon"
+            alt="{{ info.title }}"
+          />
+        </mat-card-title-group>
+      </mat-card-header>
+    </mat-card>
+    }
+  </div>
+
+  <!-- RIGHT: Contact Form Card -->
+  <div class="card">
+    <!-- Image Section -->
+    <div class="card-media">
+      <img src="assets/images/contact.jpg" alt="Contact Us" loading="lazy" />
+      <div class="card-badge">Get in Touch</div>
+    </div>
+
+    <!-- Form Section -->
+    <div class="card-body">
+      <div class="card-header">
+        <h1>
+          <mat-icon>support_agent</mat-icon>
+          Contact Us
+        </h1>
+      </div>
+
+      <p class="subtitle">
+        We’d love to hear from you. Fill out the form and our team will reach
+        out within 24 hours.
+      </p>
+
+      <!-- Contact Form -->
+      <form
+        [formGroup]="contactForm"
+        (ngSubmit)="onSubmit()"
+        class="contact-form"
+      >
+        <!-- Name -->
+        <mat-form-field appearance="outline">
+          <mat-label>Name</mat-label>
+          <input matInput formControlName="name" placeholder="Your name" />
+          <mat-hint align="start">Min 2, Max 30 characters</mat-hint>
+          @if (contactForm.get('name')?.hasError('required')) {
+          <mat-error>Name is required</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Phone -->
+        <div class="phone-group">
+          <mat-form-field appearance="outline" class="phone-field">
+            <mat-label>Phone</mat-label>
+            <input
+              matInput
+              formControlName="phone"
+              type="tel"
+              placeholder="Contact number"
+              maxlength="20"
+              autocomplete="tel"
+            />
+            <mat-hint align="start"
+              >Examples: 9876543210, +1 555 123 4567, +44-7911-123456, +91 (987)
+              654-3210</mat-hint
+            >
+            @if (contactForm.get('phone')?.hasError('pattern')) {
+            <mat-error>Enter valid number</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <!-- Email -->
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input
+            matInput
+            formControlName="email"
+            placeholder="your@email.com"
+          />
+          <mat-hint align="start">Example: sample@gmail.com</mat-hint>
+          @if (contactForm.get('email')?.hasError('email')) {
+          <mat-error>Enter valid email address</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Shared validation for phone/email -->
+        @if (contactForm.hasError('phoneOrEmailRequired') && (contactForm.dirty
+        || contactForm.touched)) {
+        <mat-error>Phone number or Email is required</mat-error>
+        }
+
+        <!-- Query Type -->
+        <label class="radio-label">Query Type</label>
+        <mat-radio-group formControlName="queryType" class="radio-group">
+          <mat-radio-button value="general">General Query</mat-radio-button>
+          <mat-radio-button value="product"
+            >Product Specific Query</mat-radio-button
+          >
+        </mat-radio-group>
+
+        <!-- Product dropdown -->
+        @if (contactForm.get('queryType')?.value === 'product') {
+        <mat-form-field appearance="outline">
+          <mat-label>Product</mat-label>
+          <mat-select formControlName="product">
+            @for (p of productsList; track p) {
+            <mat-option [value]="p">{{ p }}</mat-option>
+            }
+          </mat-select>
+          @if (contactForm.get('product')?.hasError('required')) {
+          <mat-error>Product selection is required</mat-error>
+          }
+        </mat-form-field>
+        }
+
+        <!-- Message -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Message</mat-label>
+          <textarea
+            matInput
+            rows="4"
+            formControlName="query"
+            placeholder="Your message... (Minimum 10 characters)"
+          ></textarea>
+          <mat-hint align="start">Minimum 10 characters required</mat-hint>
+          @if (contactForm.get('query')?.hasError('required')) {
+          <mat-error>Message is required (Minimum 10 characters)</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Submit -->
+        <div class="cta-row">
+          <button
+            mat-raised-button
+            color="primary"
+            [disabled]="contactForm.invalid"
+          >
+            <mat-icon>send</mat-icon>
+            <span>Send Message</span>
+          </button>
+          <span class="micro">We usually respond within 24 hours</span>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>

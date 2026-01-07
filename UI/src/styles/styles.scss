@@ -1,0 +1,21 @@
+@use "@angular/material" as mat;
+
+@font-face {
+  font-family: ThemeFont-Regular;
+  src: url(/assets/fonts/Metropolis-Regular.otf);
+}
+$theme1: #e0c3a6;
+$theme2: #3e0d31;
+$theme3: #ff4081;
+$theme4: #467b2e;
+html,
+body {
+  font-family: "ThemeFont-Regular", "Trebuchet MS", "Helvetica Neue", sans-serif;
+  background-color: $theme1;
+}
+.bgTheme2 {
+  background-color: $theme2;
+}
+* {
+  box-sizing: border-box;
+}

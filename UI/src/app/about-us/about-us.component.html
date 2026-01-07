@@ -1,0 +1,33 @@
+<div class="about-us-container">
+  <mat-card class="about-card">
+    <h1 class="title">About Us</h1>
+    <p class="description">
+      Kalakala corner is a vibrant hub for Handicrafts, Art and Craft dedicated
+      to promoting and preserving traditional art forms.
+    </p>
+    <mat-divider></mat-divider>
+    <div class="mission-goal-grid">
+      <mat-card class="info-card mission" role="article" aria-label="Mission">
+        <h3>Mission</h3>
+        <ul>
+          @for (item of missions; track item) {
+          <li>{{item}}</li>
+          }
+        </ul>
+      </mat-card>
+
+      <mat-card class="info-card goal" role="article" aria-label="Goals">
+        <h3>Goals</h3>
+        <ul>
+          @for (item of goals; track item) {
+          <li>{{item}}</li>
+          }
+        </ul>
+      </mat-card>
+    </div>
+    
+    <a><button mat-raised-button color="primary"  routerLink="/catalogue">
+        <mat-icon>shopping_bag</mat-icon> Explore Our Collections
+      </button></a>
+  </mat-card>
+</div>

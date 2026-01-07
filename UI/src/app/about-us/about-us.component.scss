@@ -1,0 +1,58 @@
+@use "../../styles/styles.scss" as styles;
+
+$accent: #e91e63;
+$muted: #6b6b6b;
+$glass: linear-gradient(
+  135deg,
+  rgba(255, 255, 255, 0.9),
+  rgba(255, 250, 245, 0.85)
+);
+.about-us-container {
+  min-height: 100vh;
+}
+
+.about-card {
+  padding: 32px;
+  border-radius: 20px;
+  background: #ffffffcc;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+
+  .title {
+    color: styles.$theme3;
+    font-weight: bold;
+  }
+
+  .description {
+    font-size: 1.2rem;
+    color: #333;
+    margin-bottom: 32px;
+  }
+
+  .mission-goal-grid {
+    margin: 18px 0;
+
+    .info-card {
+      margin: 1% 0;
+      padding: 14px;
+      border-radius: 12px;
+      background: $glass;
+
+      h3 {
+        margin-top: 0;
+        color: $accent;
+      }
+      ul {
+        margin: 10px 0 0 18px;
+        color: $muted;
+        list-style: square;
+        line-height: 3em;
+      }
+    }
+  }
+  // Responsive breakpoints
+  @media (max-width: 960px) {
+    .mission-goal-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}

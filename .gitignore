@@ -1,0 +1,11 @@
+node_modules/
+
+# Ignore build artifacts in UI
+UI/node_modules/
+UI/dist/
+UI/.angular
+
+# Ignore compiled files in Mid-tier
+mid-tier/node_modules/
+mid-tier/dist/
+mid-tier/.env

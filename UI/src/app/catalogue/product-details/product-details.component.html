@@ -1,0 +1,223 @@
+<div class="product-details-container animate-fade-in">
+  <!-- Close Button -->
+  <button mat-icon-button class="close-btn animate-scale-in" (click)="close()" aria-label="Close">
+    <mat-icon>close</mat-icon>
+  </button>
+
+  <!-- Left: Image Carousel -->
+  <div class="carousel-section animate-slide-left">
+    <div class="carousel-container">
+      <div class="image-wrapper">
+        <img [src]="data.images[currentIndex]" [alt]="data.name" class="carousel-image" />
+
+        <!-- Navigation Buttons -->
+        @if(data.images.length > 1) {
+        <button mat-mini-fab class="nav-btn prev" (click)="prevImage()" aria-label="Previous image">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <button mat-mini-fab class="nav-btn next" (click)="nextImage()" aria-label="Next image">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+        }
+      </div>
+
+      <!-- Thumbnail Dots -->
+      @if(data.images.length > 1) {
+      <div class="dots">
+        @for (img of data.images; track img; let i = $index) {
+        <button class="dot" [class.active]="i === currentIndex" (click)="currentIndex = i"
+          [attr.aria-label]="'Go to image ' + (i + 1)"></button>
+        }
+      </div>
+      }
+
+      <!-- Image Counter -->
+      @if(data.images.length > 1) {
+      <div class="image-counter">
+        <mat-icon>photo_library</mat-icon>
+        {{ currentIndex + 1 }} / {{ data.images.length }}
+      </div>
+      }
+    </div>
+  </div>
+
+  <!-- Right: Product Info -->
+  <div class="details-section animate-slide-right">
+    <div class="details-scroll">
+      <!-- Product Name -->
+      <h1 class="product-name">{{ data.name }}</h1>
+
+      <!-- Category Badge & Get Quote Button -->
+      <div class="header-actions">
+        @if(data.categoryName) {
+        <div class="category-badge">
+          <mat-icon>label</mat-icon>
+          <span>{{ data.categoryName }}</span>
+        </div>
+        }
+
+        <a routerLink="/contact" target="_blank" class="quote-link">
+          <button mat-stroked-button color="primary" class="quote-btn-compact">
+            <mat-icon>request_quote</mat-icon>
+            <span>Get Quote</span>
+          </button>
+        </a>
+      </div>
+
+      <!-- Price Section -->
+      <mat-card class="price-card animate-scale-in" [class.has-discount]="priceRange.hasDiscount">
+        <mat-card-content>
+          <div class="price-content">
+            <!-- Discount Badge - Show at top if there's a discount -->
+            @if(priceRange.maxDiscountPercent > 0) {
+            <div class="discount-badge-top">
+              <mat-icon>local_offer</mat-icon>
+              <span>UP TO {{ priceRange.maxDiscountPercent }}% OFF</span>
+            </div>
+            }
+
+            <!-- Current/Display Price -->
+            <div class="current-price">
+              <div class="price-label">
+                <mat-icon>payments</mat-icon>
+                Price
+              </div>
+              @if(priceRange.displayMinPrice === priceRange.displayMaxPrice) {
+              @if(priceRange.displayMinPrice){<span class="price-value">₹{{ priceRange.displayMinPrice }}</span>
+              }@else {<span>Click 'Get Quote' to contact Admin to know the price</span>}} @else {
+              <span class="price-value">₹{{ priceRange.displayMinPrice }} - ₹{{
+                priceRange.displayMaxPrice
+                }}</span>
+              }
+            </div>
+
+            <!-- Original Price (strikethrough) - Show only if different -->
+            @if(shouldShowOriginalPrice()) {
+            <div class="original-price">
+              <div class="price-label-small">Was:</div>
+              @if(priceRange.originalMinPrice === priceRange.originalMaxPrice) {
+              <span class="price-value-original">₹{{ priceRange.originalMinPrice }}</span>
+              } @else {
+              <span class="price-value-original">₹{{ priceRange.originalMinPrice }} - ₹{{
+                priceRange.originalMaxPrice
+                }}</span>
+              }
+            </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-divider></mat-divider>
+
+      <!-- Description -->
+      @if(data.desc) {
+      <div class="description-section">
+        <h3>
+          <mat-icon>info</mat-icon>
+          Description
+        </h3>
+        <p class="description-text">{{ data.desc }}</p>
+      </div>
+      }
+
+      <!-- Variants Table -->
+      @if (data.variants?.length) {
+      <div class="variants-section">
+        <h3>
+          <mat-icon>inventory_2</mat-icon>
+          Available Variants
+        </h3>
+
+        <div class="table-container">
+          <table mat-table [dataSource]="data.variants" class="variants-table">
+            <!-- Size Column -->
+            <ng-container matColumnDef="size">
+              <th mat-header-cell *matHeaderCellDef>
+                <div class="header-with-icon">
+                  <mat-icon>straighten</mat-icon>
+                  <span>Size</span>
+                </div>
+              </th>
+              <td mat-cell *matCellDef="let v">
+                <div class="size-cell">
+                  <mat-icon class="size-icon">straighten</mat-icon>
+                  <span>{{ v.size }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Original Price Column -->
+            <ng-container matColumnDef="price">
+              <th mat-header-cell *matHeaderCellDef>
+                <div class="header-with-icon">
+                  <mat-icon>{{
+                    hasAnyOfferPrice ? "money_off" : "payments"
+                    }}</mat-icon>
+                  <span>{{
+                    hasAnyOfferPrice ? "Regular Price" : "Price"
+                    }}</span>
+                </div>
+              </th>
+              <td mat-cell *matCellDef="let v">
+                <span class="price-cell" [class.crossed]="
+                    v.discountedPrice && v.discountedPrice !== 'null'
+                  ">
+                  {{ v.price === "null" || !v.price ? "--" : "₹" + v.price }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Discounted Price Column -->
+            <ng-container matColumnDef="discountedPrice">
+              <th mat-header-cell *matHeaderCellDef>
+                <div class="header-with-icon">
+                  <mat-icon>local_offer</mat-icon>
+                  <span>Offer Price</span>
+                </div>
+              </th>
+              <td mat-cell *matCellDef="let v">
+                @if(v.discountedPrice && v.discountedPrice !== "null") {
+                <div class="offer-price-cell">
+                  <span class="discounted-value">₹{{ v.discountedPrice }}</span>
+                  @if(v.price && v.price !== "null") {
+                  <span class="discount-percent">
+                    <mat-icon>arrow_downward</mat-icon>
+                    {{ calculateDiscount(v.price, v.discountedPrice) }}% OFF
+                  </span>
+                  }
+                </div>
+                } @else {
+                <span class="no-offer">--</span>
+                }
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns" class="animate-fade-in"></tr>
+          </table>
+        </div>
+      </div>
+      }
+
+      <!-- Notes Section -->
+      @if (data.notes?.length) {
+      <div class="notes-section">
+        <h3>
+          <mat-icon>speaker_notes</mat-icon>
+          Important Notes
+        </h3>
+
+        <div class="notes-list">
+          @for (note of data.notes; track note; let i = $index) {
+          <div class="note-item animate-fade-in" [style.animation-delay.ms]="i * 100">
+            <mat-icon class="note-icon">fiber_manual_record</mat-icon>
+            <span class="note-text">{{ note }}</span>
+          </div>
+          }
+        </div>
+      </div>
+      }
+    </div>
+  </div>
+</div>
