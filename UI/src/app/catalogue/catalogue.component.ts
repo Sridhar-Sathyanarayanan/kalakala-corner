@@ -25,7 +25,7 @@ import { ConfirmationModalComponent } from "../shared/confirmation/confirmation-
 import { MaterialStandaloneModules } from "../shared/material-standalone";
 import { ProductDetailsComponent } from "./product-details/product-details.component";
 import { BreakpointObserver, Breakpoints } from "@angular/cdk/layout";
-import { MatPaginatorIntl, PageEvent } from "@angular/material/paginator";
+import { PageEvent } from "@angular/material/paginator";
 import { NgxSpinnerService } from "ngx-spinner";
 
 @Component({
@@ -42,6 +42,7 @@ export class CatalogueComponent implements OnInit, OnDestroy {
   private readonly PDF_IMAGE_WIDTH = 50;
   private readonly PDF_IMAGE_HEIGHT = 40;
   private readonly PDF_IMAGE_SPACING = 5;
+  readonly PAGE_SIZE = 9; // Fixed page size, no pagination selector
   // Modern inject() pattern - Angular 21 best practice
   private readonly productService = inject(ProductService);
   readonly appService = inject(AppService);
@@ -49,7 +50,6 @@ export class CatalogueComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly breakpointObserver = inject(BreakpointObserver);
-  private readonly paginatorIntl = inject(MatPaginatorIntl);
   private readonly spinner = inject(NgxSpinnerService);
 
   @ViewChild("catalogueContent", { read: ElementRef })
@@ -59,7 +59,6 @@ export class CatalogueComponent implements OnInit, OnDestroy {
   products = signal<ProductWithPricing[]>([]);
   category = signal<string>("");
   categoryTitle = signal<string>("");
-  pageSize = signal<number>(this.DEFAULT_PAGE_SIZE);
   currentPage = signal<number>(0);
   loading = signal<boolean>(true);
   errorMessage = signal<string>("");
@@ -77,12 +76,17 @@ export class CatalogueComponent implements OnInit, OnDestroy {
   searchFilter = signal<string>("");
   searchInput = signal<string>(""); // Temporary input value
 
+  // Discount filter signals
+  discountFilter = signal<boolean>(false); // Applied discount filter
+  discountFilterInput = signal<boolean>(false); // Temporary input value
+
   // Computed signals for filter state
   hasActiveFilters = computed(() => {
     return (
       this.searchFilter() !== "" ||
       this.minPriceFilter() !== null ||
-      this.maxPriceFilter() !== null
+      this.maxPriceFilter() !== null ||
+      this.discountFilter()
     );
   });
 
@@ -90,7 +94,8 @@ export class CatalogueComponent implements OnInit, OnDestroy {
     return (
       this.searchInput() !== "" ||
       this.minPriceInput() !== null ||
-      this.maxPriceInput() !== null
+      this.maxPriceInput() !== null ||
+      this.discountFilterInput()
     );
   });
 
@@ -100,8 +105,14 @@ export class CatalogueComponent implements OnInit, OnDestroy {
     const minPrice = this.minPriceFilter();
     const maxPrice = this.maxPriceFilter();
     const searchText = this.searchFilter().toLowerCase().trim();
+    const onlyDiscounted = this.discountFilter();
 
     return allProducts.filter((product) => {
+      // Discount filter
+      if (onlyDiscounted && !product.hasDiscount) {
+        return false;
+      }
+
       // Search filter
       if (searchText) {
         const nameMatch =
@@ -132,16 +143,15 @@ export class CatalogueComponent implements OnInit, OnDestroy {
 
   // Computed signal for paginated products
   paginatedProducts = computed(() => {
-    const startIndex = this.currentPage() * this.pageSize();
-    const endIndex = startIndex + this.pageSize();
-    return this.products().slice(startIndex, endIndex);
+    const startIndex = this.currentPage() * this.PAGE_SIZE;
+    const endIndex = startIndex + this.PAGE_SIZE;
+    return this.filteredProducts().slice(startIndex, endIndex);
   });
 
   private readonly destroy$ = new Subject<void>();
   private categoryChange$ = new Subject<void>();
 
   ngOnInit(): void {
-    this.setPaginatorTooltips();
     this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe({
       next: (params) => {
         this.loading.set(true);
@@ -229,29 +239,7 @@ export class CatalogueComponent implements OnInit, OnDestroy {
       });
   }
 
-  private setPaginatorTooltips(): void {
-    this.paginatorIntl.itemsPerPageLabel = "Items per page";
-    this.paginatorIntl.nextPageLabel = "Next page";
-    this.paginatorIntl.previousPageLabel = "Previous page";
-    this.paginatorIntl.firstPageLabel = "First page";
-    this.paginatorIntl.lastPageLabel = "Last page";
-    this.paginatorIntl.getRangeLabel = (
-      page: number,
-      pageSize: number,
-      length: number
-    ) => {
-      if (length === 0) {
-        return `0 of 0`;
-      }
-      const startIndex = page * pageSize;
-      const endIndex =
-        startIndex < length
-          ? Math.min(startIndex + pageSize, length)
-          : startIndex + pageSize;
-      return `${startIndex + 1} - ${endIndex} of ${length}`;
-    };
-    this.paginatorIntl.changes.next();
-  }
+
 
   getProductsList(category?: string): void {
     this.spinner.show();
@@ -336,9 +324,46 @@ export class CatalogueComponent implements OnInit, OnDestroy {
 
   onPageChange(event: PageEvent): void {
     this.currentPage.set(event.pageIndex);
-    this.pageSize.set(event.pageSize);
 
     // Scroll to top of catalogue when page changes
+    if (this.catalogueContent?.nativeElement) {
+      this.catalogueContent.nativeElement.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }
+
+  goToFirstPage(): void {
+    this.currentPage.set(0);
+    this.scrollToTop();
+  }
+
+  goToPreviousPage(): void {
+    const newPage = Math.max(0, this.currentPage() - 1);
+    this.currentPage.set(newPage);
+    this.scrollToTop();
+  }
+
+  goToNextPage(): void {
+    const lastPage = Math.ceil(this.products().length / this.PAGE_SIZE) - 1;
+    const newPage = Math.min(lastPage, this.currentPage() + 1);
+    this.currentPage.set(newPage);
+    this.scrollToTop();
+  }
+
+  goToLastPage(): void {
+    const lastPage = Math.ceil(this.products().length / this.PAGE_SIZE) - 1;
+    this.currentPage.set(lastPage);
+    this.scrollToTop();
+  }
+
+  hasNextPage(): boolean {
+    const lastPage = Math.ceil(this.filteredProducts().length / this.PAGE_SIZE) - 1;
+    return this.currentPage() < lastPage;
+  }
+
+  private scrollToTop(): void {
     if (this.catalogueContent?.nativeElement) {
       this.catalogueContent.nativeElement.scrollIntoView({
         behavior: "smooth",
@@ -368,13 +393,8 @@ export class CatalogueComponent implements OnInit, OnDestroy {
     this.searchFilter.set(this.searchInput());
     this.minPriceFilter.set(this.minPriceInput());
     this.maxPriceFilter.set(this.maxPriceInput());
+    this.discountFilter.set(this.discountFilterInput());
     this.currentPage.set(0); // Reset to first page when filter changes
-
-    // Close filter panel on mobile after applying filters
-    if (typeof window !== "undefined" && window.innerWidth <= 768) {
-      this.filterPanelExpanded.set(false);
-      document.body.style.overflow = "";
-    }
   }
 
   resetFilters(): void {
@@ -384,27 +404,18 @@ export class CatalogueComponent implements OnInit, OnDestroy {
     this.maxPriceFilter.set(null);
     this.minPriceInput.set(null);
     this.maxPriceInput.set(null);
+    this.discountFilter.set(false);
+    this.discountFilterInput.set(false);
     this.currentPage.set(0);
-
-    // Close filter panel on mobile after clearing filters
-    if (typeof window !== "undefined" && window.innerWidth <= 768) {
-      this.filterPanelExpanded.set(false);
-      document.body.style.overflow = "";
-    }
   }
 
   toggleFilterPanel(): void {
-    const newState = !this.filterPanelExpanded();
-    this.filterPanelExpanded.set(newState);
+    this.filterPanelExpanded.set(!this.filterPanelExpanded());
+  }
 
-    // Prevent body scroll on mobile when filter is expanded
-    if (typeof window !== "undefined") {
-      if (newState && window.innerWidth <= 768) {
-        document.body.style.overflow = "hidden";
-      } else {
-        document.body.style.overflow = "";
-      }
-    }
+  isSmallScreen(): boolean {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth <= 768;
   }
 
   onImageError(event: Event): void {

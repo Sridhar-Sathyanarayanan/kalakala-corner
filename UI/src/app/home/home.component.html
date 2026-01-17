@@ -152,7 +152,8 @@
             @if (testimonialProductImages.get(testimonial.id)) {
             <div class="testimonial-image">
               <img [src]="testimonialProductImages.get(testimonial.id)" 
-                   [alt]="testimonial.product" />
+                   [alt]="testimonial.product"
+                   (error)="$event.target.src = 'assets/images/placeholder.png'" />
             </div>
             }
             

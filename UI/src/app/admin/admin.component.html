@@ -304,12 +304,6 @@
       <div class="table-wrapper">
         @if (testimonials().length > 0) {
         <table mat-table [dataSource]="testimonials()" class="testimonials-table">
-          <!-- ID Column -->
-          <ng-container matColumnDef="id">
-            <th mat-header-cell *matHeaderCellDef>ID</th>
-            <td mat-cell *matCellDef="let testimonial">{{ testimonial.id }}</td>
-          </ng-container>
-
           <!-- Category Column -->
           <ng-container matColumnDef="category">
             <th mat-header-cell *matHeaderCellDef>Category</th>

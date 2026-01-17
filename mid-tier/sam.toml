@@ -1,0 +1,15 @@
+{
+  "version": 0.2,
+  "architecture": {
+    "type": "arm64"
+  },
+  "package": {
+    "type": "zip",
+    "patterns": [
+      "dist/**",
+      "node_modules/**",
+      "!dist/server.js",
+      "!dist/server.d.ts"
+    ]
+  }
+}

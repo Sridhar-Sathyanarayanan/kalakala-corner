@@ -1,0 +1,432 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Kalakala Corner API - Serverless Application Model
+
+Parameters:
+  Environment:
+    Type: String
+    Default: prod
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Deployment environment
+  AdminTokenSecret:
+    Type: String
+    NoEcho: true
+    Description: JWT secret for admin token validation
+  OriginURL:
+    Type: String
+    Default: 'https://kalakalacorner.com'
+    Description: CORS origin URL
+
+Globals:
+  Function:
+    Timeout: 60
+    MemorySize: 512
+    Runtime: nodejs20.x
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        ADMIN_TOKEN: !Ref AdminTokenSecret
+        ORIGIN: !Ref OriginURL
+
+Resources:
+  # ==================== IAM Role ====================
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                Resource:
+                  - !GetAtt ProductsTable.Arn
+                  - !GetAtt TestimonialsTable.Arn
+                  - !GetAtt EnquiriesTable.Arn
+                  - !GetAtt CategoriesTable.Arn
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub 'arn:aws:s3:::${S3BucketName}'
+                  - !Sub 'arn:aws:s3:::${S3BucketName}/*'
+
+  # ==================== DynamoDB Tables ====================
+  ProductsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'products-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: category
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: CategoryIndex
+          KeySchema:
+            - AttributeName: category
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  TestimonialsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'testimonials-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: N
+        - AttributeName: productId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: ProductIndex
+          KeySchema:
+            - AttributeName: productId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  EnquiriesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'enquiries-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  CategoriesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'categories-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  # ==================== Lambda Functions - Products ====================
+  GetAllProductsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'kalakala-get-products-${Environment}'
+      CodeUri: dist/lambda/handlers/
+      Handler: products.getAllProducts
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        GetProductsAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /products-list
+            Method: GET
+
+  GetProductsByCategoryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'kalakala-get-products-category-${Environment}'
+      CodeUri: dist/lambda/handlers/
+      Handler: products.getProductsByCategory
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        GetProductsCategoryAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /products-list/{category}
+            Method: GET
+
+  GetProductByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'kalakala-get-product-${Environment}'
+      CodeUri: dist/lambda/handlers/
+      Handler: products.getProductById
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        GetProductAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /product/{id}
+            Method: GET
+
+  AddProductFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'kalakala-add-product-${Environment}'
+      CodeUri: dist/lambda/handlers/
+      Handler: products.addProduct
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        AddProductAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /add-product
+            Method: POST
+
+  UpdateProductFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'kalakala-update-product-${Environment}'
+      CodeUri: dist/lambda/handlers/
+      Handler: products.updateProduct
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        UpdateProductAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /update-product/{id}
+            Method: POST
+
+  DeleteProductFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'kalakala-delete-product-${Environment}'
+      CodeUri: dist/lambda/handlers/
+      Handler: products.deleteProduct
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        DeleteProductAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /delete-product/{id}
+            Method: DELETE
+
+  GetCategoriesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'kalakala-get-categories-${Environment}'
+      CodeUri: dist/lambda/handlers/
+      Handler: products.getCategories
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        GetCategoriesAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /categories-list
+            Method: GET
+
+  SaveCategoriesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'kalakala-save-categories-${Environment}'
+      CodeUri: dist/lambda/handlers/
+      Handler: products.saveCategories
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        SaveCategoriesAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /save-categories
+            Method: POST
+
+  # ==================== Lambda Functions - Login ====================
+  LoginFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'kalakala-login-${Environment}'
+      CodeUri: dist/lambda/handlers/
+      Handler: login.login
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        LoginAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /api/login
+            Method: POST
+
+  LogoutFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'kalakala-logout-${Environment}'
+      CodeUri: dist/lambda/handlers/
+      Handler: login.logout
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        LogoutAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /api/logout
+            Method: POST
+
+  CheckAuthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'kalakala-check-auth-${Environment}'
+      CodeUri: dist/lambda/handlers/
+      Handler: login.checkAuth
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        CheckAuthAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /api/auth/check
+            Method: GET
+
+  # ==================== Lambda Functions - Testimonials ====================
+  GetTestimonialsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'kalakala-get-testimonials-${Environment}'
+      CodeUri: dist/lambda/handlers/
+      Handler: testimonials.getAllTestimonials
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        GetTestimonialsAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /testimonials-list
+            Method: GET
+
+  AddTestimonialFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'kalakala-add-testimonial-${Environment}'
+      CodeUri: dist/lambda/handlers/
+      Handler: testimonials.addTestimonial
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        AddTestimonialAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /add-testimonial
+            Method: POST
+
+  UpdateTestimonialFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'kalakala-update-testimonial-${Environment}'
+      CodeUri: dist/lambda/handlers/
+      Handler: testimonials.updateTestimonial
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        UpdateTestimonialAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /update-testimonial/{id}
+            Method: PUT
+
+  DeleteTestimonialFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'kalakala-delete-testimonial-${Environment}'
+      CodeUri: dist/lambda/handlers/
+      Handler: testimonials.deleteTestimonial
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        DeleteTestimonialAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /delete-testimonial/{id}
+            Method: DELETE
+
+  # ==================== Lambda Functions - Enquiries ====================
+  GetEnquiriesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'kalakala-get-enquiries-${Environment}'
+      CodeUri: dist/lambda/handlers/
+      Handler: enquiries.getEnquiries
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        GetEnquiriesAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /enquiries-list
+            Method: GET
+
+  # ==================== API Gateway ====================
+  KalakalaAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub 'kalakala-api-${Environment}'
+      StageName: !Ref Environment
+      TracingEnabled: true
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: !Sub "'${OriginURL}'"
+        MaxAge: "'3600'"
+        AllowCredentials: true
+      MethodSettings:
+        - ResourcePath: '/*'
+          HttpMethod: '*'
+          LoggingLevel: INFO
+          DataTraceEnabled: true
+          MetricsEnabled: true
+
+Outputs:
+  APIEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub 'https://${KalakalaAPI}.execute-api.${AWS::Region}.amazonaws.com/${Environment}'
+  
+  ProductsTableName:
+    Description: Products DynamoDB table name
+    Value: !Ref ProductsTable
+  
+  TestimonialsTableName:
+    Description: Testimonials DynamoDB table name
+    Value: !Ref TestimonialsTable
+  
+  EnquiriesTableName:
+    Description: Enquiries DynamoDB table name
+    Value: !Ref EnquiriesTable
+  
+  CategoriesTableName:
+    Description: Categories DynamoDB table name
+    Value: !Ref CategoriesTable

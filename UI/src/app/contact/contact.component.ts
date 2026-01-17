@@ -5,6 +5,8 @@ import { MatDialog } from "@angular/material/dialog";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { Router } from "@angular/router";
 import { NgxSpinnerService } from "ngx-spinner";
+import { Observable } from "rxjs";
+import { map, startWith } from "rxjs/operators";
 import { personalDetails, Product } from "../models/app.model";
 import { AppService } from "../services/app.service";
 import { ProductService } from "../services/product.service";
@@ -20,6 +22,7 @@ import { MessageModalComponent } from "../shared/message/message-modal.component
 export class ContactComponent implements OnInit {
   contactForm: FormGroup;
   productsList = [];
+  filteredProducts$: Observable<string[]>;
   personalDetails = personalDetails;
   constructor(
     private fb: FormBuilder,
@@ -49,6 +52,10 @@ export class ContactComponent implements OnInit {
       product: [""],
       query: ["", [Validators.required, Validators.minLength(10)]],
     });
+    this.filteredProducts$ = this.contactForm.get("product")!.valueChanges.pipe(
+      startWith(""),
+      map((value) => this._filterProducts(value))
+    );
   }
 
   ngOnInit(): void {
@@ -75,7 +82,7 @@ export class ContactComponent implements OnInit {
       return;
     }
     this.spinner.show();
-    this.appService.sendEmail(this.contactForm.value).subscribe({
+    this.appService.submitCustomerEnquiry(this.contactForm.value).subscribe({
       next: () => {
         this.spinner.hide();
         const isMobile = this.breakpointObserver.isMatched(Breakpoints.Handset);
@@ -87,7 +94,7 @@ export class ContactComponent implements OnInit {
           width: isMobile ? "90%" : "55%",
           maxWidth: "95vw",
         });
-        this.router.navigate([""]);
+        this.contactForm.reset({ queryType: "general" });
       },
       error: () => {
         this.spinner.hide();
@@ -98,5 +105,12 @@ export class ContactComponent implements OnInit {
         );
       },
     });
+  }
+
+  private _filterProducts(value: string): string[] {
+    const filterValue = value.toLowerCase();
+    return this.productsList.filter((product) =>
+      product.toLowerCase().includes(filterValue)
+    );
   }
 }

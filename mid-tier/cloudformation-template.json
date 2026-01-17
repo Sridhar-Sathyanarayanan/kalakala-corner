@@ -1,0 +1,153 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "CloudFormation template for Kalakala Corner Lambda API",
+  "Parameters": {
+    "Environment": {
+      "Type": "String",
+      "Default": "dev",
+      "AllowedValues": ["dev", "staging", "prod"],
+      "Description": "Environment name"
+    },
+    "AdminTokenSecret": {
+      "Type": "String",
+      "NoEcho": true,
+      "Description": "Admin token secret for JWT validation"
+    }
+  },
+  "Resources": {
+    "LambdaExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        ],
+        "Policies": [
+          {
+            "PolicyName": "DynamoDBAccess",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:Query",
+                    "dynamodb:Scan"
+                  ],
+                  "Resource": [
+                    "arn:aws:dynamodb:*:*:table/products",
+                    "arn:aws:dynamodb:*:*:table/testimonials",
+                    "arn:aws:dynamodb:*:*:table/enquiries",
+                    "arn:aws:dynamodb:*:*:table/categories"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "S3Access",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:GetObject",
+                    "s3:PutObject",
+                    "s3:DeleteObject",
+                    "s3:ListBucket"
+                  ],
+                  "Resource": [
+                    "arn:aws:s3:::kalakala-corner-*",
+                    "arn:aws:s3:::kalakala-corner-*/*"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "GetAllProductsFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": { "Fn::Sub": "kalakala-get-products-${Environment}" },
+        "Runtime": "nodejs20.x",
+        "Handler": "dist/lambda/handlers/products/get-all-products.handler",
+        "Code": {
+          "S3Bucket": { "Ref": "LambdaCodeBucket" },
+          "S3Key": "lambda-code.zip"
+        },
+        "Role": { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"] },
+        "Timeout": 30,
+        "MemorySize": 512,
+        "Environment": {
+          "Variables": {
+            "ENVIRONMENT": { "Ref": "Environment" },
+            "ADMIN_TOKEN": { "Ref": "AdminTokenSecret" }
+          }
+        }
+      }
+    },
+    "LoginFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": { "Fn::Sub": "kalakala-login-${Environment}" },
+        "Runtime": "nodejs20.x",
+        "Handler": "dist/lambda/handlers/login/login.handler",
+        "Code": {
+          "S3Bucket": { "Ref": "LambdaCodeBucket" },
+          "S3Key": "lambda-code.zip"
+        },
+        "Role": { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"] },
+        "Timeout": 30,
+        "MemorySize": 256,
+        "Environment": {
+          "Variables": {
+            "ENVIRONMENT": { "Ref": "Environment" },
+            "ADMIN_TOKEN": { "Ref": "AdminTokenSecret" }
+          }
+        }
+      }
+    },
+    "APIGateway": {
+      "Type": "AWS::ApiGatewayV2::Api",
+      "Properties": {
+        "Name": { "Fn::Sub": "kalakala-api-${Environment}" },
+        "ProtocolType": "HTTP",
+        "CorsConfiguration": {
+          "AllowOrigins": ["*"],
+          "AllowMethods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+          "AllowHeaders": ["Content-Type", "Authorization"]
+        }
+      }
+    },
+    "LambdaCodeBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": { "Fn::Sub": "kalakala-lambda-code-${AWS::AccountId}" }
+      }
+    }
+  },
+  "Outputs": {
+    "APIEndpoint": {
+      "Description": "API Gateway endpoint",
+      "Value": { "Fn::GetAtt": ["APIGateway", "ApiEndpoint"] }
+    }
+  }
+}

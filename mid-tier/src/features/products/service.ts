@@ -13,20 +13,30 @@ import {
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { Response } from "express";
-import { v4 as uuidv4 } from "uuid";
-import { createDDBDocClient } from "../clients/dynamoClient";
-import { createS3Client } from "../clients/s3Client";
-import logger from "./logger";
+import { randomUUID } from "crypto";
+import { getDynamoDocumentClient } from "../../clients/dynamoClient";
+import { getS3Client } from "../../clients/s3Client";
+import logger from "../../services/logger";
+import { getConfig } from "../../lambda/core/config";
 
 interface CategoryPayload {
   deletedCategories: { path: string }[];
   modifiedCategories: { path: string; newName: string }[];
   addedCategories: { name: string }[];
 }
-const ddbDocClient = createDDBDocClient();
+const ddbDocClient = getDynamoDocumentClient();
+
+function getTableName(): string {
+  try {
+    return getConfig().tables.products;
+  } catch {
+    return "product-catalogue"; // fallback for backward compatibility
+  }
+}
+
 export async function getProducts() {
   try {
-    const params = { TableName: "product-catalogue" };
+    const params = { TableName: getTableName() };
     const command = new ScanCommand(params);
     const data = await ddbDocClient.send(command);
     return data.Items;
@@ -39,7 +49,7 @@ export async function getProducts() {
 export async function allProductsWithCategory(category: string) {
   try {
     const params = {
-      TableName: "product-catalogue",
+      TableName: getTableName(),
       FilterExpression: "contains(#cat, :categoryValue)",
       ExpressionAttributeNames: {
         "#cat": "category",
@@ -60,7 +70,7 @@ export async function allProductsWithCategory(category: string) {
 export async function getProduct(id: string) {
   try {
     const params = {
-      TableName: "product-catalogue",
+      TableName: getTableName(),
       Key: {
         id,
       },
@@ -83,11 +93,11 @@ export async function addProduct(
   files: any
 ) {
   const imageUrls: string[] = [];
-  const uuid = uuidv4();
+  const uuid = randomUUID();
   // Upload each image to S3
   for (const file of files as Express.Multer.File[]) {
     const fileKey = `${uuid}/${file.originalname}`;
-    const s3 = createS3Client();
+    const s3 = getS3Client();
     try {
       await s3.send(
         new PutObjectCommand({
@@ -107,7 +117,7 @@ export async function addProduct(
   }
 
   const params = {
-    TableName: "product-catalogue",
+    TableName: getTableName(),
     Item: {
       ...data,
       id: uuid,
@@ -163,13 +173,13 @@ export async function updateProduct(
 ) {
   const { name, desc, variants, existingImages, category, notes } = data;
 
-  const s3 = createS3Client();
-  const ddb = createDDBDocClient();
+  const s3 = getS3Client();
+  const ddb = getDynamoDocumentClient();
 
   try {
     // 1️⃣ Fetch existing product
     const existingProduct = await ddb.send(
-      new GetCommand({ TableName: "product-catalogue", Key: { id } })
+      new GetCommand({ TableName: getTableName(), Key: { id } })
     );
     const oldImages: string[] = existingProduct?.Item?.images || [];
 
@@ -197,7 +207,7 @@ export async function updateProduct(
     // 6️⃣ Update DynamoDB
     const updatedProduct = await ddb.send(
       new UpdateCommand({
-        TableName: "product-catalogue",
+        TableName: getTableName(),
         Key: { id },
         UpdateExpression: `
           SET #name = :name,
@@ -238,11 +248,11 @@ export async function updateProduct(
 }
 export async function deleteProduct(id: string) {
   const item = await getProduct(id);
-  const s3 = createS3Client();
+  const s3 = getS3Client();
   await Promise.all(item?.images.map((url: string) => deleteS3File(s3, url)));
-  const ddb = createDDBDocClient();
+  const ddb = getDynamoDocumentClient();
   const params = {
-    TableName: "product-catalogue",
+    TableName: getTableName(),
     Key: {
       id,
     },
@@ -268,7 +278,7 @@ export async function downloadCatalogue(
       data = { Items: items };
     } else {
       // Fetch all products
-      const params = { TableName: "product-catalogue" };
+      const params = { TableName: getTableName() };
       const command = new ScanCommand(params);
       data = await ddbDocClient.send(command);
     }
@@ -292,9 +302,8 @@ export async function fetchImageFromS3(url: string, res: Response) {
       res.status(400).send({ message: "Invalid S3 URL" });
       return;
     }
-
     const key = url.replace(bucketUrl, "");
-    const s3 = createS3Client();
+    const s3 = getS3Client();
     const command = new GetObjectCommand({
       Bucket: process.env.S3_BUCKET_NAME,
       Key: key,
@@ -327,9 +336,17 @@ export async function fetchImageFromS3(url: string, res: Response) {
   }
 }
 
+function getCategoriesTableName(): string {
+  try {
+    return getConfig().tables.categories;
+  } catch {
+    return "product-categories"; // fallback for backward compatibility
+  }
+}
+
 export async function getCategories() {
   try {
-    const params = { TableName: "product-categories" };
+    const params = { TableName: getCategoriesTableName() };
     const command = new ScanCommand(params);
     const data = await ddbDocClient.send(command);
     return data.Items;
@@ -356,7 +373,7 @@ export async function saveCategories(payload: CategoryPayload) {
       // Delete the category (using path as primary key)
       await ddbDocClient.send(
         new DeleteCommand({
-          TableName: "product-categories",
+          TableName: getCategoriesTableName(),
           Key: { path: cat.path },
         })
       );
@@ -378,14 +395,14 @@ export async function saveCategories(payload: CategoryPayload) {
       // Delete old category entry
       await ddbDocClient.send(
         new DeleteCommand({
-          TableName: "product-categories",
+          TableName: getCategoriesTableName(),
           Key: { path: cat.path },
         })
       );
       // Add new category entry with updated name and path
       await ddbDocClient.send(
         new PutCommand({
-          TableName: "product-categories",
+          TableName: getCategoriesTableName(),
           Item: {
             path: createSlug(cat.newName),
             name: cat.newName,
@@ -400,7 +417,7 @@ export async function saveCategories(payload: CategoryPayload) {
     for (const cat of payload.addedCategories) {
       await ddbDocClient.send(
         new PutCommand({
-          TableName: "product-categories",
+          TableName: getCategoriesTableName(),
           Item: {
             path: createSlug(cat.name),
             name: cat.name,
@@ -472,7 +489,7 @@ async function batchUpdateProducts(
 
         return ddbDocClient.send(
           new UpdateCommand({
-            TableName: "product-catalogue",
+            TableName: getTableName(),
             Key: { id: product.id },
             UpdateExpression:
               "SET #categoryName = :newName, #updatedAt = :updatedAt",

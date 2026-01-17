@@ -39,7 +39,7 @@ export class LoginComponent {
         this.snackBar.open("Logged in successfully", null, {
           duration: 3000,
         });
-        this.router.navigate(["/catalogue/all"]);
+        this.router.navigate(["/admin"]);
       },
       error: () => {
         this.spinner.hide();

@@ -119,19 +119,30 @@
           >
         </mat-radio-group>
 
-        <!-- Product dropdown -->
+        <!-- Product dropdown with autocomplete -->
         @if (contactForm.get('queryType')?.value === 'product') {
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" class="full-width">
           <mat-label>Product</mat-label>
-          <mat-select formControlName="product">
-            @for (p of productsList; track p) {
-            <mat-option [value]="p">{{ p }}</mat-option>
-            }
-          </mat-select>
+          <input
+            matInput
+            formControlName="product"
+            [matAutocomplete]="auto"
+            placeholder="Search product..."
+            autocomplete="off"
+          />
           @if (contactForm.get('product')?.hasError('required')) {
           <mat-error>Product selection is required</mat-error>
           }
         </mat-form-field>
+        <mat-autocomplete #auto="matAutocomplete">
+          @if ((filteredProducts$ | async)?.length === 0) {
+          <mat-option disabled>No products found</mat-option>
+          } @else {
+          @for (p of filteredProducts$ | async; track p) {
+          <mat-option [value]="p">{{ p }}</mat-option>
+          }
+          }
+        </mat-autocomplete>
         }
 
         <!-- Message -->

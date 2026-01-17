@@ -14,7 +14,12 @@
   "scripts": {
     "start:dev": "nodemon --watch src --ext ts --exec ts-node src/server.ts",
     "start": "node dist/server.js",
-    "build": "npx tsc"
+    "start:lambda": "node dist/lambda-handler.js",
+    "build": "npx tsc",
+    "build:watch": "npx tsc --watch",
+    "build:lambda": "npm run build && npm run zip:create",
+    "zip:create": "node scripts/create-lambda-zip.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
@@ -24,6 +29,7 @@
     "@aws-sdk/client-ses": "^3.964.0",
     "@aws-sdk/client-sns": "^3.964.0",
     "@aws-sdk/lib-dynamodb": "^3.964.0",
+    "archiver": "^6.0.2",
     "bcrypt": "^6.0.0",
     "body-parser": "^2.2.2",
     "cookie-parser": "^1.4.7",
@@ -36,10 +42,11 @@
     "node-fetch": "^3.3.2",
     "node-mailjet": "^6.0.11",
     "pdfkit": "^0.17.2",
-    "uuid": "^13.0.0",
+    "serverless-http": "^4.0.0",
     "winston": "^3.19.0"
   },
   "devDependencies": {
+    "@types/aws-lambda": "^8.10.141",
     "@types/bcrypt": "^6.0.0",
     "@types/body-parser": "^1.19.6",
     "@types/cookie-parser": "^1.4.10",

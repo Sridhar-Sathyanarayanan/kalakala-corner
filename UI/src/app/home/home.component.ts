@@ -1,7 +1,6 @@
 import { Component, OnInit, OnDestroy, signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterLink } from "@angular/router";
-import { DomSanitizer, SafeUrl } from "@angular/platform-browser";
 import { Subject, takeUntil } from "rxjs";
 
 import { MaterialStandaloneModules } from "../shared/material-standalone";
@@ -25,34 +24,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   
   testimonials: Testimonial[] = [];
-  testimonialProductImages: Map<number, SafeUrl> = new Map();
-
-  catalogItems = [
-    {
-      name: "Eco-friendly Wooden Gifts",
-      desc: "Sustainable, handmade — perfect for special moments.",
-    },
-    {
-      name: "Wooden Utility Articles",
-      desc: "Home & office pieces with natural charm.",
-    },
-    {
-      name: "Thanjavur Paintings",
-      desc: "Traditional gold-foil paintings with a modern twist.",
-    },
-    {
-      name: "Wooden Pooja Items",
-      desc: "Devotional pieces crafted with care.",
-    },
-    {
-      name: "Kids Eco Toys",
-      desc: "Safe, durable, and bright toys for little ones.",
-    },
-    {
-      name: "Textile & Embroidery",
-      desc: "Hand-stitched fabrics and accessories.",
-    },
-  ];
+  testimonialProductImages: Map<number, string> = new Map(); // Simple image URLs
 
   slides = [
     { image: "assets/images/slide1.jpeg", title: "Traditional Dolls" },
@@ -128,8 +100,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   constructor(
     private testimonialsService: TestimonialsService,
-    private productService: ProductService,
-    private sanitizer: DomSanitizer
+    private productService: ProductService
   ) {}
 
   ngOnInit() {
@@ -210,19 +181,8 @@ export class HomeComponent implements OnInit, OnDestroy {
             next: (res) => {
               const product = res.items;
               if (product && product.images && product.images.length > 0) {
-                // Load the first image
-                this.productService.fetchS3Image(product.images[0])
-                  .pipe(takeUntil(this.destroy$))
-                  .subscribe({
-                    next: (blob) => {
-                      const objectURL = URL.createObjectURL(blob);
-                      const safeUrl = this.sanitizer.bypassSecurityTrustUrl(objectURL);
-                      this.testimonialProductImages.set(testimonial.id, safeUrl);
-                    },
-                    error: (error) => {
-                      console.error(`Error loading image for testimonial ${testimonial.id}:`, error);
-                    }
-                  });
+                // Use the first image URL directly (like catalogue does)
+                this.testimonialProductImages.set(testimonial.id, product.images[0]);
               }
             },
             error: (error) => {

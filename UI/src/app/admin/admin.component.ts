@@ -27,7 +27,6 @@ export class AdminComponent implements OnInit {
   ];
 
   testimonialColumns: string[] = [
-    "id",
     "category",
     "product",
     "customerName",
@@ -101,7 +100,12 @@ export class AdminComponent implements OnInit {
 
   loadTestimonials(): void {
     this.testimonialsService.getTestimonials().subscribe((res) => {
-      this.testimonials.set(res.items || []);
+      const sorted = (res.items || []).sort((a, b) => {
+        const dateA = new Date(a.updatedAt).getTime();
+        const dateB = new Date(b.updatedAt).getTime();
+        return dateB - dateA; // Latest first
+      });
+      this.testimonials.set(sorted);
     });
   }
 

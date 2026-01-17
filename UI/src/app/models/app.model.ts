@@ -25,12 +25,18 @@ export interface Category {
 }
 
 export interface Customerenquiry {
+  id: string;
   date: Date;
   name: string;
-  phone: string;
+  phone: string | number;
   email: string;
   product: string;
   query: string;
+  queryType?: string;
+}
+
+export interface CustomerenquiryResponse {
+  items: Customerenquiry[];
 }
 
 export interface Testimonial {

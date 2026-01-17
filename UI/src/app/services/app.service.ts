@@ -44,7 +44,11 @@ export class AppService {
     return this.http.post(`${environment.apiURL}/sendSMS`, params);
   }
 
-  sendEmail(params) {
-    return this.http.post(`${environment.apiURL}/sendEmail`, params);
+  submitCustomerEnquiry(params) {
+    return this.http.post(
+      `${environment.apiURL}/save-customer-enquiry`,
+      params,
+      { withCredentials: true }
+    );
   }
 }

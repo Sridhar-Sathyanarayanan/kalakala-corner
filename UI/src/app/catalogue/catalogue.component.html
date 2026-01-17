@@ -30,14 +30,147 @@
   }
 
   @if(products().length > 0){
-  <!-- Top Paginator -->
-  <div class="paginator-wrapper top-paginator">
-    <mat-paginator [length]="products().length" [pageSize]="pageSize()" [pageIndex]="currentPage()"
-      [pageSizeOptions]="[3, 6, 9, 12, 15]" [showFirstLastButtons]="true" (page)="onPageChange($event)"
-      class="catalogue-paginator">
-    </mat-paginator>
+  <!-- Floating Filter Button -->
+  <div class="floating-filter-container">
+    <button
+      class="floating-filter-btn"
+      (click)="toggleFilterPanel()"
+      [class.active]="hasActiveFilters()"
+      [attr.aria-expanded]="filterPanelExpanded()"
+      aria-label="Toggle filters">
+      <mat-icon>tune</mat-icon>
+      @if(hasActiveFilters()) {
+      <span class="filter-active-indicator">●</span>
+      }
+    </button>
+
+    <!-- Collapsible Filter Panel -->
+    @if(filterPanelExpanded()) {
+    <div class="floating-filter-panel">
+      <!-- Panel Header -->
+      <div class="filter-panel-header">
+        <h3 class="filter-panel-title">Filters</h3>
+        <button
+          mat-icon-button
+          (click)="toggleFilterPanel()"
+          aria-label="Close filters"
+          class="close-filter-btn">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Panel Content -->
+      <div class="filter-panel-content">
+        <!-- Price Range Filter -->
+        <div class="filter-section">
+          <div class="filter-section-header">
+            <h4 class="filter-section-title">Price Range</h4>
+          </div>
+
+          <div class="price-filter-container">
+            <!-- Min Price Input -->
+            <div class="price-input-group">
+              <label for="min-price" class="price-label">Min Price (₹)</label>
+              <input
+                id="min-price"
+                type="number"
+                class="price-input"
+                [value]="minPriceInput() || ''"
+                [placeholder]="minPriceAvailable()"
+                (change)="minPriceInput.set($event.target.valueAsNumber || null)"
+                [min]="0"
+              />
+            </div>
+
+            <!-- Max Price Input -->
+            <div class="price-input-group">
+              <label for="max-price" class="price-label">Max Price (₹)</label>
+              <input
+                id="max-price"
+                type="number"
+                class="price-input"
+                [value]="maxPriceInput() || ''"
+                [placeholder]="maxPriceAvailable()"
+                (change)="maxPriceInput.set($event.target.valueAsNumber || null)"
+                [min]="0"
+              />
+            </div>
+
+            <!-- Price Range Display -->
+            @if(minPriceInput() !== null || maxPriceInput() !== null) {
+            <div class="price-range-display">
+              @if(minPriceInput() !== null && maxPriceInput() !== null) {
+              <span>₹{{ minPriceInput() }} - ₹{{ maxPriceInput() }}</span>
+              } @else if(minPriceInput() !== null) {
+              <span>₹{{ minPriceInput() }} and above</span>
+              } @else {
+              <span>Up to ₹{{ maxPriceInput() }}</span>
+              }
+            </div>
+            }
+          </div>
+        </div>
+
+        <!-- Discount Filter Section -->
+        <div class="filter-section">
+          <div class="filter-section-header">
+            <h4 class="filter-section-title">Discount</h4>
+          </div>
+
+          <div class="discount-filter-container">
+            <input
+              id="discount-filter"
+              type="checkbox"
+              class="discount-checkbox"
+              [checked]="discountFilterInput()"
+              (change)="discountFilterInput.set($event.target.checked)"
+            />
+            <label for="discount-filter" class="discount-label">Show Discounted Items Only</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel Footer -->
+      <div class="filter-panel-footer">
+        <button mat-raised-button color="accent" (click)="applyFilters()" class="apply-btn">
+          <mat-icon>check</mat-icon>
+          Apply
+        </button>
+        <button mat-stroked-button (click)="resetFilters()" [disabled]="!hasFilterInputs()" class="reset-btn">
+          <mat-icon>refresh</mat-icon>
+          Clear Filters
+        </button>
+      </div>
+    </div>
+    }
+
+    <!-- Overlay for Filter Panel -->
+    @if(filterPanelExpanded()) {
+    <div class="filter-panel-overlay" (click)="toggleFilterPanel()"></div>
+    }
   </div>
 
+  <!-- Top Navigation -->
+  <div class="navigation-bar top-navigation">
+    <div class="nav-left">
+      <button mat-icon-button (click)="goToFirstPage()" [disabled]="currentPage() === 0" aria-label="First page">
+        <mat-icon>first_page</mat-icon>
+      </button>
+      <button mat-icon-button (click)="goToPreviousPage()" [disabled]="currentPage() === 0" aria-label="Previous page">
+        <mat-icon>navigate_before</mat-icon>
+      </button>
+    </div>
+    <div class="nav-right">
+      <button mat-icon-button (click)="goToNextPage()" [disabled]="!hasNextPage()" aria-label="Next page">
+        <mat-icon>navigate_next</mat-icon>
+      </button>
+      <button mat-icon-button (click)="goToLastPage()" [disabled]="!hasNextPage()" aria-label="Last page">
+        <mat-icon>last_page</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  @if(paginatedProducts().length > 0) {
   <div class="products-grid">
     @for (product of paginatedProducts(); track product.id) {
     <div class="product-card" [class.has-discount]="product.hasDiscount" (click)="openProductModal(product)">
@@ -118,15 +251,37 @@
     </div>
     }
   </div>
-
-  <!-- Bottom Paginator -->
-  <div class="paginator-wrapper bottom-paginator">
-    <mat-paginator [length]="products().length" [pageSize]="pageSize()" [pageIndex]="currentPage()"
-      [pageSizeOptions]="[3, 6, 9, 12, 15]" [showFirstLastButtons]="true" (page)="onPageChange($event)"
-      class="catalogue-paginator">
-    </mat-paginator>
+  } @else if(filteredProducts().length === 0 && hasActiveFilters()) {
+  <div class="empty-state">
+    <mat-icon class="empty-icon">filter_alt_off</mat-icon>
+    <h3 class="empty-title">No products match your filters</h3>
+    <p class="empty-subtitle">
+      Try adjusting your price range or
+      <button class="reset-link" (click)="resetFilters()">reset filters</button>
+    </p>
   </div>
-  } @else if(!(products().length || loading())) {
+  }
+
+  <!-- Bottom Navigation -->
+  <div class="navigation-bar bottom-navigation">
+    <div class="nav-left">
+      <button mat-icon-button (click)="goToFirstPage()" [disabled]="currentPage() === 0" aria-label="First page">
+        <mat-icon>first_page</mat-icon>
+      </button>
+      <button mat-icon-button (click)="goToPreviousPage()" [disabled]="currentPage() === 0" aria-label="Previous page">
+        <mat-icon>navigate_before</mat-icon>
+      </button>
+    </div>
+    <div class="nav-right">
+      <button mat-icon-button (click)="goToNextPage()" [disabled]="!hasNextPage()" aria-label="Next page">
+        <mat-icon>navigate_next</mat-icon>
+      </button>
+      <button mat-icon-button (click)="goToLastPage()" [disabled]="!hasNextPage()" aria-label="Last page">
+        <mat-icon>last_page</mat-icon>
+      </button>
+    </div>
+  </div>
+  } @else if(products().length === 0 && !loading()) {
   <div class="empty-state">
     <img src="assets/images/no_data_found.png" alt="No Data Found" class="empty-image" />
     <h3 class="empty-title">No products found</h3>

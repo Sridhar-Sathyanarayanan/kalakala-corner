@@ -4,10 +4,11 @@ import {
   ScanCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { createDDBDocClient } from "../clients/dynamoClient";
-import logger from "./logger";
+import { getDynamoDocumentClient } from "../../clients/dynamoClient";
+import logger from "../../services/logger";
+import { getConfig } from "../../lambda/core/config";
 
-const ddbDocClient = createDDBDocClient();
+const ddbDocClient = getDynamoDocumentClient();
 
 interface Testimonial {
   id: number;
@@ -20,9 +21,17 @@ interface Testimonial {
   updatedAt: string;
 }
 
+function getTableName(): string {
+  try {
+    return getConfig().tables.testimonials;
+  } catch {
+    return "testimonials"; // fallback for backward compatibility
+  }
+}
+
 export async function getTestimonials() {
   try {
-    const params = { TableName: "testimonials" };
+    const params = { TableName: getTableName() };
     const command = new ScanCommand(params);
     const data = await ddbDocClient.send(command);
     return data.Items;
@@ -49,7 +58,7 @@ export async function addTestimonial(testimonial: {
     const newId = maxId + 1;
 
     const params = {
-      TableName: "testimonials",
+      TableName: getTableName(),
       Item: {
         id: newId,
         category: testimonial.category,
@@ -127,7 +136,7 @@ export async function updateTestimonial(
     expressionAttributeValues[":updatedAt"] = new Date().toISOString();
 
     const params = {
-      TableName: "testimonials",
+      TableName: getTableName(),
       Key: { id },
       UpdateExpression: `SET ${updateExpressions.join(", ")}`,
       ExpressionAttributeNames: expressionAttributeNames,
@@ -146,7 +155,7 @@ export async function updateTestimonial(
 export async function deleteTestimonial(id: number) {
   try {
     const params = {
-      TableName: "testimonials",
+      TableName: getTableName(),
       Key: { id },
     };
 

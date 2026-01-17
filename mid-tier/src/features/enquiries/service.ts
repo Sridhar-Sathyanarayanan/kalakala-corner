@@ -1,7 +1,16 @@
 import { PutCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
-import { v4 as uuidv4 } from "uuid";
-import { createDDBDocClient } from "../clients/dynamoClient";
-import logger from "./logger";
+import { randomUUID } from "crypto";
+import { getDynamoDocumentClient } from "../../clients/dynamoClient";
+import logger from "../../services/logger";
+import { getConfig } from "../../lambda/core/config";
+
+function getTableName(): string {
+  try {
+    return getConfig().tables.enquiries;
+  } catch {
+    return "customer-enquiries"; // fallback for backward compatibility
+  }
+}
 
 export async function addCustomerEnquiries(args: {
   name: string;
@@ -11,12 +20,12 @@ export async function addCustomerEnquiries(args: {
   product: string;
 }) {
   try {
-    const ddbDocClient = createDDBDocClient();
+    const ddbDocClient = getDynamoDocumentClient();
     const params = {
-      TableName: "customer-enquiries",
+      TableName: getTableName(),
       Item: {
         ...args,
-        id: uuidv4(),
+        id: randomUUID(),
         date: new Date().toISOString(),
       },
     };
@@ -28,8 +37,8 @@ export async function addCustomerEnquiries(args: {
 }
 
 export async function enquiriesList() {
-  const ddbDocClient = createDDBDocClient();
-  const params = { TableName: "customer-enquiries" };
+  const ddbDocClient = getDynamoDocumentClient();
+  const params = { TableName: getTableName() };
   const data = await ddbDocClient.send(new ScanCommand(params));
   return data.Items;
 }
