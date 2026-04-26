@@ -22,6 +22,7 @@ export class AdminComponent implements OnInit {
     "name",
     "email",
     "phone",
+    "category",
     "product",
     "query",
   ];
@@ -124,6 +125,26 @@ export class AdminComponent implements OnInit {
         this.onCategoryChange();
       }
     });
+  }
+
+  getProductImage(productName: string, category?: string): string | null {
+    if (!productName) return null;
+    
+    const products = this.allProducts();
+    const product = products.find((p) => {
+      const nameMatch = p.name === productName;
+      if (!category) return nameMatch;
+      
+      // Check if category matches
+      if (Array.isArray(p.category)) {
+        return nameMatch && p.category.some(
+          (cat) => String(cat).toLowerCase() === String(category).toLowerCase()
+        );
+      }
+      return nameMatch && String(p.category).toLowerCase() === String(category).toLowerCase();
+    });
+    
+    return product?.images?.[0] || null;
   }
 
   onCategoryChange(): void {

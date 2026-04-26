@@ -15,42 +15,52 @@ export class LoginController extends BaseController {
   /**
    * Authenticate user with username and password
    */
-  async login(username: string, password: string): Promise<ControllerResponse> {
+  async login(username: string, password: string): Promise<any> {
     try {
+      console.log(`[CONTROLLER-START] Login called with username: ${username}`);
+      
       // Validate input
       if (!username || !password) {
         logger.warn("Login attempt without credentials");
-        return this.badRequest("Username and password are required");
+        throw new Error("Username and password are required");
       }
 
       logger.info(`Login attempt for user: ${username}`);
+      console.log(`[CONTROLLER] About to call verifyPassword for user: ${username}`);
 
       // Verify credentials
       const result = await verifyPassword(username, password);
+      console.log(`[CONTROLLER] verifyPassword returned:`, result);
+      logger.info(`Login result for user ${username}:`, { message: result.message, hasToken: !!result.token });
+      
       if (result.message === "User not found") {
         logger.warn(`Login failed: User not found - ${username}`);
-        return this.unauthorized("Invalid username or password");
+        throw new Error("Invalid username or password");
       }
 
       if (result.message === "Invalid password") {
         logger.warn(`Login failed: Invalid password for user ${username}`);
-        return this.unauthorized("Invalid username or password");
+        throw new Error("Invalid username or password");
       }
 
       if (result.message === "Login successful" && result.token) {
         logger.info(`Login successful for user: ${username}`);
-        return this.success({
+        return {
           token: result.token,
           username,
           expiresIn: "30m",
-        });
+        };
       }
 
       logger.error(`Unexpected login response for user: ${username}`);
-      return this.serverError("Login failed");
-    } catch (error) {
-      logger.error("Error during login", error);
-      return this.serverError("Failed to authenticate user");
+      throw new Error("Login failed");
+    } catch (error: any) {
+      logger.error(`Login error for user ${username}:`, {
+        message: error?.message,
+        stack: error?.stack,
+        code: error?.code,
+      });
+      throw error;
     }
   }
 

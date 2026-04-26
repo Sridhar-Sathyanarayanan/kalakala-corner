@@ -79,7 +79,8 @@ export class ProductDetailsComponent implements OnInit {
       return;
     }
 
-    const regularPrices: number[] = [];
+    const regularPrices: number[] = []; // Regular prices without valid discounts (for display range)
+    const allRegularPrices: number[] = []; // All regular prices including those with discounts (for original price)
     const discountedPrices: number[] = [];
     const priceDiscountPairs: { original: number; discounted: number }[] = [];
 
@@ -88,13 +89,19 @@ export class ProductDetailsComponent implements OnInit {
       const price = this.parsePrice(variant.price);
       const discountedPrice = this.parsePrice(variant.discountedPrice);
 
-      // Collect regular prices
+      const hasValidDiscount = discountedPrice !== null && discountedPrice > 0;
+
+      // Collect all regular prices
       if (price !== null && price > 0) {
-        regularPrices.push(price);
+        allRegularPrices.push(price);
+        // Only add to display list if there's no valid discount for this variant
+        if (!hasValidDiscount) {
+          regularPrices.push(price);
+        }
       }
 
-      // Collect discounted prices (only if valid and less than original)
-      if (discountedPrice !== null && discountedPrice > 0) {
+      // Collect discounted prices (only if valid and greater than 0)
+      if (hasValidDiscount) {
         discountedPrices.push(discountedPrice);
 
         // Store pairs for discount calculation
@@ -107,21 +114,21 @@ export class ProductDetailsComponent implements OnInit {
       }
     });
 
-    // Determine minimum price: lowest of (all discounted prices, or all regular prices)
+    // Determine minimum price: lowest of (all discounted prices, or regular prices without discounts)
     const allAvailablePrices = [...discountedPrices, ...regularPrices];
     if (allAvailablePrices.length > 0) {
       this.priceRange.displayMinPrice = Math.min(...allAvailablePrices);
     }
 
-    // Determine maximum price: highest regular price
+    // Determine maximum price: highest regular price without discount
     if (regularPrices.length > 0) {
       this.priceRange.displayMaxPrice = Math.max(...regularPrices);
     }
 
-    // Store original min/max prices (from regular prices only)
-    if (regularPrices.length > 0) {
-      this.priceRange.originalMinPrice = Math.min(...regularPrices);
-      this.priceRange.originalMaxPrice = Math.max(...regularPrices);
+    // Store original min/max prices (from all regular prices)
+    if (allRegularPrices.length > 0) {
+      this.priceRange.originalMinPrice = Math.min(...allRegularPrices);
+      this.priceRange.originalMaxPrice = Math.max(...allRegularPrices);
     }
 
     // Calculate maximum discount percentage
@@ -154,7 +161,7 @@ export class ProductDetailsComponent implements OnInit {
     const original = this.parsePrice(originalPrice);
     const discounted = this.parsePrice(discountedPrice);
 
-    if (original === null || discounted === null || original === 0) {
+    if (original === null || discounted === null || original === 0 || discounted === 0) {
       return 0;
     }
 

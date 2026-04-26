@@ -21,8 +21,10 @@ import { MessageModalComponent } from "../shared/message/message-modal.component
 })
 export class ContactComponent implements OnInit {
   contactForm: FormGroup;
-  productsList = [];
-  filteredProducts$: Observable<string[]>;
+  productsList: any[] = [];
+  categoriesList = [];
+  allProducts = [];
+  filteredProducts$!: Observable<any[]>;
   personalDetails = personalDetails;
   constructor(
     private fb: FormBuilder,
@@ -49,30 +51,48 @@ export class ContactComponent implements OnInit {
       ],
       email: ["", [Validators.email]],
       queryType: ["general", Validators.required],
+      category: [""],
       product: [""],
       query: ["", [Validators.required, Validators.minLength(10)]],
     });
+  }
+
+  ngOnInit(): void {
+    // Load categories
+    this.productService.getCategories().subscribe((data: any) => {
+      this.categoriesList = data.items || [];
+    });
+
+    // Load all products
+    this.productService.getProducts("all").subscribe((data: Product) => {
+      this.allProducts = data.items || [];
+    });
+
+    // Disable product field initially
+    this.contactForm.get("product")?.disable();
+
+    // Setup autocomplete filtering
     this.filteredProducts$ = this.contactForm.get("product")!.valueChanges.pipe(
       startWith(""),
       map((value) => this._filterProducts(value))
     );
-  }
 
-  ngOnInit(): void {
-    this.productService.getProducts("").subscribe((data: Product) => {
-      data.items.forEach((item) => {
-        this.productsList.push(item.name);
-      });
-    });
-    // Dynamically require product if "product" query type is chosen
+    // Dynamically require product and category if "product" query type is chosen
     this.contactForm.get("queryType")?.valueChanges.subscribe((type) => {
       const productCtrl = this.contactForm.get("product");
+      const categoryCtrl = this.contactForm.get("category");
       if (type === "product") {
+        categoryCtrl?.addValidators([Validators.required]);
         productCtrl?.addValidators([Validators.required]);
       } else {
+        categoryCtrl?.clearValidators();
         productCtrl?.clearValidators();
+        categoryCtrl?.setValue("");
         productCtrl?.setValue("");
+        productCtrl?.disable();
+        this.productsList = [];
       }
+      categoryCtrl?.updateValueAndValidity();
       productCtrl?.updateValueAndValidity();
     });
   }
@@ -107,10 +127,34 @@ export class ContactComponent implements OnInit {
     });
   }
 
-  private _filterProducts(value: string): string[] {
+  onCategoryChange(): void {
+    const selectedCategory = this.contactForm.get("category")?.value;
+    const productCtrl = this.contactForm.get("product");
+    
+    if (selectedCategory) {
+      // Enable product field and load products from API for the selected category
+      productCtrl?.enable();
+      this.productService.getProducts(selectedCategory).subscribe((data: Product) => {
+        this.productsList = data.items || [];
+        // Reset product selection and trigger autocomplete update
+        productCtrl?.setValue("");
+      });
+    } else {
+      // Disable product field and clear products list
+      productCtrl?.disable();
+      this.productsList = [];
+      productCtrl?.setValue("");
+    }
+  }
+
+  private _filterProducts(value: any): any[] {
+    if (!value || typeof value !== 'string') {
+      return this.productsList;
+    }
     const filterValue = value.toLowerCase();
     return this.productsList.filter((product) =>
-      product.toLowerCase().includes(filterValue)
+      product.name.toLowerCase().includes(filterValue) ||
+      (product.desc && product.desc.toLowerCase().includes(filterValue))
     );
   }
 }

@@ -56,11 +56,11 @@ export const extractToken = (event: APIGatewayProxyEvent): string | null => {
     }
   }
 
-  // Try cookies
+  // Try cookies (auth_token)
   const cookies = event.headers?.Cookie || event.headers?.cookie || "";
-  const authTokenMatch = cookies.match(/auth_token=([^;]+)/);
-  if (authTokenMatch && authTokenMatch[1]) {
-    return authTokenMatch[1];
+  const tokenMatch = cookies.match(/(?:^|;\s*)auth_token=([^;]+)/);
+  if (tokenMatch && tokenMatch[1]) {
+    return tokenMatch[1];
   }
 
   return null;

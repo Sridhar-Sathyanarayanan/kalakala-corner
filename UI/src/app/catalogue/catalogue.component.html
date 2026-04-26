@@ -30,16 +30,60 @@
   }
 
   @if(products().length > 0){
+  <!-- Search Bar -->
+  <div class="search-bar-container">
+    <mat-form-field class="search-field" appearance="outline">
+      <mat-label>Search by name or description...</mat-label>
+      <input
+        matInput
+        type="text"
+        placeholder="Search products"
+        [value]="searchInput()"
+        (input)="searchInput.set($event.target.value)"
+        (keyup.enter)="applyFilters()"
+        aria-label="Search products"
+      />
+      @if(searchInput()) {
+      <button
+        mat-icon-button
+        matSuffix
+        (click)="searchInput.set(''); applyFilters()"
+        aria-label="Clear search">
+        <mat-icon>close</mat-icon>
+      </button>
+      }
+      <mat-icon matPrefix>search</mat-icon>
+    </mat-form-field>
+    <button
+      mat-raised-button
+      color="accent"
+      (click)="applyFilters()"
+      class="search-apply-btn"
+      aria-label="Apply search">
+      Search
+    </button>
+    @if(hasActiveFilters()) {
+    <button
+      mat-stroked-button
+      (click)="resetFilters()"
+      class="clear-filters-btn"
+      aria-label="Clear all filters">
+      <mat-icon>clear_all</mat-icon>
+      Clear Filters
+    </button>
+    }
+  </div>
+
   <!-- Floating Filter Button -->
   <div class="floating-filter-container">
     <button
       class="floating-filter-btn"
       (click)="toggleFilterPanel()"
-      [class.active]="hasActiveFilters()"
+      [class.active]="hasFilterPanelFilters()"
       [attr.aria-expanded]="filterPanelExpanded()"
       aria-label="Toggle filters">
       <mat-icon>tune</mat-icon>
-      @if(hasActiveFilters()) {
+      @if(hasFilterPanelFilters()) {
       <span class="filter-active-indicator">●</span>
       }
     </button>
@@ -153,18 +197,18 @@
   <!-- Top Navigation -->
   <div class="navigation-bar top-navigation">
     <div class="nav-left">
-      <button mat-icon-button (click)="goToFirstPage()" [disabled]="currentPage() === 0" aria-label="First page">
+      <button mat-icon-button (click)="goToFirstPage()" [disabled]="currentPage() === 0" aria-label="First page" matTooltip="Go to first page">
         <mat-icon>first_page</mat-icon>
       </button>
-      <button mat-icon-button (click)="goToPreviousPage()" [disabled]="currentPage() === 0" aria-label="Previous page">
+      <button mat-icon-button (click)="goToPreviousPage()" [disabled]="currentPage() === 0" aria-label="Previous page" matTooltip="Go to previous page">
         <mat-icon>navigate_before</mat-icon>
       </button>
     </div>
     <div class="nav-right">
-      <button mat-icon-button (click)="goToNextPage()" [disabled]="!hasNextPage()" aria-label="Next page">
+      <button mat-icon-button (click)="goToNextPage()" [disabled]="!hasNextPage()" aria-label="Next page" matTooltip="Go to next page">
         <mat-icon>navigate_next</mat-icon>
       </button>
-      <button mat-icon-button (click)="goToLastPage()" [disabled]="!hasNextPage()" aria-label="Last page">
+      <button mat-icon-button (click)="goToLastPage()" [disabled]="!hasNextPage()" aria-label="Last page" matTooltip="Go to last page">
         <mat-icon>last_page</mat-icon>
       </button>
     </div>
@@ -182,7 +226,13 @@
 
       <div class="card-image-wrapper">
         <img [src]="product.images[0]" [alt]="product.name" class="product-image" loading="lazy"
-          (error)="$event.target.src = 'assets/images/placeholder.png'" />
+          (error)="$event.target.style.display='none'" />
+        <div class="image-fallback" [style.display]="product.images?.[0] ? 'none' : 'flex'">
+          <div class="image-fallback-content">
+            <mat-icon>image_not_supported</mat-icon>
+            <span class="image-fallback-text">No Image Available</span>
+          </div>
+        </div>
 
         @if(product.displayMinPrice !== undefined && product.displayMaxPrice !==
         undefined) {
@@ -265,18 +315,18 @@
   <!-- Bottom Navigation -->
   <div class="navigation-bar bottom-navigation">
     <div class="nav-left">
-      <button mat-icon-button (click)="goToFirstPage()" [disabled]="currentPage() === 0" aria-label="First page">
+      <button mat-icon-button (click)="goToFirstPage()" [disabled]="currentPage() === 0" aria-label="First page" matTooltip="Go to first page">
         <mat-icon>first_page</mat-icon>
       </button>
-      <button mat-icon-button (click)="goToPreviousPage()" [disabled]="currentPage() === 0" aria-label="Previous page">
+      <button mat-icon-button (click)="goToPreviousPage()" [disabled]="currentPage() === 0" aria-label="Previous page" matTooltip="Go to previous page">
         <mat-icon>navigate_before</mat-icon>
       </button>
     </div>
     <div class="nav-right">
-      <button mat-icon-button (click)="goToNextPage()" [disabled]="!hasNextPage()" aria-label="Next page">
+      <button mat-icon-button (click)="goToNextPage()" [disabled]="!hasNextPage()" aria-label="Next page" matTooltip="Go to next page">
         <mat-icon>navigate_next</mat-icon>
       </button>
-      <button mat-icon-button (click)="goToLastPage()" [disabled]="!hasNextPage()" aria-label="Last page">
+      <button mat-icon-button (click)="goToLastPage()" [disabled]="!hasNextPage()" aria-label="Last page" matTooltip="Go to last page">
         <mat-icon>last_page</mat-icon>
       </button>
     </div>

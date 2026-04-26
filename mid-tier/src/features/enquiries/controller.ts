@@ -53,6 +53,7 @@ export class EnquiriesController extends BaseController {
         phone: parseInt(phone as string),
         query,
         product: product || null,
+        category: enquiryData.category || null,
       };
 
       const result = await addCustomerEnquiries(enquiry);

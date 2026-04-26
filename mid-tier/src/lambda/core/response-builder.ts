@@ -22,9 +22,11 @@ export interface ApiResponse<T = any> {
  */
 export class ResponseBuilder {
   private requestId?: string;
+  private event?: APIGatewayProxyEvent;
 
-  constructor(requestId?: string) {
+  constructor(requestId?: string, event?: APIGatewayProxyEvent) {
     this.requestId = requestId;
+    this.event = event;
   }
 
   /**
@@ -160,15 +162,64 @@ export class ResponseBuilder {
   }
 
   /**
+   * Get allowed origins for CORS
+   */
+  private getAllowedOrigins(): string[] {
+    const envOrigin = process.env.ORIGIN || "";
+    const origins = [envOrigin];
+    
+    // Support both www and non-www variants
+    if (envOrigin.includes("www.")) {
+      origins.push(envOrigin.replace("www.", ""));
+    } else if (envOrigin && !envOrigin.includes("//localhost") && !envOrigin.includes("//127.0.0.1")) {
+      origins.push(envOrigin.replace("://", "://www."));
+    }
+    
+    return origins.filter((o) => o);
+  }
+
+  /**
+   * Get CORS origin based on request
+   */
+  private getCorsOrigin(): string {
+    const requestOrigin = this.event?.headers?.Origin || this.event?.headers?.origin;
+    const allowedOrigins = this.getAllowedOrigins();
+    const envOrigin = process.env.ORIGIN || "*";
+    
+    console.log(`[CORS] Request Origin: ${requestOrigin}`);
+    console.log(`[CORS] Allowed Origins: ${JSON.stringify(allowedOrigins)}`);
+    console.log(`[CORS] Environment ORIGIN: ${envOrigin}`);
+    
+    if (!requestOrigin) {
+      console.log(`[CORS] No request origin, using default: ${envOrigin}`);
+      return envOrigin;
+    }
+    
+    // Check if request origin matches any allowed origin
+    const isAllowed = allowedOrigins.some((origin) => origin === requestOrigin);
+    if (isAllowed) {
+      console.log(`[CORS] Request origin matches allowed, returning: ${requestOrigin}`);
+      return requestOrigin;
+    }
+    
+    // Fallback to default origin
+    console.log(`[CORS] Request origin NOT allowed, using default: ${envOrigin}`);
+    return envOrigin;
+  }
+
+  /**
    * Get response headers with CORS and content type
    */
   private getHeaders(): Record<string, string> {
-    return {
+    const corsOrigin = this.getCorsOrigin();
+    const headers = {
       "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": process.env.ORIGIN || "*",
+      "Access-Control-Allow-Origin": corsOrigin,
       "Access-Control-Allow-Credentials": "true",
-      "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type,Authorization",
+      "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS,PATCH",
+      "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
     };
+    console.log(`[CORS] Response headers: ${JSON.stringify(headers)}`);
+    return headers;
   }
 }

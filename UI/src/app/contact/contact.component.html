@@ -19,11 +19,13 @@
           } @else {
           <mat-card-subtitle class="value">{{ info.value }}</mat-card-subtitle>
           }
+          @if (info.icon) {
           <img
             mat-card-sm-image
             [src]="'assets/images/' + info.icon"
             alt="{{ info.title }}"
           />
+          }
         </mat-card-title-group>
       </mat-card-header>
     </mat-card>
@@ -119,8 +121,24 @@
           >
         </mat-radio-group>
 
-        <!-- Product dropdown with autocomplete -->
+        <!-- Category dropdown -->
         @if (contactForm.get('queryType')?.value === 'product') {
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Category</mat-label>
+          <mat-select 
+            formControlName="category"
+            (selectionChange)="onCategoryChange()"
+            placeholder="Select category">
+            @for (category of categoriesList; track category.path) {
+              <mat-option [value]="category.path">{{ category.name }}</mat-option>
+            }
+          </mat-select>
+          @if (contactForm.get('category')?.hasError('required')) {
+          <mat-error>Category selection is required</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Product autocomplete -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Product</mat-label>
           <input
@@ -130,6 +148,9 @@
             placeholder="Search product..."
             autocomplete="off"
           />
+          @if (!contactForm.get('category')?.value) {
+          <mat-hint>Please select a category first</mat-hint>
+          }
           @if (contactForm.get('product')?.hasError('required')) {
           <mat-error>Product selection is required</mat-error>
           }
@@ -138,8 +159,25 @@
           @if ((filteredProducts$ | async)?.length === 0) {
           <mat-option disabled>No products found</mat-option>
           } @else {
-          @for (p of filteredProducts$ | async; track p) {
-          <mat-option [value]="p">{{ p }}</mat-option>
+          @for (p of filteredProducts$ | async; track p.id) {
+          <mat-option [value]="p.name" class="product-option">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 4px 0;">
+              @if (p.images && p.images.length > 0) {
+              <img 
+                [src]="p.images[0]" 
+                [alt]="p.name"
+                style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;"
+                loading="lazy"
+              />
+              }
+              <div style="display: flex; flex-direction: column;">
+                <span style="font-weight: 500;">{{ p.name }}</span>
+                @if (p.desc) {
+                <span style="font-size: 0.85rem; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 300px;">{{ p.desc }}</span>
+                }
+              </div>
+            </div>
+          </mat-option>
           }
           }
         </mat-autocomplete>

@@ -20,6 +20,60 @@ import {
 } from "../core/handler-factory";
 import { HandlerContext } from "../core/middleware";
 import { ValidationError, NotFoundError } from "../core/errors";
+import { parseMultipart, parseExistingImages } from "../core/multipart-parser";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { getS3Client } from "../../clients/s3Client";
+import { randomUUID } from "crypto";
+import logger from "../../services/logger";
+
+/**
+ * Helper to build response matching Express format
+ */
+function buildItemsResponse(items: any, context: HandlerContext) {
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ items }),
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": process.env.ORIGIN || "*",
+      "Access-Control-Allow-Credentials": "true",
+      "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS,PATCH",
+      "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
+    },
+  };
+}
+
+/**
+ * Helper to build response for POST/PUT/DELETE matching Express format
+ */
+function buildDataResponse(
+  statusCode: number,
+  data: any,
+  context: HandlerContext,
+  message?: string
+) {
+  const body: any = {
+    statusCode,
+    success: statusCode >= 200 && statusCode < 300,
+    data,
+  };
+
+  if (message) {
+    body.message = message;
+  }
+
+  return {
+    statusCode,
+    body: JSON.stringify(body),
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": process.env.ORIGIN || "*",
+      "Access-Control-Allow-Credentials": "true",
+      "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS,PATCH",
+      "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
+    },
+  };
+}
 
 /**
  * GET /products-list
@@ -27,7 +81,7 @@ import { ValidationError, NotFoundError } from "../core/errors";
  */
 export const getAllProducts = HandlerFactory.createPublic(async (context: HandlerContext) => {
   const products = await getProducts();
-  return context.response.success({ items: products });
+  return buildItemsResponse(products, context);
 });
 
 /**
@@ -43,7 +97,7 @@ export const getProductsByCategory = HandlerFactory.createPublic(
     }
 
     const products = await allProductsWithCategory(category);
-    return context.response.success({ items: products });
+    return buildItemsResponse(products, context);
   }
 );
 
@@ -59,7 +113,7 @@ export const getProductById = HandlerFactory.createPublic(async (context: Handle
   }
 
   const product = await getProduct(id);
-  return context.response.success({ items: product });
+  return buildItemsResponse(product, context);
 });
 
 /**
@@ -74,13 +128,107 @@ export const getProductById = HandlerFactory.createPublic(async (context: Handle
  */
 export const addProduct = HandlerFactory.createAdmin(
   async (context: HandlerContext) => {
+    console.log(`[addProduct] ========== HANDLER REACHED ==========`);
+    console.log(`[addProduct] User from context: ${JSON.stringify(context.user)}`);
+    const contentType = context.event.headers?.['Content-Type'] || context.event.headers?.['content-type'] || '';
+    console.log(`[addProduct] Content-Type: ${contentType}`);
+    console.log(`[addProduct] isBase64Encoded: ${context.event.isBase64Encoded}`);
+    
     const body = getBody(context);
+    console.log(`[addProduct] Body received: ${JSON.stringify(body).substring(0, 200)}`);
+    
+    // Check if it's multipart (file upload)
+    if (body._isMultipart) {
+      console.log(`[addProduct] Multipart upload detected - parsing...`);
+      
+      try {
+        // Parse multipart data
+        const parsed = parseMultipart(body._rawBody, contentType, body._isBase64);
+        console.log(`[addProduct] Parsed ${parsed.files.length} files and ${Object.keys(parsed.fields).length} fields`);
+        
+        // Upload files to S3
+        const s3 = getS3Client();
+        const uuid = randomUUID();
+        const imageUrls: string[] = [];
+        
+        for (const file of parsed.files) {
+          const fileKey = `${uuid}/${file.filename}`;
+          console.log(`[addProduct] Uploading ${fileKey} to S3...`);
+          
+          try {
+            await s3.send(
+              new PutObjectCommand({
+                Bucket: process.env.S3_BUCKET_NAME,
+                Key: fileKey,
+                Body: file.buffer,
+                ContentType: file.contentType,
+                ACL: 'public-read',
+              })
+            );
+            const imageUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;
+            imageUrls.push(imageUrl);
+            console.log(`[addProduct] Uploaded: ${imageUrl}`);
+          } catch (err) {
+            logger.error(`Failed to upload file to S3: ${fileKey}`, err);
+          }
+        }
+        
+        // Clean up arrays - remove undefined/null values and sparse elements
+        const cleanArray = (arr: any[]): any[] => {
+          if (!Array.isArray(arr)) return [];
+          return arr.filter(item => item !== undefined && item !== null);
+        };
+        
+        const cleanVariants = cleanArray(parsed.fields.variants || []);
+        const cleanCategory = cleanArray(parsed.fields.category || []);
+        const cleanNotes = cleanArray(parsed.fields.notes || []);
+        
+        console.log(`[addProduct] Cleaned variants: ${cleanVariants.length}`, JSON.stringify(cleanVariants));
+        console.log(`[addProduct] Cleaned category: ${cleanCategory.length}`, JSON.stringify(cleanCategory));
+        console.log(`[addProduct] Cleaned notes: ${cleanNotes.length}`, JSON.stringify(cleanNotes));
+        
+        // Build product data from parsed fields
+        const productData = {
+          name: parsed.fields.name,
+          desc: parsed.fields.desc,
+          variants: cleanVariants,
+          category: cleanCategory,
+          notes: cleanNotes,
+          id: uuid,
+          images: imageUrls,
+        };
+        
+        console.log(`[addProduct] Product data prepared:`, JSON.stringify(productData));
+        
+        // Save to DynamoDB (pass undefined for files since we already uploaded to S3)
+        const product = await addProductService(productData, undefined);
+        console.log(`[addProduct] Product created: ${JSON.stringify(product)}`);
+        
+        return buildDataResponse(
+          201,
+          product,
+          context,
+          "Product created successfully"
+        );
+      } catch (error: any) {
+        console.error(`[addProduct] Multipart parsing error:`, error);
+        logger.error('Failed to parse multipart data', error);
+        return buildDataResponse(
+          400,
+          null,
+          context,
+          `Failed to process upload: ${error.message}`
+        );
+      }
+    }
 
-    // Note: For file uploads via Lambda, implement multipart handling or S3 pre-signed URLs
-    // This example assumes JSON body with S3 URLs
+    // JSON path (no files)
     const product = await addProductService(body, undefined);
-    return context.response.created(
-      { items: product },
+    console.log(`[addProduct] Product created: ${JSON.stringify(product)}`);
+    return buildDataResponse(
+      201,
+      product,
+      context,
       "Product created successfully"
     );
   }
@@ -92,15 +240,121 @@ export const addProduct = HandlerFactory.createAdmin(
  */
 export const updateProduct = HandlerFactory.createAdmin(
   async (context: HandlerContext) => {
+    console.log(`[updateProduct] ========== HANDLER REACHED ==========`);
     const id = getPathParameter(context, "id");
 
     if (!id) {
       throw new NotFoundError("Product");
     }
 
+    const contentType = (context.event.headers?.['Content-Type'] || context.event.headers?.['content-type'] || '').toLowerCase();
+    console.log(`[updateProduct] Content-Type: ${contentType}`);
+    console.log(`[updateProduct] Product ID: ${id}`);
+    
     const body = getBody(context);
+    
+    // Check if it's multipart (file upload)
+    if (body._isMultipart) {
+      console.log(`[updateProduct] Multipart upload detected - parsing...`);
+      
+      try {
+        // Parse multipart data
+        const parsed = parseMultipart(body._rawBody, contentType, body._isBase64);
+        console.log(`[updateProduct] Parsed ${parsed.files.length} files and ${Object.keys(parsed.fields).length} fields`);
+        
+        // Parse existing images
+        const existingImages = parseExistingImages(parsed.fields);
+        console.log(`[updateProduct] Existing images count: ${existingImages.length}`);
+        
+        // Upload new files to S3
+        const s3 = getS3Client();
+        const newImageUrls: string[] = [];
+        
+        for (const file of parsed.files) {
+          const fileKey = `${id}/${file.filename}`;
+          console.log(`[updateProduct] Uploading ${fileKey} to S3...`);
+          
+          try {
+            await s3.send(
+              new PutObjectCommand({
+                Bucket: process.env.S3_BUCKET_NAME,
+                Key: fileKey,
+                Body: file.buffer,
+                ContentType: file.contentType,
+                ACL: 'public-read',
+              })
+            );
+            const imageUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;
+            newImageUrls.push(imageUrl);
+            console.log(`[updateProduct] Uploaded: ${imageUrl}`);
+          } catch (err) {
+            logger.error(`Failed to upload file to S3: ${fileKey}`, err);
+          }
+        }
+        
+        // Combine existing + new images
+        const allImages = [...existingImages, ...newImageUrls];
+        console.log(`[updateProduct] Total images after update: ${allImages.length}`);
+        
+        // Clean up arrays - remove undefined/null values and sparse elements
+        const cleanArray = (arr: any[]): any[] => {
+          if (!Array.isArray(arr)) return [];
+          return arr.filter(item => item !== undefined && item !== null);
+        };
+        
+        const cleanVariants = cleanArray(parsed.fields.variants || []);
+        const cleanCategory = cleanArray(parsed.fields.category || []);
+        const cleanNotes = cleanArray(parsed.fields.notes || []);
+        
+        console.log(`[updateProduct] Cleaned variants: ${cleanVariants.length}`, JSON.stringify(cleanVariants));
+        console.log(`[updateProduct] Cleaned category: ${cleanCategory.length}`, JSON.stringify(cleanCategory));
+        console.log(`[updateProduct] Cleaned notes: ${cleanNotes.length}`, JSON.stringify(cleanNotes));
+        
+        // Build update data from parsed fields
+        // IMPORTANT: Pass allImages (existing + new) as existingImages string
+        // because we've already uploaded new files ourselves
+        const updateData = {
+          name: parsed.fields.name,
+          desc: parsed.fields.desc,
+          variants: cleanVariants,
+          category: cleanCategory,
+          notes: cleanNotes,
+          existingImages: JSON.stringify(allImages), // Pass combined images (existing + new uploads)
+        };
+        
+        console.log(`[updateProduct] Update data prepared:`, JSON.stringify(updateData));
+        console.log(`[updateProduct] Images to save in DB:`, JSON.stringify(allImages));
+        
+        // Call service with undefined for files (we already handled uploads)
+        const product = await updateProductService(id, updateData, undefined);
+        console.log(`[updateProduct] Product updated: ${JSON.stringify(product)}`);
+        
+        return buildDataResponse(
+          200,
+          product,
+          context,
+          "Product updated successfully"
+        );
+      } catch (error: any) {
+        console.error(`[updateProduct] Multipart parsing error:`, error);
+        logger.error('Failed to parse multipart data', error);
+        return buildDataResponse(
+          400,
+          null,
+          context,
+          `Failed to process upload: ${error.message}`
+        );
+      }
+    }
+
+    // JSON path (no files)
     const product = await updateProductService(id, body, undefined);
-    return context.response.success({ items: product });
+    return buildDataResponse(
+      200,
+      product,
+      context,
+      "Product updated successfully"
+    );
   }
 );
 
@@ -117,7 +371,12 @@ export const deleteProduct = HandlerFactory.createAdmin(
     }
 
     const product = await deleteProductService(id);
-    return context.response.success({ items: product });
+    return buildDataResponse(
+      200,
+      product,
+      context,
+      "Product deleted successfully"
+    );
   }
 );
 
@@ -128,7 +387,7 @@ export const deleteProduct = HandlerFactory.createAdmin(
 export const getCategories = HandlerFactory.createPublic(
   async (context: HandlerContext) => {
     const categories = await getCategoriesService();
-    return context.response.success({ items: categories });
+    return buildItemsResponse(categories, context);
   }
 );
 
@@ -140,8 +399,10 @@ export const saveCategories = HandlerFactory.createAdmin(
   async (context: HandlerContext) => {
     const body = getBody(context);
     const result = await saveCategoriesService(body);
-    return context.response.created(
-      { items: result },
+    return buildDataResponse(
+      201,
+      result,
+      context,
       "Categories saved successfully"
     );
   }
@@ -171,12 +432,11 @@ export const fetchS3Image = HandlerFactory.createPublic(
     // Option 2: Proxy through CloudFront
     // Option 3: Stream image with proper binary content-type
 
-    return context.response.success(
-      {
-        message: "Image serving requires S3 CloudFront integration",
-        presignedUrl: url,
-      },
-      200
+    return buildDataResponse(
+      200,
+      { presignedUrl: url },
+      context,
+      "Image serving requires S3 CloudFront integration"
     );
   }
 );
@@ -184,28 +444,83 @@ export const fetchS3Image = HandlerFactory.createPublic(
 /**
  * GET /downloadPDF or /downloadPDF/{category}
  * Download product catalogue (admin only)
- *
- * NOTE: Lambda cannot stream large files directly.
- * Solutions:
- * 1. Return pre-signed S3 URL for direct download
- * 2. Use S3 event lambda to generate PDF and store, return URL
- * 3. Generate PDF on-demand but with Lambda's 6MB payload limit, use Lambda Layers
  */
 export const downloadCatalogue = HandlerFactory.createAdmin(
   async (context: HandlerContext) => {
     const category = getPathParameter(context, "category");
 
-    // TODO: Implement one of these solutions:
-    // Option 1: Generate PDF and return pre-signed URL
-    // Option 2: Return pre-generated PDF URL from S3
-    // Option 3: Use Lambda for generation + S3 for storage
-
-    return context.response.success(
-      {
-        message: "PDF download feature requires S3 integration",
-        catalogueUrl: `s3://bucket/catalogues/${category || "all"}.pdf`,
-      },
-      200
-    );
+    try {
+      let products;
+      if (category && category !== "all") {
+        products = await allProductsWithCategory(category);
+      } else {
+        products = await getProducts();
+      }
+      return buildItemsResponse(products, context);
+    } catch (error) {
+      throw error;
+    }
   }
 );
+
+/**
+ * Main consolidated handler for all product operations
+ * Routes requests based on HTTP method and path
+ */
+export const handler = async (
+  event: import("aws-lambda").APIGatewayProxyEvent,
+  context: import("aws-lambda").Context
+): Promise<import("aws-lambda").APIGatewayProxyResult> => {
+  const method = event.httpMethod;
+  const path = event.path || event.resource;
+
+  console.log(`[Products Handler] ${method} ${path}`);
+
+  // Route to appropriate handler
+  if (method === "GET") {
+    if (path.includes("/products-list/")) {
+      return await getProductsByCategory(event, context);
+    }
+    if (path.includes("/products-list")) {
+      return await getAllProducts(event, context);
+    }
+    if (path.includes("/product/")) {
+      return await getProductById(event, context);
+    }
+    if (path.includes("/categories-list")) {
+      return await getCategories(event, context);
+    }
+    if (path.includes("/downloadPDF/")) {
+      return await downloadCatalogue(event, context);
+    }
+    if (path.includes("/downloadPDF")) {
+      return await downloadCatalogue(event, context);
+    }
+  }
+  if (method === "POST") {
+    if (path.includes("/fetch-s3-image")) {
+      return await fetchS3Image(event, context);
+    }
+    if (path.includes("/add-product")) {
+      return await addProduct(event, context);
+    }
+    if (path.includes("/update-product")) {
+      return await updateProduct(event, context);
+    }
+    if (path.includes("/save-categories")) {
+      return await saveCategories(event, context);
+    }
+  }
+  if (method === "DELETE") {
+    if (path.includes("/delete-product")) {
+      return await deleteProduct(event, context);
+    }
+  }
+
+  // Not found
+  const response = new (require("../core/response-builder").ResponseBuilder)(
+    context.awsRequestId,
+    event
+  );
+  return response.notFound(`Route not found: ${method} ${path}`);
+};

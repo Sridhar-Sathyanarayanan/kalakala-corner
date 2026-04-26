@@ -174,6 +174,36 @@
       }
     }
 
+    .image-fallback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+      
+      .image-fallback-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        
+        mat-icon {
+          font-size: 3.5rem;
+          width: 3.5rem;
+          height: 3.5rem;
+          color: #d0d0d0;
+        }
+        
+        .image-fallback-text {
+          font-size: 1rem;
+          color: #999;
+          font-weight: 500;
+        }
+      }
+    }
+
     .nav-btn {
       position: absolute;
       top: 50%;

@@ -40,6 +40,11 @@ export async function verifyPassword(username: string, password: string) {
       expiresIn: "30m",
     });
     logger.info("Login successful", { username });
+    console.log(`[CONSOLE] Login successful for user: ${username}`);
+    
+    logger.info("Token Information", { token });
+    console.log(`[CONSOLE] Token generated: ${token.substring(0, 20)}...`);
+    
     return { message: "Login successful", token };
   } catch (err) {
     logger.error("Login error", { error: (err as any)?.message, username });

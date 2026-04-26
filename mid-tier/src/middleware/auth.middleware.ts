@@ -84,6 +84,11 @@ export const adminAuthMiddleware = (
       logger.warn(
         `[${req.requestId || "unknown"}] Unauthorized - no token provided`
       );
+      // Set CORS headers for error response
+      res.setHeader("Access-Control-Allow-Origin", process.env.ORIGIN || "*");
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+      res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS,PATCH");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Requested-With");
       res.status(401).json({
         success: false,
         statusCode: 401,
@@ -111,6 +116,11 @@ export const adminAuthMiddleware = (
     logger.warn(
       `[${req.requestId || "unknown"}] Invalid token: ${error.message}`
     );
+    // Set CORS headers for error response
+    res.setHeader("Access-Control-Allow-Origin", process.env.ORIGIN || "*");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS,PATCH");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Requested-With");
     res.status(403).json({
       success: false,
       statusCode: 403,
@@ -137,6 +147,11 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
 
   if (!token) {
     logger.warn(`[${req.requestId}] Unauthorized - no token`);
+    // Set CORS headers for error response
+    res.setHeader("Access-Control-Allow-Origin", process.env.ORIGIN || "*");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS,PATCH");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Requested-With");
     return res.status(401).json({
       success: false,
       statusCode: 401,
@@ -155,6 +170,11 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
     next();
   } catch (error) {
     logger.warn(`[${req.requestId}] Unauthorized - invalid token`, error);
+    // Set CORS headers for error response
+    res.setHeader("Access-Control-Allow-Origin", process.env.ORIGIN || "*");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS,PATCH");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Requested-With");
     return res.status(401).json({
       success: false,
       statusCode: 401,

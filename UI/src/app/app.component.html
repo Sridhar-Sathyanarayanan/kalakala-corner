@@ -53,12 +53,16 @@
 
 <main class="main-content">
   @if (appService.isLoggedIn$ | async) {
-  <div class="greeting-container mat-elevation-z2">
-    <div class="admin-info">
-      <mat-icon color="primary">account_circle</mat-icon>
-      <div class="admin-text">
-        <span class="greeting-text">Hi, Admin</span>
-        <small class="role-text">Welcome back!</small>
+  <div class="greeting-section">
+    <div class="greeting-card">
+      <div class="greeting-icon-wrapper">
+        <mat-icon class="greeting-icon">admin_panel_settings</mat-icon>
+      </div>
+      <div class="greeting-content">
+        <h2 class="greeting-title">Welcome back!</h2>
+        <p class="greeting-subtitle">You're logged in as Administrator</p>
+        <div class="greeting-divider"></div>
+        <p class="greeting-message">Ready to manage your store</p>
       </div>
     </div>
   </div>

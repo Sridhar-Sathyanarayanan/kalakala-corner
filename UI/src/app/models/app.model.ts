@@ -30,6 +30,7 @@ export interface Customerenquiry {
   name: string;
   phone: string | number;
   email: string;
+  category?: string;
   product: string;
   query: string;
   queryType?: string;
@@ -68,6 +69,10 @@ export const personalDetails = [
     icon: "phone.svg",
   },
   { title: "Location", value: "New Delhi, India", icon: "location.svg" },
+  {
+    title: "GST",
+    value: "07AQQPK3370H1ZL",
+  },
   {
     title: "Instagram",
     value: "kalakalacorner",

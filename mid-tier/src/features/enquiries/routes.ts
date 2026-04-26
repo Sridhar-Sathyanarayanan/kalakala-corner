@@ -15,7 +15,7 @@ const router = Router();
  */
 
 // POST /customer-enquiry - Submit a new customer enquiry
-router.post("/save-customer-enquiry",verifyAdmin, async (req: Request, res: Response) => {
+router.post("/save-customer-enquiry", async (req: Request, res: Response) => {
   try {
     const response = await enquiriesController.createEnquiry(req.body);
     res.status(response.statusCode).json(response);

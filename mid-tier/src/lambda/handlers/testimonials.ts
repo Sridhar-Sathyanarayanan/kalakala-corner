@@ -18,13 +18,62 @@ import { HandlerContext } from "../core/middleware";
 import { ValidationError } from "../core/errors";
 
 /**
+ * Helper to build response matching Express format
+ */
+function buildItemsResponse(items: any, context: HandlerContext) {
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ items }),
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": process.env.ORIGIN || "*",
+      "Access-Control-Allow-Credentials": "true",
+      "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS,PATCH",
+      "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
+    },
+  };
+}
+
+/**
+ * Helper to build response for POST/PUT/DELETE matching Express format
+ */
+function buildDataResponse(
+  statusCode: number,
+  data: any,
+  context: HandlerContext,
+  message?: string
+) {
+  const body: any = {
+    statusCode,
+    success: statusCode >= 200 && statusCode < 300,
+    data,
+  };
+
+  if (message) {
+    body.message = message;
+  }
+
+  return {
+    statusCode,
+    body: JSON.stringify(body),
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": process.env.ORIGIN || "*",
+      "Access-Control-Allow-Credentials": "true",
+      "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS,PATCH",
+      "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
+    },
+  };
+}
+
+/**
  * GET /testimonials-list
  * Fetch all testimonials
  */
 export const getAllTestimonials = HandlerFactory.createPublic(
   async (context: HandlerContext) => {
     const testimonials = await getTestimonials();
-    return context.response.success({ items: testimonials });
+    return buildItemsResponse(testimonials, context);
   }
 );
 
@@ -72,8 +121,10 @@ export const addTestimonial = HandlerFactory.createAdmin(
       customerName,
     });
 
-    return context.response.created(
+    return buildDataResponse(
+      201,
       testimonial,
+      context,
       "Testimonial added successfully"
     );
   }
@@ -124,7 +175,12 @@ export const updateTestimonial = HandlerFactory.createAdmin(
     }
 
     const testimonial = await updateTestimonialService(idNum, updates);
-    return context.response.success(testimonial);
+    return buildDataResponse(
+      200,
+      testimonial,
+      context,
+      "Testimonial updated successfully"
+    );
   }
 );
 
@@ -146,6 +202,46 @@ export const deleteTestimonial = HandlerFactory.createAdmin(
     }
 
     const result = await deleteTestimonialService(idNum);
-    return context.response.success(result);
+    return buildDataResponse(
+      200,
+      result,
+      context,
+      "Testimonial deleted successfully"
+    );
   }
 );
+
+/**
+ * Main consolidated handler for all testimonial operations
+ * Routes requests based on HTTP method and path
+ */
+export const handler = async (
+  event: import("aws-lambda").APIGatewayProxyEvent,
+  context: import("aws-lambda").Context
+): Promise<import("aws-lambda").APIGatewayProxyResult> => {
+  const method = event.httpMethod;
+  const path = event.path || event.resource;
+
+  console.log(`[Testimonials Handler] ${method} ${path}`);
+
+  // Route to appropriate handler
+  if (method === "GET" && path.includes("/testimonials-list")) {
+    return await getAllTestimonials(event, context);
+  }
+  if (method === "POST" && path.includes("/add-testimonial")) {
+    return await addTestimonial(event, context);
+  }
+  if (method === "PUT" && path.includes("/update-testimonial")) {
+    return await updateTestimonial(event, context);
+  }
+  if (method === "DELETE" && path.includes("/delete-testimonial")) {
+    return await deleteTestimonial(event, context);
+  }
+
+  // Not found
+  const response = new (require("../core/response-builder").ResponseBuilder)(
+    context.awsRequestId,
+    event
+  );
+  return response.notFound(`Route not found: ${method} ${path}`);
+};

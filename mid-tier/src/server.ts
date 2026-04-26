@@ -41,7 +41,11 @@ const corsOptions: cors.CorsOptions = {
 // Middleware stack
 app.use(cors(corsOptions));
 app.use(cookieParser());
-app.use(express.json({ limit: "10mb" }));
+// Skip JSON parsing for multipart/form-data (handled by multer)
+app.use(express.json({ 
+  limit: "10mb",
+  type: ['application/json', 'text/plain']
+}));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 // Request logging (morgan → winston)

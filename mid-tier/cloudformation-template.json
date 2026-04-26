@@ -1,17 +1,53 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "CloudFormation template for Kalakala Corner Lambda API",
+  "Description": "CloudFormation template for Kalakala Corner Lambda API - Updated 2026-04-25",
   "Parameters": {
-    "Environment": {
-      "Type": "String",
-      "Default": "dev",
-      "AllowedValues": ["dev", "staging", "prod"],
-      "Description": "Environment name"
-    },
     "AdminTokenSecret": {
       "Type": "String",
       "NoEcho": true,
       "Description": "Admin token secret for JWT validation"
+    },
+    "OriginURL": {
+      "Type": "String",
+      "Default": "https://www.kalakalacorner.com",
+      "Description": "CORS origin URL"
+    },
+    "LambdaCodeBucketName": {
+      "Type": "String",
+      "Default": "kalakala-lambda-code-786142129270",
+      "Description": "Existing S3 bucket name for Lambda code"
+    }
+  },
+  "Mappings": {
+    "CorsHeaders": {
+      "AllowHeaders": {
+        "Value": "Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token"
+      },
+      "AllowMethods": {
+        "Value": "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+      }
+    },
+    "ApiEndpoints": {
+      "ProductsList": { "Path": "products-list", "Method": "GET", "Lambda": "ProductsFunction" },
+      "ProductsByCategory": { "Path": "products-list/:category", "Method": "GET", "Lambda": "ProductsFunction" },
+      "ProductById": { "Path": "product/:id", "Method": "GET", "Lambda": "ProductsFunction" },
+      "CategoriesList": { "Path": "categories-list", "Method": "GET", "Lambda": "ProductsFunction" },
+      "FetchS3Image": { "Path": "fetch-s3-image", "Method": "POST", "Lambda": "ProductsFunction" },
+      "AddProduct": { "Path": "add-product", "Method": "POST", "Lambda": "ProductsFunction" },
+      "UpdateProduct": { "Path": "update-product", "Method": "POST", "Lambda": "ProductsFunction" },
+      "DeleteProduct": { "Path": "delete-product/:id", "Method": "DELETE", "Lambda": "ProductsFunction" },
+      "DownloadPDF": { "Path": "downloadPDF", "Method": "GET", "Lambda": "ProductsFunction" },
+      "DownloadPDFByCategory": { "Path": "downloadPDF/:category", "Method": "GET", "Lambda": "ProductsFunction" },
+      "SaveCategories": { "Path": "save-categories", "Method": "POST", "Lambda": "ProductsFunction" },
+      "TestimonialsList": { "Path": "testimonials-list", "Method": "GET", "Lambda": "TestimonialsFunction" },
+      "AddTestimonial": { "Path": "add-testimonial", "Method": "POST", "Lambda": "TestimonialsFunction" },
+      "UpdateTestimonial": { "Path": "update-testimonial", "Method": "PUT", "Lambda": "TestimonialsFunction" },
+      "DeleteTestimonial": { "Path": "delete-testimonial", "Method": "DELETE", "Lambda": "TestimonialsFunction" },
+      "LoginApi": { "Path": "api/login", "Method": "POST", "Lambda": "LoginFunction" },
+      "LogoutApi": { "Path": "api/logout", "Method": "POST", "Lambda": "LoginFunction" },
+      "AuthCheck": { "Path": "api/auth/check", "Method": "GET", "Lambda": "LoginFunction" },
+      "SaveEnquiry": { "Path": "save-customer-enquiry", "Method": "POST", "Lambda": "EnquiriesFunction" },
+      "EnquiriesList": { "Path": "enquiries-list", "Method": "GET", "Lambda": "EnquiriesFunction" }
     }
   },
   "Resources": {
@@ -23,9 +59,7 @@
           "Statement": [
             {
               "Effect": "Allow",
-              "Principal": {
-                "Service": "lambda.amazonaws.com"
-              },
+              "Principal": { "Service": "lambda.amazonaws.com" },
               "Action": "sts:AssumeRole"
             }
           ]
@@ -42,18 +76,16 @@
                 {
                   "Effect": "Allow",
                   "Action": [
-                    "dynamodb:GetItem",
-                    "dynamodb:PutItem",
-                    "dynamodb:UpdateItem",
-                    "dynamodb:DeleteItem",
-                    "dynamodb:Query",
-                    "dynamodb:Scan"
+                    "dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem", "dynamodb:Query", "dynamodb:Scan",
+                    "dynamodb:BatchGetItem", "dynamodb:BatchWriteItem"
                   ],
                   "Resource": [
-                    "arn:aws:dynamodb:*:*:table/products",
-                    "arn:aws:dynamodb:*:*:table/testimonials",
-                    "arn:aws:dynamodb:*:*:table/enquiries",
-                    "arn:aws:dynamodb:*:*:table/categories"
+                    { "Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/app-config" },
+                    { "Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/product-catalogue" },
+                    { "Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/testimonials" },
+                    { "Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/customer-enquiries" },
+                    { "Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/product-categories" }
                   ]
                 }
               ]
@@ -69,12 +101,15 @@
                   "Action": [
                     "s3:GetObject",
                     "s3:PutObject",
+                    "s3:PutObjectAcl",
                     "s3:DeleteObject",
                     "s3:ListBucket"
                   ],
                   "Resource": [
                     "arn:aws:s3:::kalakala-corner-*",
-                    "arn:aws:s3:::kalakala-corner-*/*"
+                    "arn:aws:s3:::kalakala-corner-*/*",
+                    "arn:aws:s3:::kalakala-images",
+                    "arn:aws:s3:::kalakala-images/*"
                   ]
                 }
               ]
@@ -83,23 +118,47 @@
         ]
       }
     },
-    "GetAllProductsFunction": {
+    "ProductsFunction": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
-        "FunctionName": { "Fn::Sub": "kalakala-get-products-${Environment}" },
+        "FunctionName": "kalakala-products",
         "Runtime": "nodejs20.x",
-        "Handler": "dist/lambda/handlers/products/get-all-products.handler",
-        "Code": {
-          "S3Bucket": { "Ref": "LambdaCodeBucket" },
-          "S3Key": "lambda-code.zip"
-        },
+        "Handler": "lambda/handlers/products.handler",
+        "Code": { "S3Bucket": { "Ref": "LambdaCodeBucketName" }, "S3Key": "lambda-code.zip" },
         "Role": { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"] },
-        "Timeout": 30,
+        "Timeout": 60,
         "MemorySize": 512,
         "Environment": {
           "Variables": {
-            "ENVIRONMENT": { "Ref": "Environment" },
-            "ADMIN_TOKEN": { "Ref": "AdminTokenSecret" }
+            "ENVIRONMENT": "production",
+            "ADMIN_TOKEN": { "Ref": "AdminTokenSecret" },
+            "ORIGIN": { "Ref": "OriginURL" },
+            "LOG_LEVEL": "debug",
+            "PORT": "3000",
+            "S3_BUCKET_NAME": "kalakala-images",
+            "LAST_UPDATE": "2026-04-25"
+          }
+        }
+      }
+    },
+    "TestimonialsFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": "kalakala-testimonials",
+        "Runtime": "nodejs20.x",
+        "Handler": "lambda/handlers/testimonials.handler",
+        "Code": { "S3Bucket": { "Ref": "LambdaCodeBucketName" }, "S3Key": "lambda-code.zip" },
+        "Role": { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"] },
+        "Timeout": 60,
+        "MemorySize": 512,
+        "Environment": {
+          "Variables": {
+            "ENVIRONMENT": "production",
+            "ADMIN_TOKEN": { "Ref": "AdminTokenSecret" },
+            "ORIGIN": { "Ref": "OriginURL" },
+            "LOG_LEVEL": "debug",
+            "PORT": "3000",
+            "S3_BUCKET_NAME": "kalakala-images"
           }
         }
       }
@@ -107,47 +166,1646 @@
     "LoginFunction": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
-        "FunctionName": { "Fn::Sub": "kalakala-login-${Environment}" },
+        "FunctionName": "kalakala-login",
         "Runtime": "nodejs20.x",
-        "Handler": "dist/lambda/handlers/login/login.handler",
-        "Code": {
-          "S3Bucket": { "Ref": "LambdaCodeBucket" },
-          "S3Key": "lambda-code.zip"
-        },
+        "Handler": "lambda/handlers/login.handler",
+        "Code": { "S3Bucket": { "Ref": "LambdaCodeBucketName" }, "S3Key": "lambda-code.zip" },
         "Role": { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"] },
-        "Timeout": 30,
-        "MemorySize": 256,
+        "Timeout": 60,
+        "MemorySize": 512,
         "Environment": {
           "Variables": {
-            "ENVIRONMENT": { "Ref": "Environment" },
-            "ADMIN_TOKEN": { "Ref": "AdminTokenSecret" }
+            "ENVIRONMENT": "production",
+            "ADMIN_TOKEN": { "Ref": "AdminTokenSecret" },
+            "ORIGIN": { "Ref": "OriginURL" },
+            "LOG_LEVEL": "debug",
+            "PORT": "3000",
+            "S3_BUCKET_NAME": "kalakala-images"
           }
         }
       }
     },
-    "APIGateway": {
-      "Type": "AWS::ApiGatewayV2::Api",
+    "EnquiriesFunction": {
+      "Type": "AWS::Lambda::Function",
       "Properties": {
-        "Name": { "Fn::Sub": "kalakala-api-${Environment}" },
-        "ProtocolType": "HTTP",
-        "CorsConfiguration": {
-          "AllowOrigins": ["*"],
-          "AllowMethods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-          "AllowHeaders": ["Content-Type", "Authorization"]
+        "FunctionName": "kalakala-enquiries",
+        "Runtime": "nodejs20.x",
+        "Handler": "lambda/handlers/enquiries.handler",
+        "Code": { "S3Bucket": { "Ref": "LambdaCodeBucketName" }, "S3Key": "lambda-code.zip" },
+        "Role": { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"] },
+        "Timeout": 60,
+        "MemorySize": 512,
+        "Environment": {
+          "Variables": {
+            "ENVIRONMENT": "production",
+            "ADMIN_TOKEN": { "Ref": "AdminTokenSecret" },
+            "ORIGIN": { "Ref": "OriginURL" },
+            "LOG_LEVEL": "debug",
+            "PORT": "3000",
+            "S3_BUCKET_NAME": "kalakala-images"
+          }
         }
       }
     },
-    "LambdaCodeBucket": {
-      "Type": "AWS::S3::Bucket",
+    "KalakalaAPI": {
+      "Type": "AWS::ApiGateway::RestApi",
       "Properties": {
-        "BucketName": { "Fn::Sub": "kalakala-lambda-code-${AWS::AccountId}" }
+        "Name": "kalakala-api",
+        "Description": "Kalakala Corner API Gateway",
+        "EndpointConfiguration": { "Types": ["REGIONAL"] },
+        "BinaryMediaTypes": [
+          "multipart/form-data",
+          "image/jpeg",
+          "image/png",
+          "image/gif",
+          "image/webp",
+          "application/octet-stream"
+        ]
+      }
+    },
+    "ApiGatewayAccount": {
+      "Type": "AWS::ApiGateway::Account",
+      "Properties": {
+        "CloudWatchRoleArn": { "Fn::GetAtt": ["ApiGatewayCloudWatchRole", "Arn"] }
+      }
+    },
+    "ApiGatewayCloudWatchRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": { "Service": "apigateway.amazonaws.com" },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": ["arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"]
+      }
+    },
+    "ProductsPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": { "Ref": "ProductsFunction" },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": { "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${KalakalaAPI}/*" }
+      }
+    },
+    "TestimonialsPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": { "Ref": "TestimonialsFunction" },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": { "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${KalakalaAPI}/*" }
+      }
+    },
+    "LoginPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": { "Ref": "LoginFunction" },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": { "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${KalakalaAPI}/*" }
+      }
+    },
+    "EnquiriesPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": { "Ref": "EnquiriesFunction" },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": { "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${KalakalaAPI}/*" }
+      }
+    },
+    "ProductsListResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Fn::GetAtt": ["KalakalaAPI", "RootResourceId"] },
+        "PathPart": "products-list"
+      }
+    },
+    "ProductsListMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "ProductsListResource" },
+        "HttpMethod": "GET",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ProductsFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "ProductsListOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "ProductsListResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "ProductsCategoryResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Ref": "ProductsListResource" },
+        "PathPart": "{category}"
+      }
+    },
+    "ProductsByCategoryMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "ProductsCategoryResource" },
+        "HttpMethod": "GET",
+        "AuthorizationType": "NONE",
+        "RequestParameters": { "method.request.path.category": true },
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ProductsFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "ProductsByCategoryOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "ProductsCategoryResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "ProductResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Fn::GetAtt": ["KalakalaAPI", "RootResourceId"] },
+        "PathPart": "product"
+      }
+    },
+    "ProductIdResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Ref": "ProductResource" },
+        "PathPart": "{id}"
+      }
+    },
+    "ProductByIdMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "ProductIdResource" },
+        "HttpMethod": "GET",
+        "AuthorizationType": "NONE",
+        "RequestParameters": { "method.request.path.id": true },
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ProductsFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "ProductByIdOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "ProductIdResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "CategoriesListResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Fn::GetAtt": ["KalakalaAPI", "RootResourceId"] },
+        "PathPart": "categories-list"
+      }
+    },
+    "CategoriesListMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "CategoriesListResource" },
+        "HttpMethod": "GET",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ProductsFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "CategoriesListOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "CategoriesListResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "FetchS3ImageResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Fn::GetAtt": ["KalakalaAPI", "RootResourceId"] },
+        "PathPart": "fetch-s3-image"
+      }
+    },
+    "FetchS3ImageMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "FetchS3ImageResource" },
+        "HttpMethod": "POST",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ProductsFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "FetchS3ImageOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "FetchS3ImageResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "AddProductResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Fn::GetAtt": ["KalakalaAPI", "RootResourceId"] },
+        "PathPart": "add-product"
+      }
+    },
+    "AddProductMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "AddProductResource" },
+        "HttpMethod": "POST",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ProductsFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "AddProductOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "AddProductResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "UpdateProductResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Fn::GetAtt": ["KalakalaAPI", "RootResourceId"] },
+        "PathPart": "update-product"
+      }
+    },
+    "UpdateProductMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "UpdateProductResource" },
+        "HttpMethod": "POST",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ProductsFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "UpdateProductOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "UpdateProductResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "UpdateProductIdResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Ref": "UpdateProductResource" },
+        "PathPart": "{id}"
+      }
+    },
+    "UpdateProductByIdMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "UpdateProductIdResource" },
+        "HttpMethod": "POST",
+        "AuthorizationType": "NONE",
+        "RequestParameters": { "method.request.path.id": true },
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ProductsFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "UpdateProductByIdOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "UpdateProductIdResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "DeleteProductResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Fn::GetAtt": ["KalakalaAPI", "RootResourceId"] },
+        "PathPart": "delete-product"
+      }
+    },
+    "DeleteProductIdResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Ref": "DeleteProductResource" },
+        "PathPart": "{id}"
+      }
+    },
+    "DeleteProductMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "DeleteProductIdResource" },
+        "HttpMethod": "DELETE",
+        "AuthorizationType": "NONE",
+        "RequestParameters": { "method.request.path.id": true },
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ProductsFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "DeleteProductOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "DeleteProductIdResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "DownloadPDFResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Fn::GetAtt": ["KalakalaAPI", "RootResourceId"] },
+        "PathPart": "downloadPDF"
+      }
+    },
+    "DownloadPDFMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "DownloadPDFResource" },
+        "HttpMethod": "GET",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ProductsFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "DownloadPDFOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "DownloadPDFResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "DownloadPDFCategoryResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Ref": "DownloadPDFResource" },
+        "PathPart": "{category}"
+      }
+    },
+    "DownloadPDFByCategoryMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "DownloadPDFCategoryResource" },
+        "HttpMethod": "GET",
+        "AuthorizationType": "NONE",
+        "RequestParameters": { "method.request.path.category": true },
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ProductsFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "DownloadPDFByCategoryOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "DownloadPDFCategoryResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "SaveCategoriesResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Fn::GetAtt": ["KalakalaAPI", "RootResourceId"] },
+        "PathPart": "save-categories"
+      }
+    },
+    "SaveCategoriesMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "SaveCategoriesResource" },
+        "HttpMethod": "POST",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ProductsFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "SaveCategoriesOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "SaveCategoriesResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "TestimonialsListResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Fn::GetAtt": ["KalakalaAPI", "RootResourceId"] },
+        "PathPart": "testimonials-list"
+      }
+    },
+    "TestimonialsListMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "TestimonialsListResource" },
+        "HttpMethod": "GET",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${TestimonialsFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "TestimonialsListOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "TestimonialsListResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "AddTestimonialResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Fn::GetAtt": ["KalakalaAPI", "RootResourceId"] },
+        "PathPart": "add-testimonial"
+      }
+    },
+    "AddTestimonialMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "AddTestimonialResource" },
+        "HttpMethod": "POST",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${TestimonialsFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "AddTestimonialOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "AddTestimonialResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "UpdateTestimonialResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Fn::GetAtt": ["KalakalaAPI", "RootResourceId"] },
+        "PathPart": "update-testimonial"
+      }
+    },
+    "UpdateTestimonialMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "UpdateTestimonialResource" },
+        "HttpMethod": "PUT",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${TestimonialsFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "UpdateTestimonialOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "UpdateTestimonialResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "UpdateTestimonialIdResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Ref": "UpdateTestimonialResource" },
+        "PathPart": "{id}"
+      }
+    },
+    "UpdateTestimonialByIdMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "UpdateTestimonialIdResource" },
+        "HttpMethod": "PUT",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${TestimonialsFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "UpdateTestimonialByIdOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "UpdateTestimonialIdResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "DeleteTestimonialResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Fn::GetAtt": ["KalakalaAPI", "RootResourceId"] },
+        "PathPart": "delete-testimonial"
+      }
+    },
+    "DeleteTestimonialMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "DeleteTestimonialResource" },
+        "HttpMethod": "DELETE",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${TestimonialsFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "DeleteTestimonialOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "DeleteTestimonialResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "DeleteTestimonialIdResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Ref": "DeleteTestimonialResource" },
+        "PathPart": "{id}"
+      }
+    },
+    "DeleteTestimonialByIdMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "DeleteTestimonialIdResource" },
+        "HttpMethod": "DELETE",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${TestimonialsFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "DeleteTestimonialByIdOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "DeleteTestimonialIdResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "ApiResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Fn::GetAtt": ["KalakalaAPI", "RootResourceId"] },
+        "PathPart": "api"
+      }
+    },
+    "LoginResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Ref": "ApiResource" },
+        "PathPart": "login"
+      }
+    },
+    "LoginMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "LoginResource" },
+        "HttpMethod": "POST",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LoginFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "LoginOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "LoginResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "LogoutResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Ref": "ApiResource" },
+        "PathPart": "logout"
+      }
+    },
+    "LogoutMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "LogoutResource" },
+        "HttpMethod": "POST",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LoginFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "LogoutOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "LogoutResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "AuthResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Ref": "ApiResource" },
+        "PathPart": "auth"
+      }
+    },
+    "CheckResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Ref": "AuthResource" },
+        "PathPart": "check"
+      }
+    },
+    "AuthCheckMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "CheckResource" },
+        "HttpMethod": "GET",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LoginFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "AuthCheckOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "CheckResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "SaveEnquiryResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Fn::GetAtt": ["KalakalaAPI", "RootResourceId"] },
+        "PathPart": "save-customer-enquiry"
+      }
+    },
+    "SaveEnquiryMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "SaveEnquiryResource" },
+        "HttpMethod": "POST",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${EnquiriesFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "SaveEnquiryOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "SaveEnquiryResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "EnquiriesListResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ParentId": { "Fn::GetAtt": ["KalakalaAPI", "RootResourceId"] },
+        "PathPart": "enquiries-list"
+      }
+    },
+    "EnquiriesListMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "EnquiriesListResource" },
+        "HttpMethod": "GET",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": { "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${EnquiriesFunction.Arn}/invocations" }
+        }
+      }
+    },
+    "EnquiriesListOptionsMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "ResourceId": { "Ref": "EnquiriesListResource" },
+        "HttpMethod": "OPTIONS",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Requested-With,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,PUT,DELETE,OPTIONS,PATCH'",
+                "method.response.header.Access-Control-Allow-Origin": { "Fn::Sub": "'${OriginURL}'" },
+                "method.response.header.Access-Control-Allow-Credentials": "'true'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            }
+          }
+        ]
+      }
+    },
+    "ApiDeployment": {
+      "Type": "AWS::ApiGateway::Deployment",
+      "DependsOn": [
+        "ProductsListMethod", "ProductsListOptionsMethod", "ProductsByCategoryMethod", "ProductsByCategoryOptionsMethod",
+        "ProductByIdMethod", "ProductByIdOptionsMethod", "CategoriesListMethod", "CategoriesListOptionsMethod",
+        "FetchS3ImageMethod", "FetchS3ImageOptionsMethod", "AddProductMethod", "AddProductOptionsMethod",
+        "UpdateProductMethod", "UpdateProductOptionsMethod", "UpdateProductByIdMethod", "UpdateProductByIdOptionsMethod",
+        "DeleteProductMethod", "DeleteProductOptionsMethod",
+        "DownloadPDFMethod", "DownloadPDFOptionsMethod", "DownloadPDFByCategoryMethod", "DownloadPDFByCategoryOptionsMethod",
+        "SaveCategoriesMethod", "SaveCategoriesOptionsMethod", "TestimonialsListMethod", "TestimonialsListOptionsMethod",
+        "AddTestimonialMethod", "AddTestimonialOptionsMethod", "UpdateTestimonialMethod", "UpdateTestimonialOptionsMethod",
+        "DeleteTestimonialMethod", "DeleteTestimonialOptionsMethod", "LoginMethod", "LoginOptionsMethod",
+        "LogoutMethod", "LogoutOptionsMethod", "AuthCheckMethod", "AuthCheckOptionsMethod",
+        "SaveEnquiryMethod", "SaveEnquiryOptionsMethod", "EnquiriesListMethod", "EnquiriesListOptionsMethod"
+      ],
+      "Properties": {
+        "RestApiId": { "Ref": "KalakalaAPI" },
+        "StageName": "prod",
+        "Description": "Deployment with update-product/{id} endpoint - 2026-04-25-v12"
       }
     }
   },
   "Outputs": {
     "APIEndpoint": {
-      "Description": "API Gateway endpoint",
-      "Value": { "Fn::GetAtt": ["APIGateway", "ApiEndpoint"] }
+      "Description": "API Gateway endpoint URL",
+      "Value": { "Fn::Sub": "https://${KalakalaAPI}.execute-api.${AWS::Region}.amazonaws.com/prod" }
+    },
+    "LambdaCodeBucketName": {
+      "Description": "S3 bucket for Lambda code",
+      "Value": { "Ref": "LambdaCodeBucketName" }
     }
   }
 }
+
+
+
+
+
+
+
+
+

@@ -8,7 +8,13 @@
   <div class="carousel-section animate-slide-left">
     <div class="carousel-container">
       <div class="image-wrapper">
-        <img [src]="data.images[currentIndex]" [alt]="data.name" class="carousel-image" />
+        <img [src]="data.images[currentIndex]" [alt]="data.name" class="carousel-image" (error)="$event.target.style.display='none'" />
+        <div class="image-fallback" [style.display]="data.images?.[currentIndex] ? 'none' : 'flex'">
+          <div class="image-fallback-content">
+            <mat-icon>image_not_supported</mat-icon>
+            <span class="image-fallback-text">No Image Available</span>
+          </div>
+        </div>
 
         <!-- Navigation Buttons -->
         @if(data.images.length > 1) {
@@ -161,7 +167,7 @@
               </th>
               <td mat-cell *matCellDef="let v">
                 <span class="price-cell" [class.crossed]="
-                    v.discountedPrice && v.discountedPrice !== 'null'
+                    v.discountedPrice && v.discountedPrice !== 'null' && v.discountedPrice !== '0' && v.discountedPrice !== 0
                   ">
                   {{ v.price === "null" || !v.price ? "--" : "₹" + v.price }}
                 </span>
@@ -177,7 +183,7 @@
                 </div>
               </th>
               <td mat-cell *matCellDef="let v">
-                @if(v.discountedPrice && v.discountedPrice !== "null") {
+                @if(v.discountedPrice && v.discountedPrice !== "null" && v.discountedPrice !== "0" && v.discountedPrice !== 0) {
                 <div class="offer-price-cell">
                   <span class="discounted-value">₹{{ v.discountedPrice }}</span>
                   @if(v.price && v.price !== "null") {

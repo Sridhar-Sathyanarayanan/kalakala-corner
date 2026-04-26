@@ -58,16 +58,16 @@ export class ProductController extends BaseController {
   /**
    * Add a new product
    */
-  async addProduct(productData: any): Promise<ControllerResponse> {
+  async addProduct(productData: any, files?: Express.Multer.File[]): Promise<ControllerResponse> {
     try {
       // Validate required fields
-      if (!productData || !productData.name || !productData.price) {
+      if (!productData || !productData.name) {
         logger.warn("Invalid product data provided");
-        return this.badRequest("Product name and price are required");
+        return this.badRequest("Product name is required");
       }
 
       logger.info(`Adding new product: ${productData.name}`);
-      const result = await addProduct(productData, null);
+      const result = await addProduct(productData, files || []);
 
       logger.info(`Product added successfully: ${productData.name}`);
       return this.created({
@@ -85,7 +85,8 @@ export class ProductController extends BaseController {
    */
   async updateProduct(
     productId: string,
-    productData: any
+    productData: any,
+    files?: Express.Multer.File[]
   ): Promise<ControllerResponse> {
     try {
       if (!productId || productId.trim() === "") {
@@ -98,10 +99,8 @@ export class ProductController extends BaseController {
         return this.badRequest("Product data is required");
       }
 
-      logger.info(`Updating product: ${productId}`);
-      const result = await updateProduct(productId, productData);
+      await updateProduct(productId, productData, files);
 
-      logger.info(`Product updated successfully: ${productId}`);
       return this.success({
         id: productId,
         message: "Product updated successfully",
@@ -166,7 +165,6 @@ export class ProductController extends BaseController {
    */
   async getAllCategories(): Promise<ControllerResponse> {
     try {
-      logger.info("Fetching all categories");
       const categories = await getCategories();
       return this.success(categories);
     } catch (error) {
@@ -177,6 +175,7 @@ export class ProductController extends BaseController {
 
   /**
    * Fetch image from S3
+   * @deprecated - Image fetching is now handled directly in the route
    */
   async fetchS3Image(url: string): Promise<ControllerResponse> {
     try {
@@ -211,17 +210,21 @@ export class ProductController extends BaseController {
   /**
    * Download product catalogue
    */
-  async downloadCatalogue(category?: string): Promise<ControllerResponse> {
+  async downloadCatalogue(category?: string): Promise<any> {
     try {
       logger.info(
         `Downloading catalogue${category ? ` for category: ${category}` : ""}`
       );
-      // Note: Catalogue download functionality pending implementation
-      // Users can export product list directly from /products-list endpoint
-      return this.success({ message: "Catalogue downloaded successfully" });
+      let products;
+      if (category && category !== "all") {
+        products = await allProductsWithCategory(category);
+      } else {
+        products = await getProducts();
+      }
+      return { items: products };
     } catch (error) {
       logger.error("Error downloading catalogue", error);
-      return this.serverError("Failed to download catalogue");
+      throw error;
     }
   }
 
@@ -235,10 +238,8 @@ export class ProductController extends BaseController {
         return this.badRequest("Category data is required");
       }
 
-      logger.info("Modifying product categories");
       const result = await saveCategories(categoryData);
 
-      logger.info("Product categories modified successfully");
       return this.success({
         message: "Categories modified successfully",
       });

@@ -93,11 +93,37 @@
             </td>
           </ng-container>
 
+          <!-- Category Column -->
+          <ng-container matColumnDef="category">
+            <th mat-header-cell *matHeaderCellDef>Category</th>
+            <td mat-cell *matCellDef="let enquiry" class="category-name">
+              @if (enquiry.category) {
+              <span class="category-badge">{{ enquiry.category }}</span>
+              } @else {
+              <div>--</div>
+              }
+            </td>
+          </ng-container>
+
           <!-- Product Column -->
           <ng-container matColumnDef="product">
             <th mat-header-cell *matHeaderCellDef>Product</th>
             <td mat-cell *matCellDef="let enquiry" class="product-name">
-              <span class="product-badge">{{ enquiry.product }}</span>
+              @if (enquiry.product) {
+              <div style="display: flex; align-items: center; gap: 8px;">
+                @if (getProductImage(enquiry.product, enquiry.category)) {
+                <img 
+                  [src]="getProductImage(enquiry.product, enquiry.category)" 
+                  [alt]="enquiry.product"
+                  style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px;"
+                  loading="lazy"
+                />
+                }
+                <span class="product-badge">{{ enquiry.product }}</span>
+              </div>
+              } @else {
+              <div>--</div>
+              }
             </td>
           </ng-container>
 
@@ -153,14 +179,39 @@
                 </div>
               </div>
 
+              <!-- Category -->
+              @if (enquiry.category) {
+              <div class="info-row">
+                <mat-icon>category</mat-icon>
+                <div class="info-content">
+                  <div class="label">Category</div>
+                  <div class="value">
+                    <span class="category-badge">{{ enquiry.category }}</span>
+                  </div>
+                </div>
+              </div>
+              }
+
               <!-- Product -->
               <div class="info-row">
                 <mat-icon>shopping_bag</mat-icon>
                 <div class="info-content">
                   <div class="label">Product</div>
-                  <div class="value">
+                  @if (enquiry.product) {
+                  <div class="value" style="display: flex; align-items: center; gap: 8px;">
+                    @if (getProductImage(enquiry.product, enquiry.category)) {
+                    <img 
+                      [src]="getProductImage(enquiry.product, enquiry.category)" 
+                      [alt]="enquiry.product"
+                      style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px;"
+                      loading="lazy"
+                    />
+                    }
                     <span class="product-badge">{{ enquiry.product }}</span>
                   </div>
+                  } @else {
+                  <div class="value">--</div>
+                  }
                 </div>
               </div>
 
@@ -229,7 +280,24 @@
               [disabled]="!form.category"
               (selectionChange)="onProductChange($event)">
               @for (product of filteredProducts(); track product.id) {
-                <mat-option [value]="product.name" [attr.data-product-id]="product.id">{{ product.name }}</mat-option>
+                <mat-option [value]="product.name" [attr.data-product-id]="product.id">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    @if (product.images && product.images.length > 0) {
+                    <img 
+                      [src]="product.images[0]" 
+                      [alt]="product.name"
+                      style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;"
+                      loading="lazy"
+                    />
+                    }
+                    <div style="display: flex; flex-direction: column;">
+                      <span style="font-weight: 500;">{{ product.name }}</span>
+                      @if (product.desc) {
+                      <span style="font-size: 0.85rem; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 300px;">{{ product.desc }}</span>
+                      }
+                    </div>
+                  </div>
+                </mat-option>
               }
             </mat-select>
             @if (!form.category) {
@@ -316,7 +384,17 @@
           <ng-container matColumnDef="product">
             <th mat-header-cell *matHeaderCellDef>Product</th>
             <td mat-cell *matCellDef="let testimonial">
-              <span class="product-badge">{{ testimonial.product }}</span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                @if (getProductImage(testimonial.product, testimonial.category)) {
+                <img 
+                  [src]="getProductImage(testimonial.product, testimonial.category)" 
+                  [alt]="testimonial.product"
+                  style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px;"
+                  loading="lazy"
+                />
+                }
+                <span class="product-badge">{{ testimonial.product }}</span>
+              </div>
             </td>
           </ng-container>
 

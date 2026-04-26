@@ -13,6 +13,7 @@ export interface LambdaConfig {
   requestTimeout: number;
   maxRequestSize: number;
   tables: {
+    appConfig: string;
     products: string;
     testimonials: string;
     enquiries: string;
@@ -55,6 +56,7 @@ class ConfigurationManager {
       requestTimeout: parseInt(process.env.REQUEST_TIMEOUT || "30000"),
       maxRequestSize: parseInt(process.env.MAX_REQUEST_SIZE || "10485760"), // 10MB
       tables: {
+        appConfig: "app-config",
         products: "product-catalogue",
         testimonials: "testimonials",
         enquiries: "customer-enquiries",

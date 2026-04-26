@@ -89,30 +89,38 @@ export async function addProduct(
     desc: string;
     variants: object;
     id: string;
+    images?: string[]; // Support pre-uploaded image URLs from Lambda
   },
-  files: any
+  files?: any
 ) {
   const imageUrls: string[] = [];
   const uuid = randomUUID();
-  // Upload each image to S3
-  for (const file of files as Express.Multer.File[]) {
-    const fileKey = `${uuid}/${file.originalname}`;
-    const s3 = getS3Client();
-    try {
-      await s3.send(
-        new PutObjectCommand({
-          Bucket: process.env.S3_BUCKET_NAME,
-          Key: fileKey,
-          Body: file.buffer,
-          ContentType: file.mimetype,
-          ACL: "public-read",
-        })
-      );
-      imageUrls.push(
-        `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`
-      );
-    } catch (err) {
-      logger.error(`Unable to post to s3 bucket`, err);
+  
+  // If images are already provided as URLs (Lambda path), use them directly
+  if (data.images && Array.isArray(data.images)) {
+    imageUrls.push(...data.images);
+  }
+  // Upload each image to S3 (Express/Multer path)
+  else if (files && Array.isArray(files) && files.length > 0) {
+    for (const file of files as Express.Multer.File[]) {
+      const fileKey = `${uuid}/${file.originalname}`;
+      const s3 = getS3Client();
+      try {
+        await s3.send(
+          new PutObjectCommand({
+            Bucket: process.env.S3_BUCKET_NAME,
+            Key: fileKey,
+            Body: file.buffer,
+            ContentType: file.mimetype,
+            ACL: 'public-read',
+          })
+        );
+        imageUrls.push(
+          `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`
+        );
+      } catch (err) {
+        logger.error(`Unable to post to s3 bucket`, err);
+      }
     }
   }
 
@@ -140,16 +148,22 @@ async function uploadFileToS3(
   file: Express.Multer.File
 ) {
   const key = `${id}/${file.originalname}`;
-  await s3.send(
-    new PutObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME,
-      Key: key,
-      Body: file.buffer,
-      ContentType: file.mimetype,
-      ACL: "public-read",
-    })
-  );
-  return `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+  try {
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: key,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+        ACL: 'public-read',
+      })
+    );
+    const url = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+    return url;
+  } catch (err) {
+    logger.error(`Failed to upload file to S3: ${key}`, err);
+    throw err;
+  }
 }
 
 /** Delete a file from S3 by URL */
@@ -196,46 +210,69 @@ export async function updateProduct(
 
     // 4️⃣ Upload new images to S3
     const newImageUrls: string[] = [];
-    for (const file of files as Express.Multer.File[]) {
-      const url = await uploadFileToS3(s3, id, file);
-      newImageUrls.push(url);
+    if (files) {
+      for (const file of files) {
+        const url = await uploadFileToS3(s3, id, file);
+        newImageUrls.push(url);
+      }
     }
 
     // 5️⃣ Merge retained + new images
     const finalImages = [...retainedImages, ...newImageUrls];
 
-    // 6️⃣ Update DynamoDB
+    // 6️⃣ Build dynamic update expression - only include defined fields
+    const updateExpressions: string[] = [];
+    const expressionAttributeNames: Record<string, string> = {};
+    const expressionAttributeValues: Record<string, any> = {};
+
+    // Always update images and timestamp
+    updateExpressions.push("#images = :images");
+    expressionAttributeNames["#images"] = "images";
+    expressionAttributeValues[":images"] = finalImages;
+    
+    updateExpressions.push("#updatedAt = :updatedAt");
+    expressionAttributeNames["#updatedAt"] = "updatedAt";
+    expressionAttributeValues[":updatedAt"] = new Date().toISOString();
+
+    // Conditionally add other fields
+    if (name !== undefined && name !== null) {
+      updateExpressions.push("#name = :name");
+      expressionAttributeNames["#name"] = "name";
+      expressionAttributeValues[":name"] = name;
+    }
+    
+    if (desc !== undefined && desc !== null) {
+      updateExpressions.push("#desc = :desc");
+      expressionAttributeNames["#desc"] = "desc";
+      expressionAttributeValues[":desc"] = desc;
+    }
+    
+    if (variants !== undefined && variants !== null) {
+      updateExpressions.push("#variants = :variants");
+      expressionAttributeNames["#variants"] = "variants";
+      expressionAttributeValues[":variants"] = variants;
+    }
+    
+    if (category !== undefined && category !== null) {
+      updateExpressions.push("#category = :category");
+      expressionAttributeNames["#category"] = "category";
+      expressionAttributeValues[":category"] = category;
+    }
+    
+    if (notes !== undefined && notes !== null) {
+      updateExpressions.push("#notes = :notes");
+      expressionAttributeNames["#notes"] = "notes";
+      expressionAttributeValues[":notes"] = notes;
+    }
+
+    // 7️⃣ Update DynamoDB
     const updatedProduct = await ddb.send(
       new UpdateCommand({
         TableName: getTableName(),
         Key: { id },
-        UpdateExpression: `
-          SET #name = :name,
-              #desc = :desc,
-              #variants = :variants,
-              #images = :images,
-              #notes = :notes,
-              #category = :category,
-              #updatedAt = :updatedAt
-        `,
-        ExpressionAttributeNames: {
-          "#name": "name",
-          "#desc": "desc",
-          "#variants": "variants",
-          "#images": "images",
-          "#category": "category",
-          "#notes": "notes",
-          "#updatedAt": "updatedAt",
-        },
-        ExpressionAttributeValues: {
-          ":name": name,
-          ":desc": desc,
-          ":variants": variants,
-          ":images": finalImages,
-          ":category": category,
-          ":notes": notes,
-          ":updatedAt": new Date().toISOString(),
-        },
+        UpdateExpression: `SET ${updateExpressions.join(", ")}`,
+        ExpressionAttributeNames: expressionAttributeNames,
+        ExpressionAttributeValues: expressionAttributeValues,
         ReturnValues: "ALL_NEW",
       })
     );
@@ -427,7 +464,6 @@ export async function saveCategories(payload: CategoryPayload) {
       logger.info(`Added new category: ${cat.name} `);
     }
 
-    logger.info("All categories processed successfully!");
     return await getCategories();
   } catch (error) {
     logger.error("Error updating categories:", error);

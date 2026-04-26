@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, OnDestroy } from "@angular/core";
 import { FormArray, FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { DomSanitizer, SafeUrl } from "@angular/platform-browser";
 import { MaterialStandaloneModules } from "../../shared/material-standalone";
@@ -7,7 +7,7 @@ import { MatSnackBar } from "@angular/material/snack-bar";
 import { Router, ActivatedRoute } from "@angular/router";
 import { AppService } from "../../services/app.service";
 import { NgxSpinnerService } from "ngx-spinner";
-import { forkJoin } from "rxjs";
+import { forkJoin, Subject, takeUntil } from "rxjs";
 import { ProductPayload } from "../../models/app.model";
 
 @Component({
@@ -17,7 +17,7 @@ import { ProductPayload } from "../../models/app.model";
   templateUrl: "./add-product.component.html",
   styleUrl: "./add-product.component.scss",
 })
-export class AddProductComponent implements OnInit {
+export class AddProductComponent implements OnInit, OnDestroy {
   productForm: FormGroup;
 
   // Image handling
@@ -26,6 +26,7 @@ export class AddProductComponent implements OnInit {
   imageFiles: File[] = []; // Newly uploaded files
   categories = [];
   id = "";
+  private destroy$ = new Subject<void>();
   constructor(
     private fb: FormBuilder,
     private productService: ProductService,
@@ -38,10 +39,24 @@ export class AddProductComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Check login
-    this.appService.isLoggedIn$.subscribe((status) => {
-      if (!status) this.router.navigate(["/login"]);
+    // Check login - call API first to ensure we get the correct status
+    this.appService.checkLoggedIn().subscribe({
+      next: (response) => {
+        this.appService.isLoggedIn$.next(response.loggedIn);
+        if (!response.loggedIn) {
+          this.router.navigate(["/login"]);
+        } else {
+          this.initializeComponent();
+        }
+      },
+      error: () => {
+        this.appService.isLoggedIn$.next(false);
+        this.router.navigate(["/login"]);
+      },
     });
+  }
+
+  private initializeComponent(): void {
     this.id = this.activatedRoute.snapshot.paramMap.get("id") || "";
     if (this.id) {
       this.loadProduct(this.id);
@@ -51,6 +66,11 @@ export class AddProductComponent implements OnInit {
     this.productService.getCategories().subscribe((data) => {
       this.categories = data.items;
     });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   /** Load product in edit mode */
@@ -200,6 +220,8 @@ export class AddProductComponent implements OnInit {
 
   /** Handle new file selection */
   onFilesSelected(event: Event) {
+    event.preventDefault();
+    event.stopPropagation();
     const target = event.target as HTMLInputElement;
     if (!target.files) return;
 
@@ -284,8 +306,11 @@ export class AddProductComponent implements OnInit {
       formData.append("existingImages", JSON.stringify(this.existingImageUrls));
     }
 
-    const action = this.id ? "updateProduct" : "addProduct";
-    this.productService[action](formData, this.id).subscribe({
+    const submitRequest = this.id
+      ? this.productService.updateProduct(formData, this.id)
+      : this.productService.addProduct(formData);
+
+    submitRequest.pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
         this.spinner.hide();
         this.snackBar.open(
@@ -299,6 +324,7 @@ export class AddProductComponent implements OnInit {
       },
       error: (err) => {
         this.spinner.hide();
+        console.error("Submit error:", err);
         if (err?.error?.message?.includes?.("No token found")) {
           this.snackBar.open("Please Login", undefined, { duration: 3000 });
         } else {

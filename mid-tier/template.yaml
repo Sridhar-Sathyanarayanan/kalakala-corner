@@ -17,8 +17,8 @@ Parameters:
     Description: JWT secret for admin token validation
   OriginURL:
     Type: String
-    Default: 'https://kalakalacorner.com'
-    Description: CORS origin URL
+    Default: 'https://www.kalakalacorner.com'
+    Description: 'CORS origin URL (both with and without www are automatically supported)'
 
 Globals:
   Function:
@@ -206,6 +206,12 @@ Resources:
             RestApiId: !Ref KalakalaAPI
             Path: /add-product
             Method: POST
+        AddProductOptionsAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /add-product
+            Method: OPTIONS
 
   UpdateProductFunction:
     Type: AWS::Serverless::Function
@@ -221,6 +227,12 @@ Resources:
             RestApiId: !Ref KalakalaAPI
             Path: /update-product/{id}
             Method: POST
+        UpdateProductOptionsAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /update-product/{id}
+            Method: OPTIONS
 
   DeleteProductFunction:
     Type: AWS::Serverless::Function
@@ -236,6 +248,12 @@ Resources:
             RestApiId: !Ref KalakalaAPI
             Path: /delete-product/{id}
             Method: DELETE
+        DeleteProductOptionsAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /delete-product/{id}
+            Method: OPTIONS
 
   GetCategoriesFunction:
     Type: AWS::Serverless::Function
@@ -266,6 +284,45 @@ Resources:
             RestApiId: !Ref KalakalaAPI
             Path: /save-categories
             Method: POST
+        SaveCategoriesOptionsAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /save-categories
+            Method: OPTIONS
+
+  DownloadCatalogueFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'kalakala-download-catalogue-${Environment}'
+      CodeUri: dist/lambda/handlers/
+      Handler: products.downloadCatalogue
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        DownloadCatalogueAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /downloadPDF
+            Method: GET
+        DownloadCatalogueOptionsAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /downloadPDF
+            Method: OPTIONS
+        DownloadCategoryCatalogueAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /downloadPDF/{category}
+            Method: GET
+        DownloadCategoryCatalogueOptionsAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /downloadPDF/{category}
+            Method: OPTIONS
 
   # ==================== Lambda Functions - Login ====================
   LoginFunction:
@@ -282,6 +339,12 @@ Resources:
             RestApiId: !Ref KalakalaAPI
             Path: /api/login
             Method: POST
+        LoginOptionsAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /api/login
+            Method: OPTIONS
 
   LogoutFunction:
     Type: AWS::Serverless::Function
@@ -297,6 +360,12 @@ Resources:
             RestApiId: !Ref KalakalaAPI
             Path: /api/logout
             Method: POST
+        LogoutOptionsAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /api/logout
+            Method: OPTIONS
 
   CheckAuthFunction:
     Type: AWS::Serverless::Function
@@ -343,6 +412,12 @@ Resources:
             RestApiId: !Ref KalakalaAPI
             Path: /add-testimonial
             Method: POST
+        AddTestimonialOptionsAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /add-testimonial
+            Method: OPTIONS
 
   UpdateTestimonialFunction:
     Type: AWS::Serverless::Function
@@ -358,6 +433,12 @@ Resources:
             RestApiId: !Ref KalakalaAPI
             Path: /update-testimonial/{id}
             Method: PUT
+        UpdateTestimonialOptionsAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /update-testimonial/{id}
+            Method: OPTIONS
 
   DeleteTestimonialFunction:
     Type: AWS::Serverless::Function
@@ -373,6 +454,12 @@ Resources:
             RestApiId: !Ref KalakalaAPI
             Path: /delete-testimonial/{id}
             Method: DELETE
+        DeleteTestimonialOptionsAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KalakalaAPI
+            Path: /delete-testimonial/{id}
+            Method: OPTIONS
 
   # ==================== Lambda Functions - Enquiries ====================
   GetEnquiriesFunction:
@@ -398,9 +485,9 @@ Resources:
       StageName: !Ref Environment
       TracingEnabled: true
       Cors:
-        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
-        AllowHeaders: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
-        AllowOrigin: !Sub "'${OriginURL}'"
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS,PATCH'"
+        AllowHeaders: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,X-Requested-With'"
+        AllowOrigin: !Sub "${OriginURL}"
         MaxAge: "'3600'"
         AllowCredentials: true
       MethodSettings:

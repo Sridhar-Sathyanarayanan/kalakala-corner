@@ -63,7 +63,7 @@ router.get("/product/:id", async (req: Request, res: Response) => {
   }
 });
 
-// POST /fetch-s3-image - Fetch image from S3
+// POST /fetch-s3-image - Fetch image from S3 and return as blob
 router.post("/fetch-s3-image", async (req: Request, res: Response) => {
   try {
     const { url } = req.body;
@@ -79,8 +79,34 @@ router.post("/fetch-s3-image", async (req: Request, res: Response) => {
       });
       return;
     }
-    const response = await productController.fetchS3Image(url);
-    res.status(response.statusCode).json(response.data);
+    
+    // Fetch the image directly from S3 and return as blob
+    const response = await fetch(url);
+    if (!response.ok) {
+      logger.error(`Failed to fetch S3 image: ${response.status}`);
+      res.status(500).json({
+        success: false,
+        statusCode: 500,
+        error: {
+          code: "S3_FETCH_ERROR",
+          message: "Failed to fetch image from S3",
+        },
+        timestamp: new Date().toISOString(),
+      });
+      return;
+    }
+
+    // Set CORS headers explicitly for binary response
+    res.setHeader("Access-Control-Allow-Origin", process.env.ORIGIN || "*");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    
+    // Set content type and send blob directly
+    const contentType = response.headers.get("content-type") || "application/octet-stream";
+    res.setHeader("Content-Type", contentType);
+    const buffer = await response.arrayBuffer();
+    res.send(Buffer.from(buffer));
   } catch (error) {
     logger.error("Error fetching S3 image", error);
     res.status(500).json({
@@ -98,7 +124,6 @@ router.post("/fetch-s3-image", async (req: Request, res: Response) => {
 // GET /categories-list - Get all categories
 router.get("/categories-list", async (req: Request, res: Response) => {
   try {
-    logger.info("Categories list request");
     const response = await productController.getAllCategories();
     res.status(response.statusCode).json({ items: response.data });
   } catch (error: any) {
@@ -127,7 +152,10 @@ router.post(
   verifyAdmin,
   async (req: Request, res: Response) => {
     try {
-      const response = await productController.addProduct(req.body);
+      const response = await productController.addProduct(
+        req.body,
+        req.files as Express.Multer.File[],
+      );
       res.status(response.statusCode).json(response);
     } catch (error) {
       logger.error("Error adding product", error);
@@ -141,7 +169,7 @@ router.post(
         timestamp: new Date().toISOString(),
       });
     }
-  }
+  },
 );
 
 // POST /update-product/:id - Update product (admin only)
@@ -152,21 +180,17 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const response = await productController.updateProduct(id, req.body);
+      const response = await productController.updateProduct(
+        id,
+        req.body,
+        req.files as Express.Multer.File[],
+      );
       res.status(response.statusCode).json(response);
     } catch (error) {
       logger.error("Error updating product", error);
-      res.status(500).json({
-        success: false,
-        statusCode: 500,
-        error: {
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to update product",
-        },
-        timestamp: new Date().toISOString(),
-      });
+      res.status(500).json({ message: "Failed to update product" });
     }
-  }
+  },
 );
 
 // DELETE /delete-product/:id - Delete product (admin only)
@@ -180,35 +204,19 @@ router.delete(
       res.status(response.statusCode).json(response);
     } catch (error) {
       logger.error("Error deleting product", error);
-      res.status(500).json({
-        success: false,
-        statusCode: 500,
-        error: {
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to delete product",
-        },
-        timestamp: new Date().toISOString(),
-      });
+      res.status(500).json({ message: "Failed to delete product" });
     }
-  }
+  },
 );
 
 // GET /downloadPDF - Download product catalogue (admin only)
 router.get("/downloadPDF", verifyAdmin, async (req: Request, res: Response) => {
   try {
-    const response = await productController.downloadCatalogue();
-    res.status(response.statusCode).json(response);
+    const response = await productController.downloadCatalogue("all");
+    res.status(200).json(response);
   } catch (error) {
     logger.error("Error downloading catalogue", error);
-    res.status(500).json({
-      success: false,
-      statusCode: 500,
-      error: {
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to download catalogue",
-      },
-      timestamp: new Date().toISOString(),
-    });
+    res.status(500).json({ message: "Failed to download catalogue", error });
   }
 });
 
@@ -220,20 +228,12 @@ router.get(
     try {
       const { category } = req.params;
       const response = await productController.downloadCatalogue(category);
-      res.status(response.statusCode).json(response);
+      res.status(200).json(response);
     } catch (error) {
       logger.error("Error downloading catalogue by category", error);
-      res.status(500).json({
-        success: false,
-        statusCode: 500,
-        error: {
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to download catalogue",
-        },
-        timestamp: new Date().toISOString(),
-      });
+      res.status(500).json({ message: "Failed to download catalogue", error });
     }
-  }
+  },
 );
 
 // POST /save-categories - Save categories (admin only)
@@ -256,7 +256,7 @@ router.post(
         timestamp: new Date().toISOString(),
       });
     }
-  }
+  },
 );
 
 export default router;

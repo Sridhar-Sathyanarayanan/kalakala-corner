@@ -90,6 +90,15 @@ export class CatalogueComponent implements OnInit, OnDestroy {
     );
   });
 
+  // Computed signal for filter panel filters only (excludes search)
+  hasFilterPanelFilters = computed(() => {
+    return (
+      this.minPriceFilter() !== null ||
+      this.maxPriceFilter() !== null ||
+      this.discountFilter()
+    );
+  });
+
   hasFilterInputs = computed(() => {
     return (
       this.searchInput() !== "" ||
@@ -271,7 +280,8 @@ export class CatalogueComponent implements OnInit, OnDestroy {
   private calculateProductPricing(products: ProductWithPricing[]): void {
     products.forEach((p) => {
       if (Array.isArray(p.variants) && p.variants.length > 0) {
-        const regularPrices: number[] = [];
+        const regularPrices: number[] = []; // Regular prices without valid discounts (for display range)
+        const allRegularPrices: number[] = []; // All regular prices including those with discounts (for original price)
         const discountedPrices: number[] = [];
         const priceDiscountPairs: { original: number; discounted: number }[] =
           [];
@@ -280,11 +290,17 @@ export class CatalogueComponent implements OnInit, OnDestroy {
           const price = Number(variant.price);
           const discountedPrice = Number(variant.discountedPrice);
 
+          const hasValidDiscount = !isNaN(discountedPrice) && discountedPrice > 0;
+
           if (!isNaN(price) && price > 0) {
-            regularPrices.push(price);
+            allRegularPrices.push(price);
+            // Only add regular price to display list if there's no valid discounted price for this variant
+            if (!hasValidDiscount) {
+              regularPrices.push(price);
+            }
           }
 
-          if (!isNaN(discountedPrice) && discountedPrice > 0) {
+          if (hasValidDiscount) {
             discountedPrices.push(discountedPrice);
 
             if (!isNaN(price) && price > 0 && discountedPrice < price) {
@@ -303,8 +319,12 @@ export class CatalogueComponent implements OnInit, OnDestroy {
 
         if (regularPrices.length > 0) {
           p.displayMaxPrice = Math.max(...regularPrices);
-          p.originalMinPrice = Math.min(...regularPrices);
-          p.originalMaxPrice = Math.max(...regularPrices);
+        }
+
+        // Use all regular prices for original price display (strikethrough)
+        if (allRegularPrices.length > 0) {
+          p.originalMinPrice = Math.min(...allRegularPrices);
+          p.originalMaxPrice = Math.max(...allRegularPrices);
         }
 
         p.hasDiscount = priceDiscountPairs.length > 0;
@@ -445,20 +465,31 @@ export class CatalogueComponent implements OnInit, OnDestroy {
     this.errorMessage.set("");
 
     try {
+      // Detect mobile device
+      const isMobile = this.breakpointObserver.isMatched(Breakpoints.Handset);
+      
       const data = await firstValueFrom(
         this.productService
           .downloadPDF(this.category())
           .pipe(takeUntil(this.destroy$))
       );
 
+      if (!data?.items || !Array.isArray(data.items)) {
+        throw new Error("Invalid PDF data format");
+      }
+
+      data.items.forEach((item, index) => {
+      });
+
       const doc = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
+        compress: true,
       });
       const margin = this.PDF_MARGIN;
-      const imageWidth = this.PDF_IMAGE_WIDTH;
-      const imageHeight = this.PDF_IMAGE_HEIGHT;
+      const imageWidth = isMobile ? 35 : this.PDF_IMAGE_WIDTH;
+      const imageHeight = isMobile ? 28 : this.PDF_IMAGE_HEIGHT;
       let y = 40;
 
       doc.setFontSize(16);
@@ -470,7 +501,7 @@ export class CatalogueComponent implements OnInit, OnDestroy {
         align: "center",
       });
 
-      for (const item of data.items) {
+      for (const item of data.items as ProductPayload[]) {
         // Calculate how many images we have and the space needed
         const imageCount = item.images?.length || 0;
         const imagesPerRow = 3;
@@ -522,28 +553,65 @@ export class CatalogueComponent implements OnInit, OnDestroy {
           let imagesInCurrentRow = 0;
 
           for (let i = 0; i < item.images.length; i++) {
+            // Limit images on mobile to prevent memory issues
+            if (isMobile && i >= 6) {
+              doc.setFillColor(220, 220, 220);
+              doc.rect(currentX, currentY, imageWidth, imageHeight, "F");
+              doc.setTextColor(100, 100, 100);
+              doc.setFontSize(7);
+              doc.text(
+                "+ See\nmore",
+                currentX + imageWidth / 2,
+                currentY + imageHeight / 2,
+                { align: "center" }
+              );
+              doc.setTextColor(0, 0, 0);
+              imagesInCurrentRow++;
+              if (imagesInCurrentRow < imagesPerRow) {
+                currentX += imageWidth + this.PDF_IMAGE_SPACING;
+              } else {
+                currentX = margin + 5;
+                currentY += imageHeight + this.PDF_IMAGE_SPACING;
+                imagesInCurrentRow = 0;
+              }
+              break;
+            }
             try {
-              const imgData = await this.toBase64(item.images[i]);
+              const imgData = await this.toBase64(item.images[i], isMobile);
+              // Detect image format from data URI
+              let imageFormat = "JPEG";
+              if (imgData.includes("data:image/png")) {
+                imageFormat = "PNG";
+              } else if (imgData.includes("data:image/jpeg") || imgData.includes("data:image/jpg")) {
+                imageFormat = "JPEG";
+              } else if (imgData.includes("data:image/webp")) {
+                // jsPDF may not support WEBP, convert to JPEG
+                imageFormat = "JPEG";
+              } else if (imgData.includes("data:image/gif")) {
+                // jsPDF may not support GIF, convert to JPEG
+                imageFormat = "JPEG";
+              }
+              
               doc.addImage(
                 imgData,
-                "JPEG",
+                imageFormat,
                 currentX,
                 currentY,
                 imageWidth,
-                imageHeight,
-                undefined,
-                "FAST"
+                imageHeight
               );
             } catch (e) {
+              console.error("Error adding image to PDF:", item.images[i], e);
               // Draw placeholder for failed images
               doc.setFillColor(230, 230, 230);
               doc.rect(currentX, currentY, imageWidth, imageHeight, "F");
               doc.setTextColor(150, 150, 150);
               doc.setFontSize(8);
               doc.text(
-                "Image not\navailable",
-                currentX + 5,
-                currentY + imageHeight / 2
+                "Image\nError",
+                currentX + imageWidth / 2,
+                currentY + imageHeight / 2,
+                { align: "center" }
               );
               doc.setTextColor(0, 0, 0); // Reset text color
             }
@@ -576,6 +644,9 @@ export class CatalogueComponent implements OnInit, OnDestroy {
 
         // Add variant table below images
         const tableStartY = y + 18 + descHeight + 5 + totalImageHeight + 3;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const availableTableWidth = pageWidth - (margin + 5) * 2;
+        
         autoTable(doc, {
           startY: tableStartY,
           margin: { left: margin + 5, right: margin + 5 },
@@ -589,9 +660,9 @@ export class CatalogueComponent implements OnInit, OnDestroy {
             fontStyle: "bold",
           },
           columnStyles: {
-            0: { cellWidth: 40 },
-            1: { cellWidth: 40 },
-            2: { cellWidth: 40 },
+            0: { cellWidth: availableTableWidth * 0.25 },
+            1: { cellWidth: availableTableWidth * 0.375 },
+            2: { cellWidth: availableTableWidth * 0.375 },
           },
           theme: "grid",
         });
@@ -618,18 +689,74 @@ export class CatalogueComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error("Error downloading PDF:", error);
       this.spinner.hide();
-      this.errorMessage.set("Failed to generate PDF. Please try again.");
+      
+      // Provide more specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes("401") || error.message.includes("403")) {
+          this.errorMessage.set("You do not have permission to download the catalog. Admin access required.");
+        } else if (error.message.includes("Invalid PDF data")) {
+          this.errorMessage.set("Invalid catalog data received. Please try again.");
+        } else if (error.message.includes("Image")) {
+          this.errorMessage.set("Failed to load some images in the PDF. The catalog was still generated but may be incomplete.");
+        } else {
+          this.errorMessage.set("Failed to generate PDF. Please try again.");
+        }
+      } else {
+        this.errorMessage.set("Failed to generate PDF. Please try again.");
+      }
     }
   }
 
-  private async toBase64(input: string | Blob): Promise<string> {
+  private async toBase64(input: string | Blob, isMobile: boolean = false): Promise<string> {
     let blob: Blob;
+    
     if (typeof input === "string") {
       try {
-        blob = await firstValueFrom(this.productService.fetchS3Image(input));
+        // Properly encode URL to handle spaces and special characters
+        const encodedUrl = this.encodeUrl(input);
+        
+        // Add timeout for mobile to prevent long waits
+        const timeout = isMobile ? 10000 : 20000;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+        
+        try {
+          const response = await firstValueFrom(
+            this.productService.fetchS3Image(encodedUrl)
+          );
+          
+          blob = response as Blob;
+          
+          // Check if blob size is suspiciously small (likely an error response)
+          if (blob.size < 1000) {
+            console.warn("Blob size too small, likely error response, trying direct fetch instead");
+            throw new Error("Blob size too small");
+          }
+          
+          clearTimeout(timeoutId);
+        } catch (serviceErr) {
+          console.warn("S3 image fetch via service failed or returned small blob, trying direct fetch:", input, serviceErr);
+          clearTimeout(timeoutId);
+          
+          // Try direct fetch as fallback
+          try {
+            const res = await fetch(encodedUrl, { 
+              mode: "cors", 
+              signal: AbortSignal.timeout(timeout)
+            });
+            
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            blob = await res.blob();
+          } catch (fetchErr) {
+            console.error("Direct fetch also failed:", input, fetchErr);
+            throw fetchErr;
+          }
+        }
       } catch (err) {
-        const res = await fetch(input, { mode: "cors" });
-        blob = await res.blob();
+        console.error("All image fetch methods failed for:", input, err);
+        throw err;
       }
     } else {
       blob = input;
@@ -637,9 +764,83 @@ export class CatalogueComponent implements OnInit, OnDestroy {
 
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        if (!result.startsWith("data:")) {
+          reject(new Error("Invalid base64 data URL"));
+        } else {
+          resolve(result);
+        }
+      };
+      reader.onerror = () => reject(new Error("FileReader error"));
       reader.readAsDataURL(blob);
+    });
+  }
+
+  /**
+   * Properly encode URL components while preserving the protocol and path structure
+   * Handles spaces and special characters in filenames
+   */
+  private encodeUrl(url: string): string {
+    try {
+      const urlObj = new URL(url);
+      // Split path into segments and encode each one
+      const pathSegments = urlObj.pathname.split('/').map(segment => 
+        encodeURIComponent(decodeURIComponent(segment))
+      );
+      urlObj.pathname = pathSegments.join('/');
+      return urlObj.toString();
+    } catch (e) {
+      console.warn("Could not parse URL, returning as-is:", url);
+      return url;
+    }
+  }
+
+  private async compressImage(blob: Blob): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onload = (event: any) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+          
+          // Scale down if too large
+          const maxDimension = 800;
+          if (width > maxDimension || height > maxDimension) {
+            const ratio = Math.min(maxDimension / width, maxDimension / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            reject(new Error("Could not get canvas context"));
+            return;
+          }
+          
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(
+            (compressedBlob) => {
+              if (compressedBlob) {
+                resolve(compressedBlob);
+              } else {
+                reject(new Error("Failed to compress image"));
+              }
+            },
+            "image/jpeg",
+            0.75
+          );
+        };
+        img.onerror = () => reject(new Error("Failed to load image for compression"));
+      };
+      reader.onerror = () => reject(new Error("FileReader error"));
     });
   }
 

@@ -14,7 +14,7 @@ export class ProductService {
   getProducts(category: string): Observable<Product> {
     return this.http.get<Product>(
       `${environment.apiURL}/products-list${
-        category === "all" ? "" : "/" + category
+        !category || category === "all" ? "" : "/" + category
       }`
     );
   }
@@ -67,7 +67,7 @@ export class ProductService {
     return this.http.post(
       `${environment.apiURL}/fetch-s3-image`,
       { url },
-      { responseType: "blob", withCredentials: true }
+      { responseType: "blob" }
     ) as Observable<Blob>;
   }
 

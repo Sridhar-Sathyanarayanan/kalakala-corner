@@ -32,8 +32,16 @@ const app = createExpressApp();
  * Wraps the Express app with serverless-http to handle API Gateway events
  */
 export const handler = serverless(app, {
-  binary: ["image/*", "font/*"],
+  binary: ["image/*", "font/*", "application/octet-stream", "multipart/form-data"],
   provider: "aws",
+  request(request: any) {
+    // If API Gateway sent base64-encoded body for multipart, decode it
+    if (request.headers['content-type']?.includes('multipart/form-data') && 
+        request.isBase64Encoded && 
+        typeof request.body === 'string') {
+      request.body = Buffer.from(request.body, 'base64');
+    }
+  },
 });
 
 /**

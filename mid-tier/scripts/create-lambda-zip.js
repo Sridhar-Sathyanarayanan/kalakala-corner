@@ -21,7 +21,7 @@ const fs = require('fs');
 const path = require('path');
 const archiver = require('archiver');
 
-const ZIP_NAME = 'kalakala-lambda-deployment.zip';
+const ZIP_NAME = 'lambda-code.zip';
 const DIST_DIR = path.join(__dirname, '../dist');
 const NODE_MODULES_DIR = path.join(__dirname, '../node_modules');
 const OUTPUT_PATH = path.join(__dirname, '..', ZIP_NAME);

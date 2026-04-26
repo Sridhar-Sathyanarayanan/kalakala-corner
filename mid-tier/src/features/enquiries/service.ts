@@ -18,6 +18,7 @@ export async function addCustomerEnquiries(args: {
   phone: number;
   query: string;
   product: string;
+  category: string;
 }) {
   try {
     const ddbDocClient = getDynamoDocumentClient();
